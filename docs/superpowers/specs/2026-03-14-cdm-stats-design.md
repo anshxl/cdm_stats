@@ -75,6 +75,8 @@ CREATE TABLE matches (
 );
 ```
 
+For same-date matches, `match_id` insertion order is the tiebreaker for Elo chronological ordering.
+
 ### `map_results`
 ```sql
 CREATE TABLE map_results (
@@ -161,9 +163,10 @@ Teams referenced by abbreviation. A 3-0 sweep has 3 rows, a 3-2 has 5 rows.
    - Slots 2–4 → loser of previous map
 3. **Compute running series scores** (`team1_score_before`, `team2_score_before`) by accumulating wins
 4. **Derive `pick_context`** from slot + series state using rules table
-5. **Compute `picking_team_score` / `non_picking_team_score`** — remap winner/loser scores based on whether the picker won
-6. **Insert match + map_results atomically** in a single transaction
-7. **Compute Elo update** for both teams after match insert
+5. **Compute `picking_team_score` / `non_picking_team_score`** — remap winner/loser scores based on whether the picker won. For slot 5 (no picker), store `winner_score` as `picking_team_score` and `loser_score` as `non_picking_team_score` by convention.
+6. **Derive `series_winner_id`** from accumulated map wins (the team that reaches 3)
+7. **Insert match + map_results atomically** in a single transaction
+8. **Compute Elo update** for both teams after match insert
 
 ### Validation rules (reject match on failure)
 
@@ -221,7 +224,7 @@ Per team per map: breakdown of picks by context (Opener, Neutral, Must-Win, Clos
 
 ## Excel Export (`export/excel.py`)
 
-Generates a single `.xlsx` workbook using `openpyxl`. Output to `output/` directory.
+Generates `.xlsx` workbooks using `openpyxl`. Output to `output/` directory (auto-created on first run, git-ignored). Re-running overwrites the target file — inherently idempotent.
 
 ### Sheet 1: Map Matrix
 
@@ -236,6 +239,7 @@ Generates a single `.xlsx` workbook using `openpyxl`. Output to `output/` direct
 ### Sheet 2: Match-Up Prep
 
 - Parameterized by your team + opponent
+- Generates a standalone file per matchup: `output/matchup_ATL_vs_LAT.xlsx`
 - Per map row: opponent's avoidance & target index, your pick & defend W/L, dominance flags (all with sample sizes)
 - Footer: Elo ratings for both teams with low-confidence flag if applicable
 
@@ -258,7 +262,7 @@ python main.py export matrix                      # Map Matrix workbook
 python main.py export matchup ATL LAT             # Match-Up Prep for ATL vs LAT
 python main.py chart heatmap ATL                  # avoidance vs target heatmap
 python main.py chart elo ATL                      # Elo trajectory
-python main.py backfill                           # reprocess all matches
+python main.py backfill                           # wipe and recalculate Elo from existing DB rows in chronological order
 python main.py init                               # create DB + seed teams/maps
 ```
 
@@ -281,7 +285,8 @@ cdm_stats/
 │       │   └── queries.py
 │       ├── ingestion/
 │       │   ├── csv_loader.py
-│       │   └── backfill.py
+│       │   ├── backfill.py
+│       │   └── seed.py
 │       ├── metrics/
 │       │   ├── elo.py
 │       │   ├── avoidance.py
@@ -290,8 +295,10 @@ cdm_stats/
 │       │   └── excel.py
 │       └── charts/
 │           └── heatmap.py
-├── scripts/
-│   └── seed_teams_maps.py
+├── tests/
+│   ├── test_csv_loader.py
+│   ├── test_elo.py
+│   └── test_pick_context.py
 ├── output/                    # generated .xlsx and .png files
 └── main.py
 ```
