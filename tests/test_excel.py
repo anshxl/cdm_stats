@@ -11,10 +11,10 @@ from cdm_stats.export.excel import export_matchup_prep
 
 
 MATCH_CSV = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score
-2026-01-15,ATL,LAT,ATL,1,Terminal,ATL,6,3
-2026-01-15,ATL,LAT,ATL,2,Highrise,LAT,250,220
-2026-01-15,ATL,LAT,ATL,3,Karachi,ATL,3,1
-2026-01-15,ATL,LAT,ATL,4,Karachi,ATL,6,2"""
+2026-01-15,DVS,OUG,DVS,1,Tunisia,DVS,6,3
+2026-01-15,DVS,OUG,DVS,2,Summit,OUG,250,220
+2026-01-15,DVS,OUG,DVS,3,Raid,DVS,3,1
+2026-01-15,DVS,OUG,DVS,4,Slums,DVS,6,2"""
 
 
 @pytest.fixture
@@ -53,17 +53,17 @@ def test_export_map_matrix_has_team_rows(db, tmp_path):
 
 
 def test_export_matchup_creates_file(db, tmp_path):
-    output_path = tmp_path / "matchup_ATL_vs_LAT.xlsx"
-    atl = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'ATL'").fetchone()[0]
-    lat = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'LAT'").fetchone()[0]
-    export_matchup_prep(db, atl, lat, str(output_path))
+    output_path = tmp_path / "matchup_DVS_vs_OUG.xlsx"
+    dvs = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
+    oug = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'OUG'").fetchone()[0]
+    export_matchup_prep(db, dvs, oug, str(output_path))
     assert output_path.exists()
 
 
 def test_export_matchup_has_correct_sheet(db, tmp_path):
-    output_path = tmp_path / "matchup_ATL_vs_LAT.xlsx"
-    atl = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'ATL'").fetchone()[0]
-    lat = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'LAT'").fetchone()[0]
-    export_matchup_prep(db, atl, lat, str(output_path))
+    output_path = tmp_path / "matchup_DVS_vs_OUG.xlsx"
+    dvs = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
+    oug = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'OUG'").fetchone()[0]
+    export_matchup_prep(db, dvs, oug, str(output_path))
     wb = load_workbook(str(output_path))
     assert "Match-Up Prep" in wb.sheetnames

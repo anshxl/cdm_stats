@@ -12,7 +12,8 @@ TABLES = [
     CREATE TABLE IF NOT EXISTS maps (
         map_id   INTEGER PRIMARY KEY,
         map_name TEXT NOT NULL,
-        mode     TEXT NOT NULL CHECK(mode IN ('SnD', 'HP', 'Control'))
+        mode     TEXT NOT NULL CHECK(mode IN ('SnD', 'HP', 'Control')),
+        UNIQUE(map_name, mode)
     )
     """,
     """

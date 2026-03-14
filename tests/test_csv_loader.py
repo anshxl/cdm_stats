@@ -17,32 +17,35 @@ def db():
     conn.close()
 
 
+# DVS 3-1 OUG: DVS wins slots 1,3,4; OUG wins slot 2
 FOUR_MAP_CSV = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score
-2026-01-15,ATL,LAT,ATL,1,Terminal,ATL,6,3
-2026-01-15,ATL,LAT,ATL,2,Highrise,LAT,250,220
-2026-01-15,ATL,LAT,ATL,3,Karachi,ATL,3,1
-2026-01-15,ATL,LAT,ATL,4,Karachi,ATL,6,2"""
+2026-01-15,DVS,OUG,DVS,1,Tunisia,DVS,6,3
+2026-01-15,DVS,OUG,DVS,2,Summit,OUG,250,220
+2026-01-15,DVS,OUG,DVS,3,Raid,DVS,3,1
+2026-01-15,DVS,OUG,DVS,4,Slums,DVS,6,2"""
 
+# Q9 3-0 SPG sweep
 SWEEP_CSV = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score
-2026-01-14,MIN,TOR,MIN,1,Terminal,MIN,6,2
-2026-01-14,MIN,TOR,MIN,2,Highrise,MIN,250,180
-2026-01-14,MIN,TOR,MIN,3,Karachi,MIN,3,0"""
+2026-01-14,Q9,SPG,Q9,1,Tunisia,Q9,6,2
+2026-01-14,Q9,SPG,Q9,2,Summit,Q9,250,180
+2026-01-14,Q9,SPG,Q9,3,Raid,Q9,3,0"""
 
+# ELV 3-2 XROCK: full 5 maps
 FIVE_MAP_CSV = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score
-2026-01-16,BOS,SEA,BOS,1,Invasion,BOS,6,4
-2026-01-16,BOS,SEA,BOS,2,Karachi,SEA,250,200
-2026-01-16,BOS,SEA,BOS,3,Highrise,BOS,3,2
-2026-01-16,BOS,SEA,BOS,4,Skidrow,SEA,6,3
-2026-01-16,BOS,SEA,BOS,5,Invasion,BOS,250,230"""
+2026-01-16,ELV,XROCK,ELV,1,Firing Range,ELV,6,4
+2026-01-16,ELV,XROCK,ELV,2,Hacienda,XROCK,250,200
+2026-01-16,ELV,XROCK,ELV,3,Standoff,ELV,3,2
+2026-01-16,ELV,XROCK,ELV,4,Meltdown,XROCK,6,3
+2026-01-16,ELV,XROCK,ELV,5,Takeoff,ELV,250,230"""
 
 INVALID_TEAM_CSV = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score
-2026-01-17,FAKE,LAT,FAKE,1,Terminal,FAKE,6,3
-2026-01-17,FAKE,LAT,FAKE,2,Highrise,LAT,250,220
-2026-01-17,FAKE,LAT,FAKE,3,Karachi,FAKE,3,1"""
+2026-01-17,FAKE,OUG,FAKE,1,Tunisia,FAKE,6,3
+2026-01-17,FAKE,OUG,FAKE,2,Summit,OUG,250,220
+2026-01-17,FAKE,OUG,FAKE,3,Raid,FAKE,3,1"""
 
 INVALID_NO_WINNER_CSV = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score
-2026-01-17,ATL,LAT,ATL,1,Terminal,ATL,6,3
-2026-01-17,ATL,LAT,ATL,2,Highrise,LAT,250,220"""
+2026-01-17,DVS,OUG,DVS,1,Tunisia,DVS,6,3
+2026-01-17,DVS,OUG,DVS,2,Summit,OUG,250,220"""
 
 
 def test_ingest_sweep_3_0_creates_3_map_results(db):
@@ -55,28 +58,28 @@ def test_ingest_sweep_3_0_creates_3_map_results(db):
 def test_ingest_sweep_3_0_winner_has_one_pick(db):
     """In a 3-0 sweep, the sweeping team (2v2 winner) has exactly 1 pick (slot 1)."""
     ingest_csv(db, io.StringIO(SWEEP_CSV))
-    min_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'MIN'").fetchone()[0]
+    q9_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'Q9'").fetchone()[0]
     picks = db.execute(
-        "SELECT COUNT(*) FROM map_results WHERE picked_by_team_id = ?", (min_id,)
+        "SELECT COUNT(*) FROM map_results WHERE picked_by_team_id = ?", (q9_id,)
     ).fetchone()[0]
     assert picks == 1
 
 
 def test_ingest_sweep_3_0_swept_team_has_two_picks(db):
-    """In a 3-0 where MIN won 2v2 and all 3 maps, TOR (loser of each map) picks slots 2 and 3."""
+    """In a 3-0 where Q9 won 2v2 and all 3 maps, SPG (loser of each map) picks slots 2 and 3."""
     ingest_csv(db, io.StringIO(SWEEP_CSV))
-    tor_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'TOR'").fetchone()[0]
+    spg_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'SPG'").fetchone()[0]
     picks = db.execute(
-        "SELECT COUNT(*) FROM map_results WHERE picked_by_team_id = ?", (tor_id,)
+        "SELECT COUNT(*) FROM map_results WHERE picked_by_team_id = ?", (spg_id,)
     ).fetchone()[0]
     assert picks == 2
 
 
 def test_ingest_sweep_3_0_series_winner_correct(db):
     ingest_csv(db, io.StringIO(SWEEP_CSV))
-    min_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'MIN'").fetchone()[0]
+    q9_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'Q9'").fetchone()[0]
     winner = db.execute("SELECT series_winner_id FROM matches").fetchone()[0]
-    assert winner == min_id
+    assert winner == q9_id
 
 
 def test_ingest_invalid_team_returns_error(db):
@@ -108,10 +111,10 @@ def test_ingest_sweep_creates_4_map_results(db):
 def test_ingest_sweep_series_winner_is_correct(db):
     ingest_csv(db, io.StringIO(FOUR_MAP_CSV))
     match = db.execute("SELECT series_winner_id FROM matches").fetchone()
-    atl_id = db.execute(
-        "SELECT team_id FROM teams WHERE abbreviation = 'ATL'"
+    dvs_id = db.execute(
+        "SELECT team_id FROM teams WHERE abbreviation = 'DVS'"
     ).fetchone()[0]
-    assert match[0] == atl_id
+    assert match[0] == dvs_id
 
 
 def test_ingest_sweep_slot1_pick_context_is_opener(db):
@@ -124,25 +127,25 @@ def test_ingest_sweep_slot1_pick_context_is_opener(db):
 
 def test_ingest_sweep_picked_by_slot1_is_2v2_winner(db):
     ingest_csv(db, io.StringIO(FOUR_MAP_CSV))
-    atl_id = db.execute(
-        "SELECT team_id FROM teams WHERE abbreviation = 'ATL'"
+    dvs_id = db.execute(
+        "SELECT team_id FROM teams WHERE abbreviation = 'DVS'"
     ).fetchone()[0]
     picker = db.execute(
         "SELECT picked_by_team_id FROM map_results WHERE slot = 1"
     ).fetchone()[0]
-    assert picker == atl_id
+    assert picker == dvs_id
 
 
 def test_ingest_sweep_slot2_picked_by_loser_of_slot1(db):
-    """ATL won slot 1, so LAT (loser) picks slot 2."""
+    """DVS won slot 1, so OUG (loser) picks slot 2."""
     ingest_csv(db, io.StringIO(FOUR_MAP_CSV))
-    lat_id = db.execute(
-        "SELECT team_id FROM teams WHERE abbreviation = 'LAT'"
+    oug_id = db.execute(
+        "SELECT team_id FROM teams WHERE abbreviation = 'OUG'"
     ).fetchone()[0]
     picker = db.execute(
         "SELECT picked_by_team_id FROM map_results WHERE slot = 2"
     ).fetchone()[0]
-    assert picker == lat_id
+    assert picker == oug_id
 
 
 def test_ingest_sweep_series_scores_accumulate(db):
@@ -150,7 +153,7 @@ def test_ingest_sweep_series_scores_accumulate(db):
     rows = db.execute(
         "SELECT slot, team1_score_before, team2_score_before FROM map_results ORDER BY slot"
     ).fetchall()
-    # Slot 1: 0-0, Slot 2: 1-0 (ATL won s1), Slot 3: 1-1 (LAT won s2), Slot 4: 2-1 (ATL won s3)
+    # Slot 1: 0-0, Slot 2: 1-0 (DVS won s1), Slot 3: 1-1 (OUG won s2), Slot 4: 2-1 (DVS won s3)
     assert rows[0][1:] == (0, 0)  # slot 1
     assert rows[1][1:] == (1, 0)  # slot 2
     assert rows[2][1:] == (1, 1)  # slot 3
@@ -183,7 +186,7 @@ def test_ingest_duplicate_match_is_rejected(db):
 
 
 def test_ingest_picking_team_score_when_picker_wins(db):
-    """Slot 1: ATL picked, ATL won 6-3. picking_team_score=6, non=3."""
+    """Slot 1: DVS picked, DVS won 6-3. picking_team_score=6, non=3."""
     ingest_csv(db, io.StringIO(FOUR_MAP_CSV))
     row = db.execute(
         "SELECT picking_team_score, non_picking_team_score FROM map_results WHERE slot = 1"
@@ -192,7 +195,7 @@ def test_ingest_picking_team_score_when_picker_wins(db):
 
 
 def test_ingest_picking_team_score_when_picker_loses(db):
-    """Slot 2: LAT picked, LAT won 250-220. picking_team_score=250, non=220."""
+    """Slot 2: OUG picked, OUG won 250-220. picking_team_score=250, non=220."""
     ingest_csv(db, io.StringIO(FOUR_MAP_CSV))
     row = db.execute(
         "SELECT picking_team_score, non_picking_team_score FROM map_results WHERE slot = 2"

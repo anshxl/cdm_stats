@@ -8,15 +8,15 @@ from cdm_stats.metrics.elo import update_elo, get_current_elo
 from cdm_stats.ingestion.backfill import backfill_elo
 
 TWO_MATCHES_CSV = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score
-2026-01-15,ATL,LAT,ATL,1,Terminal,ATL,6,3
-2026-01-15,ATL,LAT,ATL,2,Highrise,LAT,250,220
-2026-01-15,ATL,LAT,ATL,3,Karachi,ATL,3,1
-2026-01-15,ATL,LAT,ATL,4,Karachi,ATL,6,2
-2026-01-16,BOS,SEA,BOS,1,Invasion,BOS,6,4
-2026-01-16,BOS,SEA,BOS,2,Karachi,SEA,250,200
-2026-01-16,BOS,SEA,BOS,3,Highrise,BOS,3,2
-2026-01-16,BOS,SEA,BOS,4,Skidrow,SEA,6,3
-2026-01-16,BOS,SEA,BOS,5,Invasion,BOS,250,230"""
+2026-01-15,DVS,OUG,DVS,1,Tunisia,DVS,6,3
+2026-01-15,DVS,OUG,DVS,2,Summit,OUG,250,220
+2026-01-15,DVS,OUG,DVS,3,Raid,DVS,3,1
+2026-01-15,DVS,OUG,DVS,4,Slums,DVS,6,2
+2026-01-16,ELV,XROCK,ELV,1,Firing Range,ELV,6,4
+2026-01-16,ELV,XROCK,ELV,2,Hacienda,XROCK,250,200
+2026-01-16,ELV,XROCK,ELV,3,Standoff,ELV,3,2
+2026-01-16,ELV,XROCK,ELV,4,Meltdown,XROCK,6,3
+2026-01-16,ELV,XROCK,ELV,5,Takeoff,ELV,250,230"""
 
 
 @pytest.fixture
@@ -38,10 +38,10 @@ def test_backfill_elo_populates_all_teams(db):
 
 def test_backfill_elo_is_idempotent(db):
     backfill_elo(db)
-    atl = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'ATL'").fetchone()[0]
-    elo_first = get_current_elo(db, atl)
+    dvs = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
+    elo_first = get_current_elo(db, dvs)
     backfill_elo(db)
-    elo_second = get_current_elo(db, atl)
+    elo_second = get_current_elo(db, dvs)
     assert elo_first == elo_second
 
 

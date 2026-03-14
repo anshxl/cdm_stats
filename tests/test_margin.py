@@ -43,10 +43,10 @@ def test_control_contested():
 
 
 MATCH_CSV = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score
-2026-01-15,ATL,LAT,ATL,1,Terminal,ATL,6,3
-2026-01-15,ATL,LAT,ATL,2,Highrise,LAT,250,220
-2026-01-15,ATL,LAT,ATL,3,Karachi,ATL,3,1
-2026-01-15,ATL,LAT,ATL,4,Karachi,ATL,6,2"""
+2026-01-15,DVS,OUG,DVS,1,Tunisia,DVS,6,3
+2026-01-15,DVS,OUG,DVS,2,Summit,OUG,250,220
+2026-01-15,DVS,OUG,DVS,3,Raid,DVS,3,1
+2026-01-15,DVS,OUG,DVS,4,Slums,DVS,6,2"""
 
 
 @pytest.fixture
@@ -61,9 +61,9 @@ def db():
 
 
 def test_score_margins_returns_list(db):
-    atl = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'ATL'").fetchone()[0]
-    terminal = db.execute("SELECT map_id FROM maps WHERE map_name = 'Terminal' AND mode = 'SnD'").fetchone()[0]
-    margins = score_margins(db, atl, terminal)
+    dvs = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
+    tunisia = db.execute("SELECT map_id FROM maps WHERE map_name = 'Tunisia' AND mode = 'SnD'").fetchone()[0]
+    margins = score_margins(db, dvs, tunisia)
     assert len(margins) == 1
     assert margins[0]["margin"] == 3  # 6 - 3
     assert margins[0]["dominance"] == "Dominant"

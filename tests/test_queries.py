@@ -22,7 +22,7 @@ def db():
 
 
 def test_get_team_id_by_abbr(db):
-    team_id = get_team_id_by_abbr(db, "ATL")
+    team_id = get_team_id_by_abbr(db, "DVS")
     assert team_id is not None
     assert isinstance(team_id, int)
 
@@ -32,12 +32,12 @@ def test_get_team_id_by_abbr_invalid(db):
 
 
 def test_get_map_id(db):
-    map_id = get_map_id(db, "Terminal", "SnD")
+    map_id = get_map_id(db, "Tunisia", "SnD")
     assert map_id is not None
 
 
 def test_get_map_id_wrong_mode(db):
-    assert get_map_id(db, "Terminal", "HP") is None
+    assert get_map_id(db, "Tunisia", "HP") is None
 
 
 def test_get_mode_for_slot():
@@ -49,8 +49,8 @@ def test_get_mode_for_slot():
 
 
 def test_insert_match(db):
-    atl = get_team_id_by_abbr(db, "ATL")
-    lat = get_team_id_by_abbr(db, "LAT")
+    atl = get_team_id_by_abbr(db, "DVS")
+    lat = get_team_id_by_abbr(db, "OUG")
     match_id = insert_match(db, "2026-01-15", atl, lat, atl, atl)
     assert match_id is not None
     row = db.execute("SELECT * FROM matches WHERE match_id = ?", (match_id,)).fetchone()
