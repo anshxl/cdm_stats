@@ -182,6 +182,8 @@ def ingest_csv(conn: sqlite3.Connection, file: IO[str]) -> list[dict]:
             for data in map_result_data:
                 insert_map_result(conn, match_id, *data)
             conn.commit()
+            from cdm_stats.metrics.elo import update_elo
+            update_elo(conn, match_id)
             results.append({"match": key, "status": "ok", "match_id": match_id})
         except Exception as e:
             conn.rollback()
