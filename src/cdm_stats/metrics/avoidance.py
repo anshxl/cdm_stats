@@ -88,3 +88,19 @@ def target_index(conn: sqlite3.Connection, team_id: int, map_id: int) -> dict:
 
     avoided = sum(1 for r in rows if r[3] != map_id)
     return {"ratio": avoided / len(rows), "opportunities": len(rows)}
+
+
+def pick_context_distribution(conn: sqlite3.Connection, team_id: int, map_id: int) -> dict[str, int]:
+    """Breakdown of how often a team picks this map in each context."""
+    rows = conn.execute(
+        """SELECT pick_context, COUNT(*)
+           FROM map_results
+           WHERE picked_by_team_id = ? AND map_id = ? AND slot != 5
+           GROUP BY pick_context""",
+        (team_id, map_id),
+    ).fetchall()
+    result = {"Opener": 0, "Neutral": 0, "Must-Win": 0, "Close-Out": 0}
+    for ctx, count in rows:
+        if ctx in result:
+            result[ctx] = count
+    return result

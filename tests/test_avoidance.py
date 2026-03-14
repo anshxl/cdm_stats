@@ -9,6 +9,7 @@ from cdm_stats.metrics.avoidance import (
     defend_win_loss,
     avoidance_index,
     target_index,
+    pick_context_distribution,
 )
 
 
@@ -82,3 +83,13 @@ def test_target_index_basic(db):
     result = target_index(db, atl, karachi_snd)
     assert result["ratio"] == 0.0
     assert result["opportunities"] == 1
+
+
+def test_pick_context_distribution(db):
+    """ATL picked Terminal in slot 1 (Opener context)."""
+    ingest_csv(db, io.StringIO(MATCH_CSV))
+    atl, _, terminal, _, _ = _get_ids(db)
+    dist = pick_context_distribution(db, atl, terminal)
+    assert dist["Opener"] == 1
+    assert dist.get("Neutral", 0) == 0
+    assert dist.get("Must-Win", 0) == 0
