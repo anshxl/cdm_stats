@@ -4,6 +4,7 @@ from openpyxl.styles import PatternFill, Font, Alignment
 from cdm_stats.metrics.avoidance import pick_win_loss, defend_win_loss, avoidance_index, target_index
 from cdm_stats.metrics.elo import get_current_elo, is_low_confidence
 from cdm_stats.metrics.margin import score_margins, dominance_flag
+from cdm_stats.db.queries import get_ban_summary
 
 GREEN_FILL = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")
 RED_FILL = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
@@ -149,6 +150,28 @@ def export_matchup_prep(
     ws.cell(row=footer_row, column=1, value="Elo Ratings").font = Font(bold=True)
     ws.cell(row=footer_row + 1, column=1, value=f"{your_abbr}: {your_elo:.0f}{your_lc}")
     ws.cell(row=footer_row + 1, column=3, value=f"{opp_abbr}: {opp_elo:.0f}{opp_lc}")
+
+    # Ban summary section
+    your_bans = get_ban_summary(conn, your_team_id, opp_team_id)
+    opp_bans = get_ban_summary(conn, opp_team_id, your_team_id)
+
+    if your_bans or opp_bans:
+        ban_row = footer_row + 3
+        ws.cell(row=ban_row, column=1, value="Head-to-Head Ban Data").font = Font(bold=True)
+        ban_row += 1
+
+        if your_bans:
+            ws.cell(row=ban_row, column=1, value=f"{your_abbr} bans vs {opp_abbr}:")
+            ban_strs = [f"{b['map_name']} {b['mode']} ({b['ban_count']}/{b['total_series']})"
+                        for b in your_bans]
+            ws.cell(row=ban_row, column=2, value=", ".join(ban_strs))
+            ban_row += 1
+
+        if opp_bans:
+            ws.cell(row=ban_row, column=1, value=f"{opp_abbr} bans vs {your_abbr}:")
+            ban_strs = [f"{b['map_name']} {b['mode']} ({b['ban_count']}/{b['total_series']})"
+                        for b in opp_bans]
+            ws.cell(row=ban_row, column=2, value=", ".join(ban_strs))
 
     for col in ws.columns:
         max_len = max(len(str(c.value or "")) for c in col)

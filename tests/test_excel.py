@@ -67,3 +67,20 @@ def test_export_matchup_has_correct_sheet(db, tmp_path):
     export_matchup_prep(db, dvs, oug, str(output_path))
     wb = load_workbook(str(output_path))
     assert "Match-Up Prep" in wb.sheetnames
+
+
+def test_matchup_prep_includes_ban_section_when_bans_exist(db_with_tournament_match, tmp_path):
+    """When tournament/playoff bans exist between two teams, matchup prep includes ban summary."""
+    conn = db_with_tournament_match
+    from cdm_stats.db.queries import get_team_id_by_abbr
+
+    elv_id = get_team_id_by_abbr(conn, "ELV")
+    alu_id = get_team_id_by_abbr(conn, "ALU")
+
+    output_path = tmp_path / "matchup_ban_test.xlsx"
+    export_matchup_prep(conn, elv_id, alu_id, str(output_path))
+    wb = load_workbook(str(output_path))
+    ws = wb.active
+    # Find "Ban" text in any cell
+    all_values = [cell.value for row in ws.iter_rows() for cell in row if cell.value]
+    assert any("Ban" in str(v) for v in all_values), "Expected ban summary section in matchup prep"
