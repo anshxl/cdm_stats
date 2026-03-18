@@ -14,7 +14,39 @@ def db():
 def raw_db():
     """Fresh in-memory DB with OLD schema (pre-migration) — no seeds, no migrate."""
     conn = sqlite3.connect(":memory:")
-    create_tables(conn)
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("""CREATE TABLE teams (
+        team_id INTEGER PRIMARY KEY, team_name TEXT NOT NULL, abbreviation TEXT NOT NULL UNIQUE)""")
+    conn.execute("""CREATE TABLE maps (
+        map_id INTEGER PRIMARY KEY, map_name TEXT NOT NULL,
+        mode TEXT NOT NULL CHECK(mode IN ('SnD', 'HP', 'Control')), UNIQUE(map_name, mode))""")
+    conn.execute("""CREATE TABLE matches (
+        match_id INTEGER PRIMARY KEY, match_date DATE NOT NULL,
+        team1_id INTEGER NOT NULL REFERENCES teams(team_id),
+        team2_id INTEGER NOT NULL REFERENCES teams(team_id),
+        two_v_two_winner_id INTEGER NOT NULL REFERENCES teams(team_id),
+        series_winner_id INTEGER NOT NULL REFERENCES teams(team_id),
+        CHECK(team1_id != team2_id))""")
+    conn.execute("""CREATE TABLE map_results (
+        result_id INTEGER PRIMARY KEY,
+        match_id INTEGER NOT NULL REFERENCES matches(match_id),
+        slot INTEGER NOT NULL CHECK(slot BETWEEN 1 AND 5),
+        map_id INTEGER NOT NULL REFERENCES maps(map_id),
+        picked_by_team_id INTEGER REFERENCES teams(team_id),
+        winner_team_id INTEGER NOT NULL REFERENCES teams(team_id),
+        picking_team_score INTEGER NOT NULL, non_picking_team_score INTEGER NOT NULL,
+        team1_score_before INTEGER NOT NULL, team2_score_before INTEGER NOT NULL,
+        pick_context TEXT NOT NULL CHECK(pick_context IN ('Opener','Neutral','Must-Win','Close-Out','Coin-Toss')),
+        UNIQUE(match_id, slot))""")
+    conn.execute("""CREATE TABLE team_elo (
+        elo_id INTEGER PRIMARY KEY, team_id INTEGER NOT NULL REFERENCES teams(team_id),
+        match_id INTEGER NOT NULL REFERENCES matches(match_id),
+        elo_after REAL NOT NULL, match_date DATE NOT NULL, UNIQUE(team_id, match_id))""")
+    conn.execute("""CREATE TABLE team_map_notes (
+        note_id INTEGER PRIMARY KEY, team_id INTEGER NOT NULL REFERENCES teams(team_id),
+        map_id INTEGER NOT NULL REFERENCES maps(map_id),
+        note TEXT NOT NULL, created_at DATE NOT NULL)""")
+    conn.commit()
     yield conn
     conn.close()
 
