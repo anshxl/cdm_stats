@@ -2,7 +2,7 @@
 import sqlite3
 import io
 import pytest
-from cdm_stats.db.schema import create_tables
+from cdm_stats.db.schema import create_tables, migrate
 from cdm_stats.ingestion.seed import seed_teams, seed_maps
 from cdm_stats.ingestion.csv_loader import ingest_csv
 
@@ -18,6 +18,7 @@ def db():
     """Fresh in-memory DB with schema and seed data."""
     conn = sqlite3.connect(":memory:")
     create_tables(conn)
+    migrate(conn)
     seed_teams(conn)
     seed_maps(conn)
     yield conn

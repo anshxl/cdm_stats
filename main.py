@@ -15,11 +15,12 @@ def get_db() -> sqlite3.Connection:
 
 
 def cmd_init(_args: argparse.Namespace) -> None:
-    from cdm_stats.db.schema import create_tables
+    from cdm_stats.db.schema import create_tables, migrate
     from cdm_stats.ingestion.seed import seed_teams, seed_maps
 
     conn = get_db()
     create_tables(conn)
+    migrate(conn)
     seed_teams(conn)
     seed_maps(conn)
     conn.close()
@@ -104,6 +105,26 @@ def cmd_chart_elo(args: argparse.Namespace) -> None:
     print(f"Elo trajectory exported to {path}")
 
 
+def cmd_ingest_tournament(args: argparse.Namespace) -> None:
+    from cdm_stats.ingestion.tournament_loader import ingest_tournament
+    from cdm_stats.db.schema import migrate
+
+    conn = get_db()
+    migrate(conn)
+    with open(args.maps_csv) as mf, open(args.bans_csv) as bf:
+        results = ingest_tournament(conn, mf, bf)
+
+    for r in results:
+        if r["status"] == "ok":
+            print(f"  OK: {r['match']}")
+        elif r["status"] == "skipped":
+            print(f"  SKIPPED: {r['match']} ({r.get('reason', '')})")
+        else:
+            print(f"  ERROR: {r['match']}: {r['errors']}")
+
+    conn.close()
+
+
 def cmd_backfill(_args: argparse.Namespace) -> None:
     from cdm_stats.ingestion.backfill import backfill_elo
 
@@ -136,6 +157,10 @@ def main() -> None:
     p_elo = chart_sub.add_parser("elo", help="Elo trajectory")
     p_elo.add_argument("team", help="Team abbreviation")
 
+    p_ingest_t = sub.add_parser("ingest-tournament", help="Ingest tournament/playoff data from CSVs")
+    p_ingest_t.add_argument("maps_csv", help="Path to maps CSV file")
+    p_ingest_t.add_argument("bans_csv", help="Path to bans CSV file")
+
     sub.add_parser("backfill", help="Wipe and recalculate Elo")
 
     args = parser.parse_args()
@@ -143,6 +168,7 @@ def main() -> None:
     commands = {
         "init": cmd_init,
         "ingest": cmd_ingest,
+        "ingest-tournament": cmd_ingest_tournament,
         "backfill": cmd_backfill,
     }
 
