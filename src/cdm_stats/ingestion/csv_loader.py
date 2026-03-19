@@ -10,32 +10,37 @@ from cdm_stats.db.queries import (
 )
 
 
-def derive_pick_context(slot: int, picker_score: int, opponent_score: int) -> str:
+def derive_pick_context(
+    slot: int, picker_score: int, opponent_score: int,
+    *, win_threshold: int = 3, last_slot: int = 5
+) -> str:
     """
     Derive the pick context for a map result based on the series state.
 
     Args:
-        slot: Map slot in the Best-of-5 series (1-5)
-        picker_score: The picking team's series score before this map (0-2)
-        opponent_score: The opponent's series score before this map (0-2)
+        slot: Map slot in the series (1-based)
+        picker_score: The picking team's series score before this map
+        opponent_score: The opponent's series score before this map
+        win_threshold: Number of wins needed to take the series (3 for BO5, 4 for BO7)
+        last_slot: The final slot number in the format (5 for BO5, 7 for BO7)
 
     Returns:
         One of: "Opener", "Neutral", "Must-Win", "Close-Out", "Coin-Toss"
 
     Rules:
-    - Slot 5 is always a coin toss (regardless of series score)
+    - Last slot is always a coin toss (regardless of series score)
     - Slot 1 is always the opener (first map)
-    - If opponent has 2 wins and picker has < 2: Must-Win
-    - If picker has 2 wins and opponent has < 2: Close-Out
+    - If opponent is one win away and picker is not: Must-Win
+    - If picker is one win away and opponent is not: Close-Out
     - All other cases: Neutral
     """
-    if slot == 5:
+    if slot == last_slot:
         return "Coin-Toss"
     if slot == 1:
         return "Opener"
-    if opponent_score == 2 and picker_score < 2:
+    if opponent_score == win_threshold - 1 and picker_score < win_threshold - 1:
         return "Must-Win"
-    if picker_score == 2 and opponent_score < 2:
+    if picker_score == win_threshold - 1 and opponent_score < win_threshold - 1:
         return "Close-Out"
     return "Neutral"
 

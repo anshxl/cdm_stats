@@ -1,10 +1,19 @@
 import sqlite3
 
-SLOT_MODES = {1: "SnD", 2: "HP", 3: "Control", 4: "SnD", 5: "HP"}
+FORMAT_SLOT_MODES = {
+    "CDL_BO5":         {1: "SnD", 2: "HP", 3: "Control", 4: "SnD", 5: "HP"},
+    "CDL_PLAYOFF_BO5": {1: "SnD", 2: "HP", 3: "Control", 4: "SnD", 5: "HP"},
+    "CDL_PLAYOFF_BO7": {1: "SnD", 2: "HP", 3: "Control", 4: "SnD", 5: "HP", 6: "Control", 7: "SnD"},
+    "TOURNAMENT_BO5":  {1: "HP", 2: "SnD", 3: "Control", 4: "HP", 5: "SnD"},
+    "TOURNAMENT_BO7":  {1: "HP", 2: "SnD", 3: "Control", 4: "HP", 5: "SnD", 6: "Control", 7: "SnD"},
+}
+
+# Keep SLOT_MODES as alias for CDL_BO5 for backward compatibility
+SLOT_MODES = FORMAT_SLOT_MODES["CDL_BO5"]
 
 
-def get_mode_for_slot(slot: int) -> str:
-    return SLOT_MODES[slot]
+def get_mode_for_slot(slot: int, match_format: str = "CDL_BO5") -> str:
+    return FORMAT_SLOT_MODES[match_format][slot]
 
 
 def get_team_id_by_abbr(conn: sqlite3.Connection, abbr: str) -> int | None:
@@ -26,13 +35,15 @@ def insert_match(
     match_date: str,
     team1_id: int,
     team2_id: int,
-    two_v_two_winner_id: int,
+    two_v_two_winner_id: int | None,
     series_winner_id: int,
+    match_format: str = "CDL_BO5",
 ) -> int:
     cursor = conn.execute(
-        """INSERT INTO matches (match_date, team1_id, team2_id, two_v_two_winner_id, series_winner_id)
-           VALUES (?, ?, ?, ?, ?)""",
-        (match_date, team1_id, team2_id, two_v_two_winner_id, series_winner_id),
+        """INSERT INTO matches (match_date, team1_id, team2_id, two_v_two_winner_id,
+                                series_winner_id, match_format)
+           VALUES (?, ?, ?, ?, ?, ?)""",
+        (match_date, team1_id, team2_id, two_v_two_winner_id, series_winner_id, match_format),
     )
     return cursor.lastrowid
 
@@ -61,3 +72,45 @@ def insert_map_result(
          team1_score_before, team2_score_before, pick_context),
     )
     return cursor.lastrowid
+
+
+def insert_map_ban(
+    conn: sqlite3.Connection,
+    match_id: int,
+    team_id: int,
+    map_id: int,
+) -> int:
+    cursor = conn.execute(
+        "INSERT INTO map_bans (match_id, team_id, map_id) VALUES (?, ?, ?)",
+        (match_id, team_id, map_id),
+    )
+    return cursor.lastrowid
+
+
+def get_ban_summary(
+    conn: sqlite3.Connection, team_id: int, opponent_id: int
+) -> list[dict]:
+    """Get ban frequency for team_id in matches against opponent_id."""
+    rows = conn.execute(
+        """SELECT mb.team_id, m2.map_name, m2.mode, COUNT(*) as ban_count
+           FROM map_bans mb
+           JOIN maps m2 ON mb.map_id = m2.map_id
+           JOIN matches m ON mb.match_id = m.match_id
+           WHERE mb.team_id = ?
+             AND ((m.team1_id = ? AND m.team2_id = ?) OR (m.team1_id = ? AND m.team2_id = ?))
+           GROUP BY mb.team_id, m2.map_name, m2.mode
+           ORDER BY ban_count DESC""",
+        (team_id, team_id, opponent_id, opponent_id, team_id),
+    ).fetchall()
+
+    total_series = conn.execute(
+        """SELECT COUNT(*) FROM matches
+           WHERE match_format != 'CDL_BO5'
+             AND ((team1_id = ? AND team2_id = ?) OR (team1_id = ? AND team2_id = ?))""",
+        (team_id, opponent_id, opponent_id, team_id),
+    ).fetchone()[0]
+
+    return [
+        {"map_name": r[1], "mode": r[2], "ban_count": r[3], "total_series": total_series}
+        for r in rows
+    ]
