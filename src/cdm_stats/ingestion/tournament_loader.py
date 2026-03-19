@@ -38,18 +38,21 @@ FORMAT_EXPECTED_BANS = {
 def _group_rows_by_match(reader: csv.DictReader) -> dict[tuple, list[dict]]:
     matches: dict[tuple, list[dict]] = {}
     for row in reader:
-        key = (row["date"], row["team1"], row["team2"])
+        series = row.get("series", "1")
+        key = (row["date"], row["team1"], row["team2"], series)
         matches.setdefault(key, []).append(row)
     return matches
 
 
-def _is_duplicate_match(conn: sqlite3.Connection, date: str, team1_id: int, team2_id: int) -> bool:
+def _is_duplicate_match(
+    conn: sqlite3.Connection, date: str, team1_id: int, team2_id: int, series_number: int
+) -> bool:
     row = conn.execute(
         """SELECT 1 FROM matches
-           WHERE match_date = ? AND (
+           WHERE match_date = ? AND series_number = ? AND (
                (team1_id = ? AND team2_id = ?) OR (team1_id = ? AND team2_id = ?)
            )""",
-        (date, team1_id, team2_id, team2_id, team1_id),
+        (date, series_number, team1_id, team2_id, team2_id, team1_id),
     ).fetchone()
     return row is not None
 
@@ -58,7 +61,7 @@ def _validate_tournament_match(
     conn: sqlite3.Connection, key: tuple, rows: list[dict], match_format: str
 ) -> list[str]:
     errors = []
-    date, team1_abbr, team2_abbr = key
+    date, team1_abbr, team2_abbr, *_ = key
     slot_modes = FORMAT_SLOT_MODES[match_format]
     win_threshold = FORMAT_WIN_THRESHOLD[match_format]
 
@@ -121,12 +124,13 @@ def _ingest_maps(
 ) -> list[dict]:
     results = []
     for key, rows in grouped.items():
-        date, team1_abbr, team2_abbr = key
+        date, team1_abbr, team2_abbr, series_str = key
+        series_number = int(series_str)
         match_format = rows[0]["format"]
         team1_id = get_team_id_by_abbr(conn, team1_abbr)
         team2_id = get_team_id_by_abbr(conn, team2_abbr)
 
-        if team1_id and team2_id and _is_duplicate_match(conn, date, team1_id, team2_id):
+        if team1_id and team2_id and _is_duplicate_match(conn, date, team1_id, team2_id, series_number):
             results.append({"match": key, "status": "skipped", "reason": "duplicate"})
             continue
 
@@ -212,6 +216,7 @@ def _ingest_maps(
                 higher_seed_id,  # None for tournament, higher seed for playoff
                 series_winner_id,
                 match_format,
+                series_number=series_number,
             )
             for data in map_result_data:
                 insert_map_result(conn, match_id, *data)
@@ -231,7 +236,8 @@ def _ingest_bans(
 ) -> list[dict]:
     results = []
     for key, bans in grouped.items():
-        date, team1_abbr, team2_abbr = key
+        date, team1_abbr, team2_abbr, series_str = key
+        series_number = int(series_str)
         match_format = bans[0]["format"]
         team1_id = get_team_id_by_abbr(conn, team1_abbr)
         team2_id = get_team_id_by_abbr(conn, team2_abbr)
@@ -242,10 +248,10 @@ def _ingest_bans(
 
         match = conn.execute(
             """SELECT match_id FROM matches
-               WHERE match_date = ? AND (
+               WHERE match_date = ? AND series_number = ? AND (
                    (team1_id = ? AND team2_id = ?) OR (team1_id = ? AND team2_id = ?)
                )""",
-            (date, team1_id, team2_id, team2_id, team1_id),
+            (date, series_number, team1_id, team2_id, team2_id, team1_id),
         ).fetchone()
 
         if not match:

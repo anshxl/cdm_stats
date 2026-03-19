@@ -1,6 +1,6 @@
 import sqlite3
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 TABLES = [
     """
@@ -29,6 +29,7 @@ TABLES = [
         match_format        TEXT NOT NULL DEFAULT 'CDL_BO5'
             CHECK(match_format IN ('CDL_BO5', 'CDL_PLAYOFF_BO5', 'CDL_PLAYOFF_BO7',
                                     'TOURNAMENT_BO5', 'TOURNAMENT_BO7')),
+        series_number       INTEGER NOT NULL DEFAULT 1,
         CHECK(team1_id != team2_id)
     )
     """,
@@ -94,59 +95,68 @@ def migrate(conn: sqlite3.Connection) -> None:
     if version >= SCHEMA_VERSION:
         return
 
-    conn.execute("PRAGMA foreign_keys = OFF")
+    if version < 1:
+        conn.execute("PRAGMA foreign_keys = OFF")
 
-    # Rebuild matches table
-    conn.execute("""CREATE TABLE matches_new (
-        match_id            INTEGER PRIMARY KEY,
-        match_date          DATE NOT NULL,
-        team1_id            INTEGER NOT NULL REFERENCES teams(team_id),
-        team2_id            INTEGER NOT NULL REFERENCES teams(team_id),
-        two_v_two_winner_id INTEGER REFERENCES teams(team_id),
-        series_winner_id    INTEGER NOT NULL REFERENCES teams(team_id),
-        match_format        TEXT NOT NULL DEFAULT 'CDL_BO5'
-            CHECK(match_format IN ('CDL_BO5', 'CDL_PLAYOFF_BO5', 'CDL_PLAYOFF_BO7',
-                                    'TOURNAMENT_BO5', 'TOURNAMENT_BO7')),
-        CHECK(team1_id != team2_id)
-    )""")
-    conn.execute("""INSERT INTO matches_new
-        (match_id, match_date, team1_id, team2_id, two_v_two_winner_id, series_winner_id, match_format)
-        SELECT match_id, match_date, team1_id, team2_id, two_v_two_winner_id, series_winner_id, 'CDL_BO5'
-        FROM matches""")
-    conn.execute("DROP TABLE matches")
-    conn.execute("ALTER TABLE matches_new RENAME TO matches")
+        # Rebuild matches table
+        conn.execute("""CREATE TABLE matches_new (
+            match_id            INTEGER PRIMARY KEY,
+            match_date          DATE NOT NULL,
+            team1_id            INTEGER NOT NULL REFERENCES teams(team_id),
+            team2_id            INTEGER NOT NULL REFERENCES teams(team_id),
+            two_v_two_winner_id INTEGER REFERENCES teams(team_id),
+            series_winner_id    INTEGER NOT NULL REFERENCES teams(team_id),
+            match_format        TEXT NOT NULL DEFAULT 'CDL_BO5'
+                CHECK(match_format IN ('CDL_BO5', 'CDL_PLAYOFF_BO5', 'CDL_PLAYOFF_BO7',
+                                        'TOURNAMENT_BO5', 'TOURNAMENT_BO7')),
+            series_number       INTEGER NOT NULL DEFAULT 1,
+            CHECK(team1_id != team2_id)
+        )""")
+        conn.execute("""INSERT INTO matches_new
+            (match_id, match_date, team1_id, team2_id, two_v_two_winner_id, series_winner_id, match_format, series_number)
+            SELECT match_id, match_date, team1_id, team2_id, two_v_two_winner_id, series_winner_id, 'CDL_BO5', 1
+            FROM matches""")
+        conn.execute("DROP TABLE matches")
+        conn.execute("ALTER TABLE matches_new RENAME TO matches")
 
-    # Rebuild map_results table
-    conn.execute("""CREATE TABLE map_results_new (
-        result_id              INTEGER PRIMARY KEY,
-        match_id               INTEGER NOT NULL REFERENCES matches(match_id),
-        slot                   INTEGER NOT NULL CHECK(slot BETWEEN 1 AND 7),
-        map_id                 INTEGER NOT NULL REFERENCES maps(map_id),
-        picked_by_team_id      INTEGER REFERENCES teams(team_id),
-        winner_team_id         INTEGER NOT NULL REFERENCES teams(team_id),
-        picking_team_score     INTEGER NOT NULL,
-        non_picking_team_score INTEGER NOT NULL,
-        team1_score_before     INTEGER NOT NULL,
-        team2_score_before     INTEGER NOT NULL,
-        pick_context           TEXT NOT NULL CHECK(pick_context IN (
-                                   'Opener', 'Neutral', 'Must-Win', 'Close-Out', 'Coin-Toss', 'Unknown'
-                               )),
-        UNIQUE(match_id, slot)
-    )""")
-    conn.execute("""INSERT INTO map_results_new
-        SELECT * FROM map_results""")
-    conn.execute("DROP TABLE map_results")
-    conn.execute("ALTER TABLE map_results_new RENAME TO map_results")
+        # Rebuild map_results table
+        conn.execute("""CREATE TABLE map_results_new (
+            result_id              INTEGER PRIMARY KEY,
+            match_id               INTEGER NOT NULL REFERENCES matches(match_id),
+            slot                   INTEGER NOT NULL CHECK(slot BETWEEN 1 AND 7),
+            map_id                 INTEGER NOT NULL REFERENCES maps(map_id),
+            picked_by_team_id      INTEGER REFERENCES teams(team_id),
+            winner_team_id         INTEGER NOT NULL REFERENCES teams(team_id),
+            picking_team_score     INTEGER NOT NULL,
+            non_picking_team_score INTEGER NOT NULL,
+            team1_score_before     INTEGER NOT NULL,
+            team2_score_before     INTEGER NOT NULL,
+            pick_context           TEXT NOT NULL CHECK(pick_context IN (
+                                       'Opener', 'Neutral', 'Must-Win', 'Close-Out', 'Coin-Toss', 'Unknown'
+                                   )),
+            UNIQUE(match_id, slot)
+        )""")
+        conn.execute("""INSERT INTO map_results_new
+            SELECT * FROM map_results""")
+        conn.execute("DROP TABLE map_results")
+        conn.execute("ALTER TABLE map_results_new RENAME TO map_results")
 
-    # Create map_bans table
-    conn.execute("""CREATE TABLE IF NOT EXISTS map_bans (
-        ban_id    INTEGER PRIMARY KEY,
-        match_id  INTEGER NOT NULL REFERENCES matches(match_id),
-        team_id   INTEGER NOT NULL REFERENCES teams(team_id),
-        map_id    INTEGER NOT NULL REFERENCES maps(map_id),
-        UNIQUE(match_id, team_id, map_id)
-    )""")
+        # Create map_bans table
+        conn.execute("""CREATE TABLE IF NOT EXISTS map_bans (
+            ban_id    INTEGER PRIMARY KEY,
+            match_id  INTEGER NOT NULL REFERENCES matches(match_id),
+            team_id   INTEGER NOT NULL REFERENCES teams(team_id),
+            map_id    INTEGER NOT NULL REFERENCES maps(map_id),
+            UNIQUE(match_id, team_id, map_id)
+        )""")
+
+        conn.execute("PRAGMA foreign_keys = ON")
+
+    if version < 2:
+        # Add series_number column if missing (v1 -> v2)
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(matches)").fetchall()]
+        if "series_number" not in cols:
+            conn.execute("ALTER TABLE matches ADD COLUMN series_number INTEGER NOT NULL DEFAULT 1")
 
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()
-    conn.execute("PRAGMA foreign_keys = ON")
