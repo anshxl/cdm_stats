@@ -125,6 +125,24 @@ def cmd_ingest_tournament(args: argparse.Namespace) -> None:
     conn.close()
 
 
+def cmd_export_profile(args: argparse.Namespace) -> None:
+    from cdm_stats.export.excel import export_team_profile
+    from cdm_stats.db.queries import get_team_id_by_abbr
+
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    conn = get_db()
+    team_id = get_team_id_by_abbr(conn, args.team)
+    if not team_id:
+        print("Error: unknown team abbreviation")
+        sys.exit(1)
+    fmt = args.format if args.format else None
+    suffix = f"_{args.format}" if args.format else ""
+    path = os.path.join(OUTPUT_DIR, f"profile_{args.team}{suffix}.xlsx")
+    export_team_profile(conn, team_id, path, format_filter=fmt)
+    conn.close()
+    print(f"Team Profile exported to {path}")
+
+
 def cmd_backfill(_args: argparse.Namespace) -> None:
     from cdm_stats.ingestion.backfill import backfill_elo
 
@@ -149,6 +167,9 @@ def main() -> None:
     p_matchup = export_sub.add_parser("matchup", help="Export Match-Up Prep")
     p_matchup.add_argument("your_team", help="Your team abbreviation")
     p_matchup.add_argument("opponent", help="Opponent team abbreviation")
+    p_profile = export_sub.add_parser("profile", help="Export Team Profile (W-L + bans)")
+    p_profile.add_argument("team", help="Team abbreviation")
+    p_profile.add_argument("--format", help="Filter by format prefix (e.g. TOURNAMENT, CDL_PLAYOFF)", default=None)
 
     sub_chart = sub.add_parser("chart", help="Generate charts")
     chart_sub = sub_chart.add_subparsers(dest="chart_type", required=True)
@@ -179,6 +200,8 @@ def main() -> None:
             cmd_export_matrix(args)
         elif args.export_type == "matchup":
             cmd_export_matchup(args)
+        elif args.export_type == "profile":
+            cmd_export_profile(args)
     elif args.command == "chart":
         if args.chart_type == "heatmap":
             cmd_chart_heatmap(args)
