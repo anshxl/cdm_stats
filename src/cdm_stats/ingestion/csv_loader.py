@@ -81,11 +81,17 @@ def _validate_match(
         if row["winner"] not in (team1_abbr, team2_abbr):
             errors.append(f"Winner '{row['winner']}' at slot {slot} is not one of the teams")
 
-    # Check exactly one team reaches 3 wins
-    t1_wins = sum(1 for r in rows if r["winner"] == team1_abbr)
-    t2_wins = sum(1 for r in rows if r["winner"] == team2_abbr)
-    if max(t1_wins, t2_wins) != 3:
-        errors.append(f"No team reached 3 wins: {team1_abbr}={t1_wins}, {team2_abbr}={t2_wins}")
+    # Check exactly one team reaches 3 wins (unless series_winner is explicitly set)
+    has_override = any((r.get("series_winner") or "").strip() for r in rows)
+    if not has_override:
+        t1_wins = sum(1 for r in rows if r["winner"] == team1_abbr)
+        t2_wins = sum(1 for r in rows if r["winner"] == team2_abbr)
+        if max(t1_wins, t2_wins) != 3:
+            errors.append(f"No team reached 3 wins: {team1_abbr}={t1_wins}, {team2_abbr}={t2_wins}")
+    else:
+        override = next(r["series_winner"].strip() for r in rows if (r.get("series_winner") or "").strip())
+        if override not in (team1_abbr, team2_abbr):
+            errors.append(f"series_winner '{override}' is not one of the teams")
 
     return errors
 
@@ -178,8 +184,15 @@ def ingest_csv(conn: sqlite3.Connection, file: IO[str]) -> list[dict]:
                 t2_series += 1
                 prev_loser_id = team1_id
 
-        # Derive series winner
-        series_winner_id = team1_id if t1_series == 3 else team2_id
+        # Derive series winner (or use explicit override)
+        override = next(
+            ((r.get("series_winner") or "").strip() for r in rows if (r.get("series_winner") or "").strip()),
+            None,
+        )
+        if override:
+            series_winner_id = get_team_id_by_abbr(conn, override)
+        else:
+            series_winner_id = team1_id if t1_series == 3 else team2_id
 
         # Atomic insert
         try:

@@ -50,7 +50,20 @@ def update_elo(conn: sqlite3.Connection, match_id: int) -> None:
     expected1 = 1 / (1 + 10 ** ((elo2 - elo1) / 400))
     expected2 = 1 - expected1
 
-    result1 = 1.0 if winner_id == team1_id else 0.0
+    # Margin-weighted result: 3-0 → 1.0/0.0, 3-1 → 0.85/0.15, 3-2 → 0.7/0.3
+    maps_won_by_winner = conn.execute(
+        "SELECT COUNT(*) FROM map_results WHERE match_id = ? AND winner_team_id = ?",
+        (match_id, winner_id),
+    ).fetchone()[0]
+    maps_won_by_loser = conn.execute(
+        "SELECT COUNT(*) FROM map_results WHERE match_id = ? AND winner_team_id != ?",
+        (match_id, winner_id),
+    ).fetchone()[0]
+    margin = maps_won_by_winner - maps_won_by_loser  # 3, 2, or 1
+    winner_score = {3: 1.0, 2: 0.85, 1: 0.7}.get(margin, 1.0)
+    loser_score = 1.0 - winner_score
+
+    result1 = winner_score if winner_id == team1_id else loser_score
     result2 = 1.0 - result1
 
     new_elo1 = elo1 + K_FACTOR * (result1 - expected1)

@@ -63,3 +63,56 @@ def chart_elo_trajectory(conn: sqlite3.Connection, team_id: int, output_path: st
     plt.tight_layout()
     plt.savefig(output_path, dpi=150)
     plt.close()
+
+
+def _week_number(date_str: str, earliest: str) -> int:
+    from datetime import datetime
+    d = datetime.strptime(date_str, "%Y-%m-%d")
+    e = datetime.strptime(earliest, "%Y-%m-%d")
+    return (d - e).days // 7 + 1
+
+
+def chart_elo_all_teams(conn: sqlite3.Connection, output_path: str) -> None:
+    teams = conn.execute("SELECT team_id, abbreviation FROM teams ORDER BY abbreviation").fetchall()
+
+    # Find earliest match date across all teams for week numbering
+    row = conn.execute("SELECT MIN(match_date) FROM matches").fetchone()
+    if not row or not row[0]:
+        return
+    earliest_date = row[0]
+
+    cmap = plt.cm.get_cmap("tab20", 20)
+    colors = [cmap(i) for i in range(14)]
+
+    fig, ax = plt.subplots(figsize=(14, 7))
+    max_week = 0
+    for idx, (team_id, abbr) in enumerate(teams):
+        history = get_elo_history(conn, team_id)
+        if not history:
+            continue
+
+        # Group by week, take last Elo per week
+        week_elo = {}
+        for h in history:
+            wk = _week_number(h["match_date"], earliest_date)
+            week_elo[wk] = h["elo_after"]
+
+        weeks = sorted(week_elo.keys())
+        if not weeks:
+            continue
+        max_week = max(max_week, weeks[-1])
+
+        x = [0] + weeks
+        y = [SEED_ELO] + [week_elo[w] for w in weeks]
+        ax.plot(x, y, marker="o", markersize=4, linewidth=1.5, label=abbr, color=colors[idx % 14])
+
+    ax.axhline(y=SEED_ELO, color="gray", linestyle="--", alpha=0.4)
+    ax.set_xticks(range(0, max_week + 1))
+    ax.set_xticklabels(["Start"] + [f"W{w}" for w in range(1, max_week + 1)])
+    ax.set_xlabel("Week")
+    ax.set_ylabel("Elo Rating")
+    ax.set_title("All Teams — Elo Trajectory")
+    ax.legend(bbox_to_anchor=(1.02, 1), loc="upper left", fontsize=8)
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=150)
+    plt.close()

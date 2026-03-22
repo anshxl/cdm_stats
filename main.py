@@ -143,6 +143,17 @@ def cmd_export_profile(args: argparse.Namespace) -> None:
     print(f"Team Profile exported to {path}")
 
 
+def cmd_chart_elo_all(_args: argparse.Namespace) -> None:
+    from cdm_stats.charts.heatmap import chart_elo_all_teams
+
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    conn = get_db()
+    path = os.path.join(OUTPUT_DIR, "elo_all_teams.png")
+    chart_elo_all_teams(conn, path)
+    conn.close()
+    print(f"All-teams Elo trajectory exported to {path}")
+
+
 def cmd_backfill(_args: argparse.Namespace) -> None:
     from cdm_stats.ingestion.backfill import backfill_elo
 
@@ -177,6 +188,7 @@ def main() -> None:
     p_heatmap.add_argument("team", help="Team abbreviation")
     p_elo = chart_sub.add_parser("elo", help="Elo trajectory")
     p_elo.add_argument("team", help="Team abbreviation")
+    chart_sub.add_parser("elo-all", help="Elo trajectory for all teams")
 
     p_ingest_t = sub.add_parser("ingest-tournament", help="Ingest tournament/playoff data from CSVs")
     p_ingest_t.add_argument("maps_csv", help="Path to maps CSV file")
@@ -207,6 +219,8 @@ def main() -> None:
             cmd_chart_heatmap(args)
         elif args.chart_type == "elo":
             cmd_chart_elo(args)
+        elif args.chart_type == "elo-all":
+            cmd_chart_elo_all(args)
 
 
 if __name__ == "__main__":
