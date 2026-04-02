@@ -4,12 +4,12 @@ import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 from dash import Input, Output, dcc, html
 
+from cdm_stats.dashboard.app import get_db
 from cdm_stats.dashboard.helpers import (
     COLORS,
     LOW_SAMPLE_THRESHOLD,
     get_all_maps,
     get_all_teams,
-    get_db,
 )
 from cdm_stats.metrics.avoidance import (
     avoidance_index,

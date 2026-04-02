@@ -1,5 +1,4 @@
 import sqlite3
-from cdm_stats.dashboard.app import get_db
 
 LOW_SAMPLE_THRESHOLD = 4
 
