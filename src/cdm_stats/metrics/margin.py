@@ -4,7 +4,7 @@ import sqlite3
 def dominance_flag(mode: str, winner_score: int, loser_score: int) -> str | None:
     margin = winner_score - loser_score
     if mode == "SnD":
-        if margin >= 3:
+        if margin >= 5:
             return "Dominant"
         if margin == 1:
             return "Contested"
@@ -14,7 +14,7 @@ def dominance_flag(mode: str, winner_score: int, loser_score: int) -> str | None
         if margin < 25:
             return "Contested"
     elif mode == "Control":
-        if margin >= 2:
+        if margin >= 3:
             return "Dominant"
         if margin == 1:
             return "Contested"
