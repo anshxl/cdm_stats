@@ -7,16 +7,11 @@ from dash import Input, Output, dcc, html
 from cdm_stats.dashboard.app import get_db
 from cdm_stats.dashboard.helpers import (
     COLORS,
-    LOW_SAMPLE_THRESHOLD,
     get_all_maps,
     get_all_teams,
 )
-from cdm_stats.metrics.avoidance import (
-    avoidance_index,
-    defend_win_loss,
-    pick_win_loss,
-    target_index,
-)
+from cdm_stats.metrics.avoidance import pick_win_loss, defend_win_loss
+from cdm_stats.metrics.map_strength import map_strength
 
 
 def _build_matrix_data(
@@ -41,8 +36,7 @@ def _build_matrix_data(
         for map_id, map_name, mode in maps:
             pw = pick_win_loss(conn, team_id, map_id)
             dw = defend_win_loss(conn, team_id, map_id)
-            av = avoidance_index(conn, team_id, map_id)
-            ti = target_index(conn, team_id, map_id)
+            ms = map_strength(conn, team_id, map_id)
 
             wins = pw["wins"] + dw["wins"]
             losses = pw["losses"] + dw["losses"]
@@ -52,8 +46,7 @@ def _build_matrix_data(
                 "losses": losses,
                 "pick_wl": pw,
                 "defend_wl": dw,
-                "avoid": av,
-                "target": ti,
+                "strength": ms,
             }
 
     return teams, maps, matrix
@@ -87,35 +80,25 @@ def _build_heatmap_figure(
 
             wins = cell["wins"]
             losses = cell["losses"]
-            total = wins + losses
+            ms = cell["strength"]
 
-            if total > 0:
-                win_rate = wins / total
-            else:
-                win_rate = None
-
-            z_row.append(win_rate)
+            # Use Map Strength for heatmap color
+            z_row.append(ms["rating"])
             text_row.append(f"{wins}-{losses}")
 
             # Build hover text
             pw = cell["pick_wl"]
             dw = cell["defend_wl"]
-            av = cell["avoid"]
-            ti = cell["target"]
 
-            avoid_pct = f"{av['ratio']:.0%}" if av["opportunities"] > 0 else "N/A"
-            target_pct = f"{ti['ratio']:.0%}" if ti["opportunities"] > 0 else "N/A"
-
-            sample_total = total
-            low_sample = "\u26a0\ufe0f Low sample" if sample_total < LOW_SAMPLE_THRESHOLD else ""
+            strength_pct = f"{ms['rating']:.0%}" if ms["rating"] is not None else "N/A"
+            low_sample = "\u26a0\ufe0f Low sample" if ms["low_confidence"] else ""
 
             hover = (
                 f"<b>{abbr}</b> on <b>{map_name}</b> ({mode})<br>"
+                f"Map Strength: {strength_pct} (w={ms['weighted_sample']:.1f})<br>"
                 f"Overall: {wins}-{losses}<br>"
                 f"Pick: {pw['wins']}-{pw['losses']}<br>"
                 f"Defend: {dw['wins']}-{dw['losses']}<br>"
-                f"Avoid: {avoid_pct} (n={av['opportunities']})<br>"
-                f"Target: {target_pct} (n={ti['opportunities']})<br>"
                 f"{low_sample}"
             )
             hover_row.append(hover)
@@ -141,7 +124,7 @@ def _build_heatmap_figure(
             zmin=0,
             zmax=1,
             colorbar=dict(
-                title="Win Rate",
+                title="Map Strength",
                 tickvals=[0, 0.25, 0.5, 0.75, 1],
                 ticktext=["0%", "25%", "50%", "75%", "100%"],
             ),
