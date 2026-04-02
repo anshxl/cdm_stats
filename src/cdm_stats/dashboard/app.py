@@ -1,3 +1,4 @@
+import os
 import sqlite3
 from pathlib import Path
 
@@ -60,4 +61,6 @@ def register_all_callbacks():
 
 def main():
     register_all_callbacks()
-    app.run(debug=True, port=8050)
+    port = int(os.environ.get("PORT", 8050))
+    debug = os.environ.get("RAILWAY_ENVIRONMENT") is None
+    app.run(debug=debug, host="0.0.0.0", port=port)
