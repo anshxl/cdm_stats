@@ -97,3 +97,18 @@ def update_elo(conn: sqlite3.Connection, match_id: int) -> None:
         (team2_id, match_id, new_elo2, match_date),
     )
     conn.commit()
+
+
+def recalculate_all_elo(conn: sqlite3.Connection) -> int:
+    """Delete all Elo history and recompute from scratch in chronological order."""
+    conn.execute("DELETE FROM team_elo")
+    conn.commit()
+
+    matches = conn.execute(
+        "SELECT match_id FROM matches ORDER BY match_date, match_id"
+    ).fetchall()
+
+    for (match_id,) in matches:
+        update_elo(conn, match_id)
+
+    return len(matches)

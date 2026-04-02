@@ -4,7 +4,7 @@ import pytest
 from cdm_stats.db.schema import create_tables
 from cdm_stats.ingestion.seed import seed_teams, seed_maps
 from cdm_stats.ingestion.csv_loader import ingest_csv
-from cdm_stats.metrics.elo import update_elo, get_current_elo, get_elo_history, normalize_margin, MODE_MAX_MARGINS
+from cdm_stats.metrics.elo import update_elo, get_current_elo, get_elo_history, normalize_margin, MODE_MAX_MARGINS, recalculate_all_elo
 
 MATCH_CSV = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score
 2026-01-15,DVS,OUG,DVS,1,Tunisia,DVS,6,3
@@ -145,3 +145,30 @@ def test_elo_winner_always_gains(db):
     dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
     dvs_elo = get_current_elo(db, dvs_id)
     assert dvs_elo >= 1000  # must not lose Elo for winning
+
+
+MATCH_CSV_2 = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score
+2026-01-20,ELV,OUG,ELV,1,Tunisia,ELV,6,4
+2026-01-20,ELV,OUG,ELV,2,Summit,ELV,250,200
+2026-01-20,ELV,OUG,ELV,3,Raid,ELV,4,2"""
+
+
+def test_recalculate_all_elo(db):
+    """recalculate_all_elo should delete all elo rows and recompute from scratch."""
+    ingest_csv(db, io.StringIO(MATCH_CSV))
+    ingest_csv(db, io.StringIO(MATCH_CSV_2))
+
+    original_count = db.execute("SELECT COUNT(*) FROM team_elo").fetchone()[0]
+    assert original_count == 4  # 2 matches x 2 teams
+
+    recalculate_all_elo(db)
+
+    new_count = db.execute("SELECT COUNT(*) FROM team_elo").fetchone()[0]
+    assert new_count == 4  # same count after recalc
+
+    # Verify chronological order was respected: first match processed before second
+    rows = db.execute(
+        "SELECT match_date, elo_id FROM team_elo ORDER BY elo_id"
+    ).fetchall()
+    dates = [r[0] for r in rows]
+    assert dates == sorted(dates)
