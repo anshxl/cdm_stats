@@ -40,15 +40,20 @@ def test_build_map_record_data(db):
     assert tunisia["losses"] == 0
     assert "pick_wins" in tunisia
     assert "defend_wins" in tunisia
+    assert "strength" in tunisia
+    assert tunisia["strength"]["rating"] is not None
+    assert tunisia["strength"]["rating"] > 0.5
 
 
-def test_build_avoidance_target_data(db):
-    from cdm_stats.dashboard.tabs.team_profile import _build_avoidance_target_data
+def test_build_map_results_detail(db):
+    from cdm_stats.dashboard.tabs.team_profile import _build_map_results_detail
     dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
-    data = _build_avoidance_target_data(db, dvs_id)
-    assert len(data) > 0
-    assert "map_name" in data[0]
-    assert "avoid_ratio" in data[0]
-    assert "target_ratio" in data[0]
-    assert "avoid_n" in data[0]
-    assert "target_n" in data[0]
+    tunisia_id = db.execute("SELECT map_id FROM maps WHERE map_name = 'Tunisia'").fetchone()[0]
+    detail = _build_map_results_detail(db, dvs_id, tunisia_id)
+    assert len(detail) == 1
+    row = detail[0]
+    assert row["opponent"] == "OUG"
+    assert row["result"] == "W"
+    assert row["pick_context"] == "Opener"
+    assert "score" in row
+    assert "picked_by" in row

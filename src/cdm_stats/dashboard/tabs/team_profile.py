@@ -10,8 +10,9 @@ from cdm_stats.dashboard.helpers import (
     wl_color, team_dropdown_options, get_all_maps,
 )
 from cdm_stats.metrics.avoidance import (
-    pick_win_loss, defend_win_loss, avoidance_index, target_index,
+    pick_win_loss, defend_win_loss, pick_context_distribution,
 )
+from cdm_stats.metrics.map_strength import map_strength
 from cdm_stats.metrics.elo import get_current_elo, is_low_confidence
 from cdm_stats.db.queries import get_team_map_wl, get_team_ban_summary
 
@@ -21,7 +22,7 @@ from cdm_stats.db.queries import get_team_map_wl, get_team_ban_summary
 # ---------------------------------------------------------------------------
 
 def _build_map_record_data(conn: sqlite3.Connection, team_id: int) -> list[dict]:
-    """Build per-map W/L records enriched with pick/defend splits."""
+    """Build per-map W/L records enriched with pick/defend splits and Map Strength."""
     base = get_team_map_wl(conn, team_id)
     maps = get_all_maps(conn)
     map_lookup = {(m[1], m[2]): m[0] for m in maps}
@@ -31,32 +32,76 @@ def _build_map_record_data(conn: sqlite3.Connection, team_id: int) -> list[dict]
         if map_id:
             pwl = pick_win_loss(conn, team_id, map_id)
             dwl = defend_win_loss(conn, team_id, map_id)
+            ms = map_strength(conn, team_id, map_id)
+            entry["map_id"] = map_id
             entry["pick_wins"] = pwl["wins"]
             entry["pick_losses"] = pwl["losses"]
             entry["defend_wins"] = dwl["wins"]
             entry["defend_losses"] = dwl["losses"]
+            entry["strength"] = ms
         else:
+            entry["map_id"] = None
             entry["pick_wins"] = entry["pick_losses"] = 0
             entry["defend_wins"] = entry["defend_losses"] = 0
+            entry["strength"] = {"rating": None, "weighted_sample": 0, "total_played": 0, "low_confidence": True}
     return base
 
 
-def _build_avoidance_target_data(conn: sqlite3.Connection, team_id: int) -> list[dict]:
-    """Build avoidance and target index data for every map."""
-    maps = get_all_maps(conn)
+def _build_map_results_detail(
+    conn: sqlite3.Connection, team_id: int, map_id: int
+) -> list[dict]:
+    """Build individual match results for a team on a specific map.
+
+    Returns list of dicts with: opponent, score, pick_context, picked_by, result, match_date.
+    Sorted by date descending.
+    """
+    rows = conn.execute(
+        """SELECT m.match_date, m.team1_id, m.team2_id,
+                  mr.winner_team_id, mr.picking_team_score, mr.non_picking_team_score,
+                  mr.pick_context, mr.picked_by_team_id
+           FROM map_results mr
+           JOIN matches m ON mr.match_id = m.match_id
+           WHERE mr.map_id = ?
+             AND (m.team1_id = ? OR m.team2_id = ?)
+           ORDER BY m.match_date DESC""",
+        (map_id, team_id, team_id),
+    ).fetchall()
+
     results = []
-    for map_id, map_name, mode in maps:
-        avoid = avoidance_index(conn, team_id, map_id)
-        tgt = target_index(conn, team_id, map_id)
+    for match_date, t1_id, t2_id, winner_id, pick_score, non_pick_score, pick_ctx, picker_id in rows:
+        opp_id = t2_id if team_id == t1_id else t1_id
+        opp_abbr = conn.execute(
+            "SELECT abbreviation FROM teams WHERE team_id = ?", (opp_id,)
+        ).fetchone()[0]
+
+        result_str = "W" if winner_id == team_id else "L"
+
+        # Determine score display oriented to this team
+        if picker_id == team_id:
+            score = f"{pick_score}-{non_pick_score}"
+        elif picker_id == opp_id:
+            score = f"{non_pick_score}-{pick_score}"
+        else:
+            # No picker — show pick_score-non_pick_score
+            score = f"{pick_score}-{non_pick_score}"
+
+        # Determine who picked
+        if picker_id == team_id:
+            picked_by = "You"
+        elif picker_id == opp_id:
+            picked_by = opp_abbr
+        else:
+            picked_by = "N/A"
+
         results.append({
-            "map_id": map_id,
-            "map_name": map_name,
-            "mode": mode,
-            "avoid_ratio": avoid["ratio"],
-            "avoid_n": avoid["opportunities"],
-            "target_ratio": tgt["ratio"],
-            "target_n": tgt["opportunities"],
+            "match_date": match_date,
+            "opponent": opp_abbr,
+            "score": score,
+            "pick_context": pick_ctx,
+            "picked_by": picked_by,
+            "result": result_str,
         })
+
     return results
 
 
@@ -64,10 +109,21 @@ def _build_avoidance_target_data(conn: sqlite3.Connection, team_id: int) -> list
 # UI card builders
 # ---------------------------------------------------------------------------
 
-def _map_record_card(records: list[dict]) -> dbc.Card:
-    """Render the MAP RECORD card with expandable rows for pick/defend splits."""
+def _strength_color(rating: float | None) -> str:
+    """Return color based on Map Strength rating."""
+    if rating is None:
+        return COLORS["muted"]
+    if rating >= 0.6:
+        return COLORS["win"]
+    if rating <= 0.4:
+        return COLORS["loss"]
+    return COLORS["neutral"]
+
+
+def _map_strength_card(records: list[dict]) -> dbc.Card:
+    """Render the MAP STRENGTH card with expandable rows showing pick/defend splits."""
     header = dbc.CardHeader(
-        html.H5("Map Record", className="mb-0", style={"color": COLORS["text"]}),
+        html.H5("Map Strength", className="mb-0", style={"color": COLORS["text"]}),
         style={"backgroundColor": COLORS["card_bg"], "borderBottom": f"1px solid {COLORS['border']}"},
     )
 
@@ -76,9 +132,15 @@ def _map_record_card(records: list[dict]) -> dbc.Card:
         total = rec["wins"] + rec["losses"]
         if total == 0:
             continue
-        win_rate = rec["wins"] / total if total else 0
-        color = wl_color(rec["wins"], rec["losses"])
+
+        ms = rec["strength"]
+        rating = ms["rating"]
+        strength_color = _strength_color(rating)
         mode_color = MODE_COLORS.get(rec["mode"], COLORS["text"])
+        wl_col = wl_color(rec["wins"], rec["losses"])
+
+        rating_text = f"{rating:.0%}" if rating is not None else "N/A"
+        low_badge = " *" if ms["low_confidence"] else ""
 
         # Main row (clickable)
         main_row = html.Div(
@@ -86,12 +148,12 @@ def _map_record_card(records: list[dict]) -> dbc.Card:
                 html.Span(rec["map_name"], style={"fontWeight": "600", "width": "140px", "display": "inline-block"}),
                 html.Span(rec["mode"], style={"color": mode_color, "width": "80px", "display": "inline-block", "fontSize": "0.85rem"}),
                 html.Span(
-                    f"{rec['wins']}-{rec['losses']}",
-                    style={"color": color, "fontWeight": "600", "width": "60px", "display": "inline-block"},
+                    f"{rating_text}{low_badge}",
+                    style={"color": strength_color, "fontWeight": "700", "width": "80px", "display": "inline-block", "fontSize": "1.1rem"},
                 ),
                 html.Span(
-                    f"({win_rate:.0%})",
-                    style={"color": color, "fontSize": "0.85rem"},
+                    f"{rec['wins']}-{rec['losses']}",
+                    style={"color": wl_col, "fontWeight": "600", "width": "60px", "display": "inline-block"},
                 ),
             ],
             id={"type": "tp-map-row", "index": f"{rec['map_name']}-{rec['mode']}"},
@@ -101,10 +163,11 @@ def _map_record_card(records: list[dict]) -> dbc.Card:
                 "borderBottom": f"1px solid {COLORS['border']}",
                 "display": "flex",
                 "alignItems": "center",
+                "opacity": "0.5" if ms["low_confidence"] else "1",
             },
         )
 
-        # Expandable detail
+        # Expandable detail: pick/defend splits
         pick_color = wl_color(rec.get("pick_wins", 0), rec.get("pick_losses", 0))
         defend_color = wl_color(rec.get("defend_wins", 0), rec.get("defend_losses", 0))
         detail = html.Div(
@@ -134,7 +197,12 @@ def _map_record_card(records: list[dict]) -> dbc.Card:
     if not rows:
         rows = [html.Div("No map data available", style={"color": COLORS["muted"], "padding": "12px"})]
 
-    body = dbc.CardBody(rows, style={"padding": "0"})
+    footer_note = html.Div(
+        "* Low sample size — interpret with caution",
+        style={"color": COLORS["muted"], "fontSize": "0.75rem", "padding": "6px 12px"},
+    )
+
+    body = dbc.CardBody(rows + [footer_note], style={"padding": "0"})
     return dbc.Card(
         [header, body],
         style={"backgroundColor": COLORS["card_bg"], "border": f"1px solid {COLORS['border']}"},
@@ -142,90 +210,75 @@ def _map_record_card(records: list[dict]) -> dbc.Card:
     )
 
 
-def _avoidance_target_card(data: list[dict]) -> dbc.Card:
-    """Render AVOIDANCE & TARGET INDEX card with horizontal bar indicators."""
+def _context_distribution_card(conn: sqlite3.Connection, team_id: int, records: list[dict]) -> dbc.Card:
+    """Render PICK CONTEXT DISTRIBUTION card showing how maps are used under pressure."""
     header = dbc.CardHeader(
-        html.H5("Avoidance & Target Index", className="mb-0", style={"color": COLORS["text"]}),
+        html.H5("Pick Context Distribution", className="mb-0", style={"color": COLORS["text"]}),
         style={"backgroundColor": COLORS["card_bg"], "borderBottom": f"1px solid {COLORS['border']}"},
     )
 
+    context_colors = {
+        "Opener": "#60a5fa",
+        "Neutral": "#a78bfa",
+        "Must-Win": "#f87171",
+        "Close-Out": "#4ade80",
+    }
+
     rows = []
-    for d in data:
-        # Skip maps with zero opportunities on both sides
-        if d["avoid_n"] == 0 and d["target_n"] == 0:
+    for rec in records:
+        map_id = rec.get("map_id")
+        if not map_id:
+            continue
+        total_played = rec["wins"] + rec["losses"]
+        if total_played == 0:
             continue
 
-        mode_color = MODE_COLORS.get(d["mode"], COLORS["text"])
-        low_avoid = d["avoid_n"] < LOW_SAMPLE_THRESHOLD
-        low_target = d["target_n"] < LOW_SAMPLE_THRESHOLD
+        dist = pick_context_distribution(conn, team_id, map_id)
+        total_picks = sum(dist.values())
+        if total_picks == 0:
+            continue
 
-        avoid_pct = d["avoid_ratio"] * 100
-        target_pct = d["target_ratio"] * 100
-
-        avoid_label = f"{avoid_pct:.0f}% (n={d['avoid_n']})"
-        target_label = f"{target_pct:.0f}% (n={d['target_n']})"
-
-        if low_avoid:
-            avoid_label += " *"
-        if low_target:
-            target_label += " *"
+        mode_color = MODE_COLORS.get(rec["mode"], COLORS["text"])
+        bar_segments = []
+        for ctx in ("Opener", "Neutral", "Must-Win", "Close-Out"):
+            count = dist.get(ctx, 0)
+            if count == 0:
+                continue
+            pct = count / total_picks * 100
+            bar_segments.append(
+                html.Div(
+                    title=f"{ctx}: {count}",
+                    style={
+                        "width": f"{pct}%",
+                        "height": "12px",
+                        "backgroundColor": context_colors[ctx],
+                        "display": "inline-block",
+                    },
+                )
+            )
 
         row = html.Div(
             [
                 html.Div(
                     [
-                        html.Span(d["map_name"], style={"fontWeight": "600", "width": "120px", "display": "inline-block"}),
-                        html.Span(d["mode"], style={"color": mode_color, "fontSize": "0.8rem", "width": "70px", "display": "inline-block"}),
+                        html.Span(rec["map_name"], style={"fontWeight": "600", "width": "120px", "display": "inline-block"}),
+                        html.Span(rec["mode"], style={"color": mode_color, "fontSize": "0.8rem", "width": "70px", "display": "inline-block"}),
                     ],
                     style={"display": "flex", "alignItems": "center", "minWidth": "200px"},
                 ),
                 html.Div(
-                    [
-                        html.Div("Avoid", style={"fontSize": "0.7rem", "color": COLORS["muted"], "marginBottom": "2px"}),
-                        html.Div(
-                            html.Div(
-                                style={
-                                    "width": f"{min(avoid_pct, 100)}%",
-                                    "height": "8px",
-                                    "backgroundColor": COLORS["ban"] if avoid_pct > 50 else COLORS["neutral"],
-                                    "borderRadius": "4px",
-                                },
-                            ),
-                            style={"width": "100px", "height": "8px", "backgroundColor": "#2a2a4a", "borderRadius": "4px"},
-                        ),
-                        html.Span(
-                            avoid_label,
-                            style={"fontSize": "0.75rem", "color": COLORS["muted"] if low_avoid else COLORS["text"], "marginLeft": "6px"},
-                        ),
-                    ],
-                    style={"display": "flex", "alignItems": "center", "gap": "4px", "flex": "1"},
+                    bar_segments,
+                    style={"flex": "1", "display": "flex", "borderRadius": "4px", "overflow": "hidden", "backgroundColor": "#2a2a4a"},
                 ),
-                html.Div(
-                    [
-                        html.Div("Target", style={"fontSize": "0.7rem", "color": COLORS["muted"], "marginBottom": "2px"}),
-                        html.Div(
-                            html.Div(
-                                style={
-                                    "width": f"{min(target_pct, 100)}%",
-                                    "height": "8px",
-                                    "backgroundColor": COLORS["loss"] if target_pct > 50 else COLORS["neutral"],
-                                    "borderRadius": "4px",
-                                },
-                            ),
-                            style={"width": "100px", "height": "8px", "backgroundColor": "#2a2a4a", "borderRadius": "4px"},
-                        ),
-                        html.Span(
-                            target_label,
-                            style={"fontSize": "0.75rem", "color": COLORS["muted"] if low_target else COLORS["text"], "marginLeft": "6px"},
-                        ),
-                    ],
-                    style={"display": "flex", "alignItems": "center", "gap": "4px", "flex": "1"},
+                html.Span(
+                    f"n={total_picks}",
+                    style={"fontSize": "0.75rem", "color": COLORS["muted"], "marginLeft": "8px", "minWidth": "40px"},
                 ),
             ],
             style={
                 "display": "flex",
                 "alignItems": "center",
-                "padding": "8px 12px",
+                "padding": "6px 12px",
                 "borderBottom": f"1px solid {COLORS['border']}",
                 "gap": "12px",
             },
@@ -233,14 +286,21 @@ def _avoidance_target_card(data: list[dict]) -> dbc.Card:
         rows.append(row)
 
     if not rows:
-        rows = [html.Div("No avoidance/target data", style={"color": COLORS["muted"], "padding": "12px"})]
+        rows = [html.Div("No pick data available", style={"color": COLORS["muted"], "padding": "12px"})]
 
-    footer_note = html.Div(
-        "* Low sample size — interpret with caution",
-        style={"color": COLORS["muted"], "fontSize": "0.75rem", "padding": "6px 12px"},
+    # Legend
+    legend = html.Div(
+        [
+            html.Span(
+                [html.Span("\u25a0 ", style={"color": c}), ctx],
+                style={"fontSize": "0.7rem", "color": COLORS["muted"], "marginRight": "12px"},
+            )
+            for ctx, c in context_colors.items()
+        ],
+        style={"padding": "6px 12px", "display": "flex"},
     )
 
-    body = dbc.CardBody(rows + [footer_note], style={"padding": "0"})
+    body = dbc.CardBody(rows + [legend], style={"padding": "0"})
     return dbc.Card(
         [header, body],
         style={"backgroundColor": COLORS["card_bg"], "border": f"1px solid {COLORS['border']}"},
@@ -408,14 +468,13 @@ def register_callbacks(app):
             abbr = conn.execute("SELECT abbreviation FROM teams WHERE team_id = ?", (team_id,)).fetchone()[0]
 
             records = _build_map_record_data(conn, team_id)
-            avoid_target = _build_avoidance_target_data(conn, team_id)
             ban_data = get_team_ban_summary(conn, team_id)
 
             return html.Div([
                 dbc.Row([
-                    dbc.Col(_map_record_card(records), md=6),
+                    dbc.Col(_map_strength_card(records), md=6),
                     dbc.Col([
-                        _avoidance_target_card(avoid_target),
+                        _context_distribution_card(conn, team_id, records),
                         _elo_card(conn, team_id, abbr),
                     ], md=6),
                 ]),
@@ -438,11 +497,9 @@ def register_callbacks(app):
         if not ctx.triggered:
             return styles
 
-        # Find which row was clicked
         triggered_id = ctx.triggered[0]["prop_id"]
         new_styles = []
         for i, style in enumerate(styles):
-            # Check if this is the one that was clicked
             row_id = ctx.inputs_list[0][i]["id"]["index"]
             expand_id_str = f'{{"index":"{row_id}","type":"tp-map-row"}}.n_clicks'
             if triggered_id == expand_id_str:
