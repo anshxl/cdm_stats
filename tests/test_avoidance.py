@@ -7,8 +7,6 @@ from cdm_stats.ingestion.csv_loader import ingest_csv
 from cdm_stats.metrics.avoidance import (
     pick_win_loss,
     defend_win_loss,
-    avoidance_index,
-    target_index,
     pick_context_distribution,
 )
 
@@ -64,25 +62,6 @@ def test_pick_win_loss_no_data(db):
     result = pick_win_loss(db, dvs, summit_hp)
     assert result == {"wins": 0, "losses": 0}
 
-
-def test_avoidance_index_basic(db):
-    """DVS had 1 SnD pick opportunity (slot 1) and picked Tunisia, not Slums SnD.
-    So DVS's avoidance of Slums SnD = 1/1 = 100%."""
-    ingest_csv(db, io.StringIO(MATCH_CSV))
-    dvs, _, _, slums_snd, _ = _get_ids(db)
-    result = avoidance_index(db, dvs, slums_snd)
-    assert result["ratio"] == 1.0
-    assert result["opportunities"] == 1
-
-
-def test_target_index_basic(db):
-    """OUG is the opponent. OUG had 1 SnD pick (slot 4) against DVS and chose Slums.
-    So target index for DVS on Slums SnD = 0/1 = 0% (opponents DO pick it against DVS)."""
-    ingest_csv(db, io.StringIO(MATCH_CSV))
-    dvs, _, _, slums_snd, _ = _get_ids(db)
-    result = target_index(db, dvs, slums_snd)
-    assert result["ratio"] == 0.0
-    assert result["opportunities"] == 1
 
 
 def test_pick_context_distribution(db):
