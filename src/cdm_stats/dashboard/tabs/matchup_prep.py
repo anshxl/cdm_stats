@@ -172,7 +172,7 @@ def _pct_block(label: str, ratio: float, n: int, tint: str) -> html.Div:
     )
 
 
-def _map_row(m: dict, row_idx: int) -> html.Div:
+def _map_row(m: dict, row_idx: int, show_indices: bool = False) -> html.Div:
     """Single map row with collapsed summary and expandable pick/defend detail."""
     mode_color = MODE_COLORS.get(m["mode"], COLORS["text"])
     h2h_color = wl_color(m["h2h"]["wins"], m["h2h"]["losses"])
@@ -190,12 +190,26 @@ def _map_row(m: dict, row_idx: int) -> html.Div:
             ),
             # Your team stats
             _stat_block("Your W-L", m["your_wl"]["wins"], m["your_wl"]["losses"], COLORS["your_team"]),
-            _pct_block("Your Avoid", m["your_avoid"]["ratio"], m["your_avoid"]["opportunities"], COLORS["your_team"]),
-            _pct_block("Your Target", m["your_target"]["ratio"], m["your_target"]["opportunities"], COLORS["your_team"]),
+            # Your indices (hidden by default, toggled via callback)
+            html.Span(
+                [
+                    _pct_block("Your Avoid", m["your_avoid"]["ratio"], m["your_avoid"]["opportunities"], COLORS["your_team"]),
+                    _pct_block("Your Target", m["your_target"]["ratio"], m["your_target"]["opportunities"], COLORS["your_team"]),
+                ],
+                className="mp-indices",
+                style={"display": "inline" if show_indices else "none"},
+            ),
             # Opp stats
             _stat_block("Opp W-L", m["opp_wl"]["wins"], m["opp_wl"]["losses"], COLORS["opponent"]),
-            _pct_block("Opp Avoid", m["opp_avoid"]["ratio"], m["opp_avoid"]["opportunities"], COLORS["opponent"]),
-            _pct_block("Opp Target", m["opp_target"]["ratio"], m["opp_target"]["opportunities"], COLORS["opponent"]),
+            # Opp indices (hidden by default)
+            html.Span(
+                [
+                    _pct_block("Opp Avoid", m["opp_avoid"]["ratio"], m["opp_avoid"]["opportunities"], COLORS["opponent"]),
+                    _pct_block("Opp Target", m["opp_target"]["ratio"], m["opp_target"]["opportunities"], COLORS["opponent"]),
+                ],
+                className="mp-indices",
+                style={"display": "inline" if show_indices else "none"},
+            ),
         ],
         id={"type": "mp-row", "index": row_idx},
         style={
@@ -351,8 +365,17 @@ def layout():
                     width=3,
                 ),
                 dbc.Col(
+                    dbc.Switch(
+                        id="mp-indices-toggle",
+                        label="Show Avoid / Target",
+                        value=False,
+                        style={"color": COLORS["muted"], "paddingTop": "28px"},
+                    ),
+                    width=2,
+                ),
+                dbc.Col(
                     html.Div(id="mp-elo-badge"),
-                    width=5,
+                    width=3,
                     style={"paddingTop": "20px"},
                 ),
             ],
@@ -389,13 +412,13 @@ def register_callbacks(app):
         finally:
             conn.close()
 
-    # Update content and Elo badge when either team changes
+    # Update content and Elo badge when either team changes or toggle flips
     @app.callback(
         [Output("mp-content", "children"), Output("mp-elo-badge", "children")],
-        [Input("mp-your-team", "value"), Input("mp-opp-team", "value")],
+        [Input("mp-your-team", "value"), Input("mp-opp-team", "value"), Input("mp-indices-toggle", "value")],
         prevent_initial_call=True,
     )
-    def update_matchup(your_team, opp_team):
+    def update_matchup(your_team, opp_team, show_indices):
         if not your_team or not opp_team:
             msg = "Select both teams to view match-up analysis"
             return (
@@ -453,7 +476,7 @@ def register_callbacks(app):
 
                 map_rows = []
                 for m in mode_maps:
-                    map_rows.append(_map_row(m, row_idx))
+                    map_rows.append(_map_row(m, row_idx, show_indices=bool(show_indices)))
                     row_idx += 1
 
                 section = dbc.Card(

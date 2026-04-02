@@ -9,6 +9,24 @@ from cdm_stats.dashboard.app import get_db
 from cdm_stats.dashboard.helpers import COLORS, get_all_teams
 from cdm_stats.metrics.elo import get_elo_history, SEED_ELO
 
+# 14 distinct colors for 14 CDL teams — avoids Plotly's default 10-color wrap
+TEAM_COLORS = [
+    "#636EFA",  # blue
+    "#EF553B",  # red
+    "#00CC96",  # green
+    "#AB63FA",  # purple
+    "#FFA15A",  # orange
+    "#19D3F3",  # cyan
+    "#FF6692",  # pink
+    "#B6E880",  # lime
+    "#FF97FF",  # magenta
+    "#FECB52",  # yellow
+    "#1F77B4",  # steel blue
+    "#2CA02C",  # forest green
+    "#D62728",  # crimson
+    "#8C564B",  # brown
+]
+
 
 def _week_number(date_str: str, earliest: str) -> int:
     from datetime import datetime
@@ -61,9 +79,11 @@ def _build_elo_traces(conn: sqlite3.Connection) -> list[dict]:
 
 def _build_figure(traces: list[dict]) -> go.Figure:
     fig = go.Figure()
+    color_idx = 0
     for trace in traces:
         if len(trace["elos"]) <= 1:
             continue
+        color = TEAM_COLORS[color_idx % len(TEAM_COLORS)]
         fig.add_trace(go.Scatter(
             x=trace["weeks"],
             y=trace["elos"],
@@ -71,9 +91,10 @@ def _build_figure(traces: list[dict]) -> go.Figure:
             name=trace["abbr"],
             text=trace["hover_texts"],
             hovertemplate="%{text}<extra></extra>",
-            marker={"size": 5},
-            line={"width": 2},
+            marker={"size": 5, "color": color},
+            line={"width": 2, "color": color},
         ))
+        color_idx += 1
     fig.add_hline(y=SEED_ELO, line_dash="dash", line_color="gray", opacity=0.4,
                   annotation_text="Seed (1000)", annotation_position="bottom right")
     fig.add_vrect(x0=0, x1=6, fillcolor="gray", opacity=0.05, line_width=0,

@@ -9,3 +9,4 @@ dist/
 *.log
 .pytest_cache/
 .claude/
+.superpowers/
