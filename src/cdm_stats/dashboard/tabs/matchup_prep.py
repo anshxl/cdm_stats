@@ -401,12 +401,20 @@ def register_callbacks(app):
     # Populate both team dropdowns on load
     @app.callback(
         Output("mp-your-team", "options"),
+        Output("mp-your-team", "value"),
         Input("mp-your-team", "id"),
     )
     def populate_your_team(_):
         conn = get_db()
         try:
-            return team_dropdown_options(conn)
+            options = team_dropdown_options(conn)
+            # Default to GL
+            gl_id = None
+            for opt in options:
+                if opt["label"] == "GL":
+                    gl_id = opt["value"]
+                    break
+            return options, gl_id
         finally:
             conn.close()
 

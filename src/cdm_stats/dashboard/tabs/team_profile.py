@@ -55,6 +55,10 @@ def _build_map_results_detail(
     Returns list of dicts with: opponent, score, pick_context, picked_by, result, match_date.
     Sorted by date descending.
     """
+    team_abbr = conn.execute(
+        "SELECT abbreviation FROM teams WHERE team_id = ?", (team_id,)
+    ).fetchone()[0]
+
     rows = conn.execute(
         """SELECT m.match_date, m.team1_id, m.team2_id,
                   mr.winner_team_id, mr.picking_team_score, mr.non_picking_team_score,
@@ -82,12 +86,11 @@ def _build_map_results_detail(
         elif picker_id == opp_id:
             score = f"{non_pick_score}-{pick_score}"
         else:
-            # No picker — show pick_score-non_pick_score
             score = f"{pick_score}-{non_pick_score}"
 
-        # Determine who picked
+        # Determine who picked — always use team abbreviation
         if picker_id == team_id:
-            picked_by = "You"
+            picked_by = team_abbr
         elif picker_id == opp_id:
             picked_by = opp_abbr
         else:
@@ -120,8 +123,8 @@ def _strength_color(rating: float | None) -> str:
     return COLORS["neutral"]
 
 
-def _map_strength_card(records: list[dict]) -> dbc.Card:
-    """Render the MAP STRENGTH card with expandable rows showing pick/defend splits."""
+def _map_strength_card(conn: sqlite3.Connection, team_id: int, records: list[dict]) -> dbc.Card:
+    """Render the MAP STRENGTH card with expandable rows showing pick/defend splits and match history."""
     header = dbc.CardHeader(
         html.H5("Map Strength", className="mb-0", style={"color": COLORS["text"]}),
         style={"backgroundColor": COLORS["card_bg"], "borderBottom": f"1px solid {COLORS['border']}"},
@@ -167,27 +170,78 @@ def _map_strength_card(records: list[dict]) -> dbc.Card:
             },
         )
 
-        # Expandable detail: pick/defend splits
+        # Expandable detail: pick/defend splits + match history
         pick_color = wl_color(rec.get("pick_wins", 0), rec.get("pick_losses", 0))
         defend_color = wl_color(rec.get("defend_wins", 0), rec.get("defend_losses", 0))
+
+        detail_children = [
+            html.Div(
+                [
+                    html.Span("Pick: ", style={"color": COLORS["muted"], "fontSize": "0.8rem"}),
+                    html.Span(
+                        f"{rec.get('pick_wins', 0)}-{rec.get('pick_losses', 0)}",
+                        style={"color": pick_color, "fontSize": "0.8rem", "marginRight": "16px"},
+                    ),
+                    html.Span("Defend: ", style={"color": COLORS["muted"], "fontSize": "0.8rem"}),
+                    html.Span(
+                        f"{rec.get('defend_wins', 0)}-{rec.get('defend_losses', 0)}",
+                        style={"color": defend_color, "fontSize": "0.8rem"},
+                    ),
+                ],
+                style={"paddingLeft": "24px", "marginBottom": "8px"},
+            ),
+        ]
+
+        # Match history rows
+        if rec.get("map_id"):
+            match_history = _build_map_results_detail(conn, team_id, rec["map_id"])
+            if match_history:
+                # Header row
+                detail_children.append(
+                    html.Div(
+                        [
+                            html.Span("Date", style={"width": "90px", "display": "inline-block", "fontWeight": "600"}),
+                            html.Span("Opp", style={"width": "50px", "display": "inline-block", "fontWeight": "600"}),
+                            html.Span("Result", style={"width": "40px", "display": "inline-block", "fontWeight": "600"}),
+                            html.Span("Score", style={"width": "60px", "display": "inline-block", "fontWeight": "600"}),
+                            html.Span("Context", style={"width": "80px", "display": "inline-block", "fontWeight": "600"}),
+                            html.Span("Picked By", style={"display": "inline-block", "fontWeight": "600"}),
+                        ],
+                        style={
+                            "paddingLeft": "24px",
+                            "fontSize": "0.7rem",
+                            "color": COLORS["muted"],
+                            "display": "flex",
+                            "borderBottom": f"1px solid {COLORS['border']}",
+                            "paddingBottom": "2px",
+                            "marginBottom": "2px",
+                        },
+                    )
+                )
+                for mh in match_history:
+                    result_color = COLORS["win"] if mh["result"] == "W" else COLORS["loss"]
+                    detail_children.append(
+                        html.Div(
+                            [
+                                html.Span(mh["match_date"], style={"width": "90px", "display": "inline-block"}),
+                                html.Span(mh["opponent"], style={"width": "50px", "display": "inline-block"}),
+                                html.Span(mh["result"], style={"width": "40px", "display": "inline-block", "color": result_color, "fontWeight": "700"}),
+                                html.Span(mh["score"], style={"width": "60px", "display": "inline-block"}),
+                                html.Span(mh["pick_context"], style={"width": "80px", "display": "inline-block", "color": COLORS["muted"]}),
+                                html.Span(mh["picked_by"], style={"display": "inline-block", "color": COLORS["muted"]}),
+                            ],
+                            style={
+                                "paddingLeft": "24px",
+                                "fontSize": "0.75rem",
+                                "color": COLORS["text"],
+                                "display": "flex",
+                                "padding": "2px 12px 2px 24px",
+                            },
+                        )
+                    )
+
         detail = html.Div(
-            [
-                html.Div(
-                    [
-                        html.Span("Pick: ", style={"color": COLORS["muted"], "fontSize": "0.8rem"}),
-                        html.Span(
-                            f"{rec.get('pick_wins', 0)}-{rec.get('pick_losses', 0)}",
-                            style={"color": pick_color, "fontSize": "0.8rem", "marginRight": "16px"},
-                        ),
-                        html.Span("Defend: ", style={"color": COLORS["muted"], "fontSize": "0.8rem"}),
-                        html.Span(
-                            f"{rec.get('defend_wins', 0)}-{rec.get('defend_losses', 0)}",
-                            style={"color": defend_color, "fontSize": "0.8rem"},
-                        ),
-                    ],
-                    style={"paddingLeft": "24px"},
-                ),
-            ],
+            detail_children,
             id={"type": "tp-expand", "index": f"{rec['map_name']}-{rec['mode']}"},
             style={"display": "none", "padding": "4px 12px 8px", "backgroundColor": "#0d1525"},
         )
@@ -472,7 +526,7 @@ def register_callbacks(app):
 
             return html.Div([
                 dbc.Row([
-                    dbc.Col(_map_strength_card(records), md=6),
+                    dbc.Col(_map_strength_card(conn, team_id, records), md=6),
                     dbc.Col([
                         _context_distribution_card(conn, team_id, records),
                         _elo_card(conn, team_id, abbr),

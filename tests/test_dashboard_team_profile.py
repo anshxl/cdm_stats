@@ -56,4 +56,4 @@ def test_build_map_results_detail(db):
     assert row["result"] == "W"
     assert row["pick_context"] == "Opener"
     assert "score" in row
-    assert "picked_by" in row
+    assert row["picked_by"] == "DVS"
