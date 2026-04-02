@@ -31,7 +31,15 @@ SWEEP_CSV = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_sco
 2026-01-14,Q9,SPG,Q9,3,Raid,Q9,3,0"""
 
 # ELV 3-2 XROCK: full 5 maps
-FIVE_MAP_CSV = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score
+FIVE_MAP_CSV = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score,series_winner,picked_by
+2026-01-16,ELV,XROCK,ELV,1,Firing Range,ELV,6,4
+2026-01-16,ELV,XROCK,ELV,2,Hacienda,XROCK,250,200
+2026-01-16,ELV,XROCK,ELV,3,Standoff,ELV,3,2
+2026-01-16,ELV,XROCK,ELV,4,Meltdown,XROCK,6,3
+2026-01-16,ELV,XROCK,ELV,5,Takeoff,ELV,250,230,,ELV"""
+
+# ELV 3-2 XROCK: full 5 maps, no picked_by (legacy format)
+FIVE_MAP_CSV_NO_PICKER = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score
 2026-01-16,ELV,XROCK,ELV,1,Firing Range,ELV,6,4
 2026-01-16,ELV,XROCK,ELV,2,Hacienda,XROCK,250,200
 2026-01-16,ELV,XROCK,ELV,3,Standoff,ELV,3,2
@@ -160,16 +168,28 @@ def test_ingest_sweep_series_scores_accumulate(db):
     assert rows[3][1:] == (2, 1)  # slot 4
 
 
-def test_ingest_five_map_slot5_picked_by_is_null(db):
+def test_ingest_five_map_slot5_picked_by_from_csv(db):
+    """When picked_by is provided for slot 5, it should be stored."""
     ingest_csv(db, io.StringIO(FIVE_MAP_CSV))
     picker = db.execute(
         "SELECT picked_by_team_id FROM map_results WHERE slot = 5"
     ).fetchone()[0]
-    assert picker is None
+    elv_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'ELV'").fetchone()[0]
+    assert picker == elv_id
 
 
-def test_ingest_five_map_slot5_is_coin_toss(db):
+def test_ingest_five_map_slot5_must_win_when_picker_known(db):
+    """Slot 5 at 2-2 with a known picker is Must-Win, not Coin-Toss."""
     ingest_csv(db, io.StringIO(FIVE_MAP_CSV))
+    ctx = db.execute(
+        "SELECT pick_context FROM map_results WHERE slot = 5"
+    ).fetchone()[0]
+    assert ctx == "Must-Win"
+
+
+def test_ingest_five_map_slot5_coin_toss_when_no_picker(db):
+    """When no picked_by is provided for slot 5, it falls back to Coin-Toss."""
+    ingest_csv(db, io.StringIO(FIVE_MAP_CSV_NO_PICKER))
     ctx = db.execute(
         "SELECT pick_context FROM map_results WHERE slot = 5"
     ).fetchone()[0]

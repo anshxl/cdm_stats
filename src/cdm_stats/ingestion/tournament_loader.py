@@ -181,14 +181,14 @@ def _ingest_maps(
                         non_picking_team_score = team2_score
                         pick_context = derive_pick_context(
                             slot, t1_series, t2_series,
-                            win_threshold=win_threshold, last_slot=max_slot
+                            win_threshold=win_threshold
                         )
                     else:
                         picking_team_score = team2_score
                         non_picking_team_score = team1_score
                         pick_context = derive_pick_context(
                             slot, t2_series, t1_series,
-                            win_threshold=win_threshold, last_slot=max_slot
+                            win_threshold=win_threshold
                         )
             else:
                 # Tournament: no picks known

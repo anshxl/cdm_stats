@@ -12,7 +12,7 @@ from cdm_stats.db.queries import (
 
 def derive_pick_context(
     slot: int, picker_score: int, opponent_score: int,
-    *, win_threshold: int = 3, last_slot: int = 5
+    *, win_threshold: int = 3,
 ) -> str:
     """
     Derive the pick context for a map result based on the series state.
@@ -22,23 +22,20 @@ def derive_pick_context(
         picker_score: The picking team's series score before this map
         opponent_score: The opponent's series score before this map
         win_threshold: Number of wins needed to take the series (3 for BO5, 4 for BO7)
-        last_slot: The final slot number in the format (5 for BO5, 7 for BO7)
 
     Returns:
-        One of: "Opener", "Neutral", "Must-Win", "Close-Out", "Coin-Toss"
+        One of: "Opener", "Neutral", "Must-Win", "Close-Out"
 
     Rules:
-    - Last slot is always a coin toss (regardless of series score)
     - Slot 1 is always the opener (first map)
     - If opponent is one win away and picker is not: Must-Win
     - If picker is one win away and opponent is not: Close-Out
+    - If both are one win away (e.g. 2-2 in BO5): Must-Win
     - All other cases: Neutral
     """
-    if slot == last_slot:
-        return "Coin-Toss"
     if slot == 1:
         return "Opener"
-    if opponent_score == win_threshold - 1 and picker_score < win_threshold - 1:
+    if opponent_score == win_threshold - 1 and picker_score <= win_threshold - 1:
         return "Must-Win"
     if picker_score == win_threshold - 1 and opponent_score < win_threshold - 1:
         return "Close-Out"
@@ -146,7 +143,8 @@ def ingest_csv(conn: sqlite3.Connection, file: IO[str]) -> list[dict]:
             if slot == 1:
                 picker_id = two_v_two_id
             elif slot == 5:
-                picker_id = None
+                picked_by_abbr = (row.get("picked_by") or "").strip()
+                picker_id = get_team_id_by_abbr(conn, picked_by_abbr) if picked_by_abbr else None
             else:
                 picker_id = prev_loser_id
 
@@ -163,7 +161,7 @@ def ingest_csv(conn: sqlite3.Connection, file: IO[str]) -> list[dict]:
 
             # Derive pick context
             if picker_id is None:
-                pick_context = derive_pick_context(slot, 0, 0)
+                pick_context = "Coin-Toss"
             else:
                 if picker_id == team1_id:
                     pick_context = derive_pick_context(slot, t1_series, t2_series)
