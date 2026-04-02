@@ -4,7 +4,7 @@ import pytest
 from cdm_stats.db.schema import create_tables
 from cdm_stats.ingestion.seed import seed_teams, seed_maps
 from cdm_stats.ingestion.csv_loader import ingest_csv
-from cdm_stats.metrics.elo import update_elo, get_current_elo, get_elo_history
+from cdm_stats.metrics.elo import update_elo, get_current_elo, get_elo_history, normalize_margin, MODE_MAX_MARGINS
 
 MATCH_CSV = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score
 2026-01-15,DVS,OUG,DVS,1,Tunisia,DVS,6,3
@@ -67,3 +67,31 @@ def test_get_elo_history(db_with_match):
     history = get_elo_history(db, dvs_id)
     assert len(history) == 1
     assert history[0]["elo_after"] > 1000
+
+
+def test_mode_max_margins_values():
+    assert MODE_MAX_MARGINS == {"SnD": 9, "HP": 250, "Control": 4}
+
+
+def test_normalize_margin_snd():
+    # 6-3 SnD = margin 3, normalized = 3/9 = 0.333...
+    result = normalize_margin(6, 3, "SnD")
+    assert abs(result - 3 / 9) < 0.001
+
+
+def test_normalize_margin_hp():
+    # 250-80 HP = margin 170, normalized = 170/250 = 0.68
+    result = normalize_margin(250, 80, "HP")
+    assert abs(result - 170 / 250) < 0.001
+
+
+def test_normalize_margin_control():
+    # 4-0 Control = margin 4, normalized = 4/4 = 1.0
+    result = normalize_margin(4, 0, "Control")
+    assert result == 1.0
+
+
+def test_normalize_margin_close_game():
+    # 250-248 HP = margin 2, normalized = 2/250 = 0.008
+    result = normalize_margin(250, 248, "HP")
+    assert abs(result - 2 / 250) < 0.001

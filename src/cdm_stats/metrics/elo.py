@@ -4,6 +4,13 @@ K_FACTOR = 32
 SEED_ELO = 1000.0
 LOW_CONFIDENCE_THRESHOLD = 7
 
+MODE_MAX_MARGINS = {"SnD": 9, "HP": 250, "Control": 4}
+
+
+def normalize_margin(winner_score: int, loser_score: int, mode: str) -> float:
+    margin = abs(winner_score - loser_score)
+    return margin / MODE_MAX_MARGINS[mode]
+
 
 def get_current_elo(conn: sqlite3.Connection, team_id: int) -> float:
     row = conn.execute(
