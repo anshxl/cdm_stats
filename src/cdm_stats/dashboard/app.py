@@ -7,7 +7,7 @@ import dash_bootstrap_components as dbc
 from dash import html, dcc
 from dash.dependencies import Input, Output
 
-DB_PATH = Path(__file__).resolve().parents[3] / "data" / "cdl.db"
+DB_PATH = Path(os.environ.get("DB_PATH", Path(__file__).resolve().parents[3] / "data" / "cdl.db"))
 
 app = dash.Dash(
     __name__,
