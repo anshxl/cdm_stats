@@ -1,7 +1,8 @@
 import sqlite3
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Font, Alignment
-from cdm_stats.metrics.avoidance import pick_win_loss, defend_win_loss, avoidance_index, target_index
+from cdm_stats.metrics.avoidance import pick_win_loss, defend_win_loss
+from cdm_stats.metrics.map_strength import map_strength
 from cdm_stats.metrics.elo import get_current_elo, is_low_confidence
 from cdm_stats.metrics.margin import score_margins, dominance_flag
 from cdm_stats.db.queries import get_ban_summary, get_team_map_wl, get_team_ban_summary
@@ -24,22 +25,14 @@ def _get_all_maps(conn: sqlite3.Connection) -> list[tuple[int, str, str]]:
     ).fetchall()
 
 
-def _cell_color(pick_wl: dict, defend_wl: dict, avoid: dict, tgt: dict) -> PatternFill | None:
-    total_sample = (pick_wl["wins"] + pick_wl["losses"] +
-                    defend_wl["wins"] + defend_wl["losses"])
-    if total_sample == 0:
+def _cell_color(ms: dict) -> PatternFill | None:
+    if ms["rating"] is None or ms["total_played"] == 0:
         return YELLOW_FILL
-    if avoid.get("opportunities", 0) < LOW_SAMPLE_THRESHOLD:
+    if ms["low_confidence"]:
         return YELLOW_FILL
-
-    pick_total = pick_wl["wins"] + pick_wl["losses"]
-    defend_total = defend_wl["wins"] + defend_wl["losses"]
-    pick_rate = pick_wl["wins"] / pick_total if pick_total else 0
-    defend_rate = defend_wl["wins"] / defend_total if defend_total else 0
-
-    if pick_rate >= 0.6 and defend_rate >= 0.6:
+    if ms["rating"] >= 0.6:
         return GREEN_FILL
-    if defend_rate <= 0.4 or avoid.get("ratio", 0) >= 0.7:
+    if ms["rating"] <= 0.4:
         return RED_FILL
     return None
 
@@ -67,18 +60,17 @@ def export_map_matrix(conn: sqlite3.Connection, output_path: str) -> None:
         for col_idx, (map_id, _, _) in enumerate(maps, start=2):
             pwl = pick_win_loss(conn, team_id, map_id)
             dwl = defend_win_loss(conn, team_id, map_id)
-            avoid = avoidance_index(conn, team_id, map_id)
-            tgt = target_index(conn, team_id, map_id)
+            ms = map_strength(conn, team_id, map_id)
 
+            strength_pct = f"{ms['rating']:.0%}" if ms["rating"] is not None else "N/A"
             text = (
                 f"P:{pwl['wins']}-{pwl['losses']} | "
                 f"D:{dwl['wins']}-{dwl['losses']} | "
-                f"Av:{avoid['ratio']:.0%}(n={avoid['opportunities']}) | "
-                f"Tg:{tgt['ratio']:.0%}(n={tgt['opportunities']})"
+                f"Str:{strength_pct}(n={ms['total_played']})"
             )
             cell = ws.cell(row=row_idx, column=col_idx, value=text)
             cell.alignment = Alignment(horizontal="center", wrap_text=True)
-            fill = _cell_color(pwl, dwl, avoid, tgt)
+            fill = _cell_color(ms)
             if fill:
                 cell.fill = fill
 
@@ -121,7 +113,7 @@ def export_matchup_prep(
     headers = ["Map (Mode)", "H2H",
                f"{your_abbr} Pick W-L", f"{your_abbr} Defend W-L",
                f"{opp_abbr} Pick W-L", f"{opp_abbr} Defend W-L",
-               f"{opp_abbr} Avoid%", f"{opp_abbr} Target%", "Dominance"]
+               f"{your_abbr} Strength", f"{opp_abbr} Strength", "Delta", "Dominance"]
     for col_idx, h in enumerate(headers, start=1):
         cell = ws.cell(row=1, column=col_idx, value=h)
         cell.fill = HEADER_FILL
@@ -136,28 +128,37 @@ def export_matchup_prep(
         your_dwl = defend_win_loss(conn, your_team_id, map_id)
         opp_pwl = pick_win_loss(conn, opp_team_id, map_id)
         opp_dwl = defend_win_loss(conn, opp_team_id, map_id)
-        opp_avoid = avoidance_index(conn, opp_team_id, map_id)
-        opp_tgt = target_index(conn, opp_team_id, map_id)
+        your_ms = map_strength(conn, your_team_id, map_id)
+        opp_ms = map_strength(conn, opp_team_id, map_id)
         margins = score_margins(conn, your_team_id, map_id)
+
+        your_str = f"{your_ms['rating']:.0%}" if your_ms["rating"] is not None else "N/A"
+        opp_str = f"{opp_ms['rating']:.0%}" if opp_ms["rating"] is not None else "N/A"
+        if your_ms["rating"] is not None and opp_ms["rating"] is not None:
+            delta = your_ms["rating"] - opp_ms["rating"]
+            delta_str = f"{delta:+.0%}"
+        else:
+            delta_str = "N/A"
 
         ws.cell(row=row_idx, column=2, value=f"{h2h['wins']}-{h2h['losses']}")
         ws.cell(row=row_idx, column=3, value=f"{your_pwl['wins']}-{your_pwl['losses']}")
         ws.cell(row=row_idx, column=4, value=f"{your_dwl['wins']}-{your_dwl['losses']}")
         ws.cell(row=row_idx, column=5, value=f"{opp_pwl['wins']}-{opp_pwl['losses']}")
         ws.cell(row=row_idx, column=6, value=f"{opp_dwl['wins']}-{opp_dwl['losses']}")
-        ws.cell(row=row_idx, column=7, value=f"{opp_avoid['ratio']:.0%} (n={opp_avoid['opportunities']})")
-        ws.cell(row=row_idx, column=8, value=f"{opp_tgt['ratio']:.0%} (n={opp_tgt['opportunities']})")
+        ws.cell(row=row_idx, column=7, value=f"{your_str} (n={your_ms['total_played']})")
+        ws.cell(row=row_idx, column=8, value=f"{opp_str} (n={opp_ms['total_played']})")
+        ws.cell(row=row_idx, column=9, value=delta_str)
 
         dom_counts = {}
         for m in margins:
             if m["dominance"]:
                 dom_counts[m["dominance"]] = dom_counts.get(m["dominance"], 0) + 1
         dom_str = ", ".join(f"{k}:{v}" for k, v in dom_counts.items()) if dom_counts else "-"
-        ws.cell(row=row_idx, column=9, value=dom_str)
+        ws.cell(row=row_idx, column=10, value=dom_str)
 
         # Yellow fill for low sample
-        if opp_avoid["opportunities"] < LOW_SAMPLE_THRESHOLD:
-            for c in range(7, 9):
+        if your_ms["low_confidence"] or opp_ms["low_confidence"]:
+            for c in range(7, 10):
                 ws.cell(row=row_idx, column=c).fill = YELLOW_FILL
 
     # Footer — Elo ratings
