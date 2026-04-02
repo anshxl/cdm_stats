@@ -9,9 +9,8 @@ from cdm_stats.dashboard.helpers import (
     COLORS, MODE_COLORS, LOW_SAMPLE_THRESHOLD,
     wl_color, team_dropdown_options, get_all_maps,
 )
-from cdm_stats.metrics.avoidance import (
-    pick_win_loss, defend_win_loss, avoidance_index, target_index,
-)
+from cdm_stats.metrics.avoidance import pick_win_loss, defend_win_loss
+from cdm_stats.metrics.map_strength import map_strength
 from cdm_stats.metrics.elo import get_current_elo, is_low_confidence
 from cdm_stats.db.queries import get_ban_summary
 
@@ -62,8 +61,8 @@ def _build_matchup_data(
     """Build per-mode map comparison data between two teams.
 
     Returns {"SnD": [...], "HP": [...], "Control": [...]} where each entry
-    contains map_id, map_name, mode, h2h, your_wl, opp_wl, avoidance/target
-    indices, and pick/defend W-L for both teams.
+    contains map_id, map_name, mode, h2h, your_wl, opp_wl, Map Strength
+    for both teams, matchup delta, and pick/defend W-L.
     """
     maps = get_all_maps(conn)
     result: dict[str, list[dict]] = {"SnD": [], "HP": [], "Control": []}
@@ -73,15 +72,19 @@ def _build_matchup_data(
         your_wl = _team_map_wl(conn, your_id, map_id)
         opp_wl = _team_map_wl(conn, opp_id, map_id)
 
-        your_avoid = avoidance_index(conn, your_id, map_id)
-        opp_avoid = avoidance_index(conn, opp_id, map_id)
-        your_tgt = target_index(conn, your_id, map_id)
-        opp_tgt = target_index(conn, opp_id, map_id)
+        your_ms = map_strength(conn, your_id, map_id)
+        opp_ms = map_strength(conn, opp_id, map_id)
 
         your_pwl = pick_win_loss(conn, your_id, map_id)
         your_dwl = defend_win_loss(conn, your_id, map_id)
         opp_pwl = pick_win_loss(conn, opp_id, map_id)
         opp_dwl = defend_win_loss(conn, opp_id, map_id)
+
+        # Compute delta (positive = your advantage)
+        if your_ms["rating"] is not None and opp_ms["rating"] is not None:
+            delta = your_ms["rating"] - opp_ms["rating"]
+        else:
+            delta = None
 
         entry = {
             "map_id": map_id,
@@ -90,10 +93,9 @@ def _build_matchup_data(
             "h2h": h2h,
             "your_wl": your_wl,
             "opp_wl": opp_wl,
-            "your_avoid": your_avoid,
-            "opp_avoid": opp_avoid,
-            "your_target": your_tgt,
-            "opp_target": opp_tgt,
+            "your_strength": your_ms,
+            "opp_strength": opp_ms,
+            "delta": delta,
             "your_pick_wl": your_pwl,
             "your_defend_wl": your_dwl,
             "opp_pick_wl": opp_pwl,
@@ -101,6 +103,10 @@ def _build_matchup_data(
         }
         if mode in result:
             result[mode].append(entry)
+
+    # Sort each mode by delta (largest advantage first)
+    for mode in result:
+        result[mode].sort(key=lambda m: m["delta"] if m["delta"] is not None else -999, reverse=True)
 
     return result
 
@@ -116,49 +122,17 @@ def _hex_to_rgb(hex_color: str) -> str:
     return ",".join(str(int(h[i : i + 2], 16)) for i in (0, 2, 4))
 
 
-def _stat_block(label: str, wins: int, losses: int, tint: str, clickable: bool = False) -> html.Div:
+def _stat_block(label: str, wins: int, losses: int, tint: str) -> html.Div:
     """Single stat display block showing W-L."""
     color = wl_color(wins, losses)
     total = wins + losses
     pct = f" ({wins / total:.0%})" if total > 0 else ""
-    style: dict = {
-        "padding": "4px 8px",
-        "borderRadius": "4px",
-        "backgroundColor": f"rgba({_hex_to_rgb(tint)}, 0.1)",
-        "display": "inline-block",
-        "marginRight": "8px",
-        "marginBottom": "4px",
-    }
-    if clickable:
-        style["cursor"] = "pointer"
-
     return html.Div(
         [
             html.Div(label, style={"fontSize": "0.7rem", "color": COLORS["muted"]}),
             html.Span(
                 f"{wins}-{losses}{pct}",
                 style={"fontWeight": "600", "color": color, "fontSize": "0.85rem"},
-            ),
-        ],
-        style=style,
-    )
-
-
-def _pct_block(label: str, ratio: float, n: int, tint: str) -> html.Div:
-    """Percentage stat block for avoid/target indices."""
-    pct = ratio * 100
-    low = n < LOW_SAMPLE_THRESHOLD
-    suffix = " *" if low else ""
-    return html.Div(
-        [
-            html.Div(label, style={"fontSize": "0.7rem", "color": COLORS["muted"]}),
-            html.Span(
-                f"{pct:.0f}% (n={n}){suffix}",
-                style={
-                    "fontWeight": "600",
-                    "color": COLORS["muted"] if low else COLORS["text"],
-                    "fontSize": "0.85rem",
-                },
             ),
         ],
         style={
@@ -172,8 +146,66 @@ def _pct_block(label: str, ratio: float, n: int, tint: str) -> html.Div:
     )
 
 
-def _map_row(m: dict, row_idx: int, show_indices: bool = False) -> html.Div:
-    """Single map row with collapsed summary and expandable pick/defend detail."""
+def _strength_block(label: str, ms: dict, tint: str) -> html.Div:
+    """Map Strength display block."""
+    rating = ms["rating"]
+    if rating is None:
+        display = "N/A"
+        color = COLORS["muted"]
+    elif rating >= 0.6:
+        display = f"{rating:.0%}"
+        color = COLORS["win"]
+    elif rating <= 0.4:
+        display = f"{rating:.0%}"
+        color = COLORS["loss"]
+    else:
+        display = f"{rating:.0%}"
+        color = COLORS["neutral"]
+
+    low = " *" if ms["low_confidence"] else ""
+
+    return html.Div(
+        [
+            html.Div(label, style={"fontSize": "0.7rem", "color": COLORS["muted"]}),
+            html.Span(
+                f"{display}{low}",
+                style={"fontWeight": "700", "color": color, "fontSize": "0.95rem"},
+            ),
+        ],
+        style={
+            "padding": "4px 8px",
+            "borderRadius": "4px",
+            "backgroundColor": f"rgba({_hex_to_rgb(tint)}, 0.1)",
+            "display": "inline-block",
+            "marginRight": "8px",
+            "marginBottom": "4px",
+        },
+    )
+
+
+def _delta_badge(delta: float | None) -> html.Span:
+    """Matchup delta badge: green positive, red negative."""
+    if delta is None:
+        return html.Span("N/A", style={"color": COLORS["muted"], "fontSize": "0.8rem"})
+
+    if delta > 0.05:
+        color = COLORS["win"]
+        prefix = "+"
+    elif delta < -0.05:
+        color = COLORS["loss"]
+        prefix = ""
+    else:
+        color = COLORS["neutral"]
+        prefix = ""
+
+    return html.Span(
+        f"{prefix}{delta:+.0%}",
+        style={"fontWeight": "700", "color": color, "fontSize": "0.9rem"},
+    )
+
+
+def _map_row(m: dict, row_idx: int) -> html.Div:
+    """Single map row with Map Strength comparison and expandable pick/defend detail."""
     mode_color = MODE_COLORS.get(m["mode"], COLORS["text"])
     h2h_color = wl_color(m["h2h"]["wins"], m["h2h"]["losses"])
 
@@ -182,33 +214,17 @@ def _map_row(m: dict, row_idx: int, show_indices: bool = False) -> html.Div:
         [
             html.Span(
                 m["map_name"],
-                style={"fontWeight": "600", "width": "140px", "display": "inline-block"},
+                style={"fontWeight": "600", "width": "130px", "display": "inline-block"},
             ),
+            _delta_badge(m["delta"]),
+            html.Span(style={"width": "16px", "display": "inline-block"}),
+            _strength_block("Your Str", m["your_strength"], COLORS["your_team"]),
+            html.Span("vs", style={"color": COLORS["muted"], "fontSize": "0.8rem", "margin": "0 4px"}),
+            _strength_block("Opp Str", m["opp_strength"], COLORS["opponent"]),
+            html.Span(style={"width": "16px", "display": "inline-block"}),
             html.Span(
                 f"H2H {m['h2h']['wins']}-{m['h2h']['losses']}",
-                style={"color": h2h_color, "width": "80px", "display": "inline-block", "fontSize": "0.85rem"},
-            ),
-            # Your team stats
-            _stat_block("Your W-L", m["your_wl"]["wins"], m["your_wl"]["losses"], COLORS["your_team"]),
-            # Your indices (hidden by default, toggled via callback)
-            html.Span(
-                [
-                    _pct_block("Your Avoid", m["your_avoid"]["ratio"], m["your_avoid"]["opportunities"], COLORS["your_team"]),
-                    _pct_block("Your Target", m["your_target"]["ratio"], m["your_target"]["opportunities"], COLORS["your_team"]),
-                ],
-                className="mp-indices",
-                style={"display": "inline" if show_indices else "none"},
-            ),
-            # Opp stats
-            _stat_block("Opp W-L", m["opp_wl"]["wins"], m["opp_wl"]["losses"], COLORS["opponent"]),
-            # Opp indices (hidden by default)
-            html.Span(
-                [
-                    _pct_block("Opp Avoid", m["opp_avoid"]["ratio"], m["opp_avoid"]["opportunities"], COLORS["opponent"]),
-                    _pct_block("Opp Target", m["opp_target"]["ratio"], m["opp_target"]["opportunities"], COLORS["opponent"]),
-                ],
-                className="mp-indices",
-                style={"display": "inline" if show_indices else "none"},
+                style={"color": h2h_color, "fontSize": "0.85rem"},
             ),
         ],
         id={"type": "mp-row", "index": row_idx},
@@ -222,12 +238,13 @@ def _map_row(m: dict, row_idx: int, show_indices: bool = False) -> html.Div:
         },
     )
 
-    # Expandable detail: pick/defend breakdown
+    # Expandable detail: W-L and pick/defend breakdown
     detail = html.Div(
         [
             html.Div(
                 [
-                    html.Span("Your Team", style={"fontWeight": "600", "color": COLORS["your_team"], "marginRight": "12px"}),
+                    html.Span("Your Team", style={"fontWeight": "600", "color": COLORS["your_team"], "marginRight": "12px", "width": "80px", "display": "inline-block"}),
+                    _stat_block("Overall", m["your_wl"]["wins"], m["your_wl"]["losses"], COLORS["your_team"]),
                     _stat_block("Pick", m["your_pick_wl"]["wins"], m["your_pick_wl"]["losses"], COLORS["your_team"]),
                     _stat_block("Defend", m["your_defend_wl"]["wins"], m["your_defend_wl"]["losses"], COLORS["your_team"]),
                 ],
@@ -235,7 +252,8 @@ def _map_row(m: dict, row_idx: int, show_indices: bool = False) -> html.Div:
             ),
             html.Div(
                 [
-                    html.Span("Opponent", style={"fontWeight": "600", "color": COLORS["opponent"], "marginRight": "12px"}),
+                    html.Span("Opponent", style={"fontWeight": "600", "color": COLORS["opponent"], "marginRight": "12px", "width": "80px", "display": "inline-block"}),
+                    _stat_block("Overall", m["opp_wl"]["wins"], m["opp_wl"]["losses"], COLORS["opponent"]),
                     _stat_block("Pick", m["opp_pick_wl"]["wins"], m["opp_pick_wl"]["losses"], COLORS["opponent"]),
                     _stat_block("Defend", m["opp_defend_wl"]["wins"], m["opp_defend_wl"]["losses"], COLORS["opponent"]),
                 ],
@@ -365,17 +383,8 @@ def layout():
                     width=3,
                 ),
                 dbc.Col(
-                    dbc.Switch(
-                        id="mp-indices-toggle",
-                        label="Show Avoid / Target",
-                        value=False,
-                        style={"color": COLORS["muted"], "paddingTop": "28px"},
-                    ),
-                    width=2,
-                ),
-                dbc.Col(
                     html.Div(id="mp-elo-badge"),
-                    width=3,
+                    width=5,
                     style={"paddingTop": "20px"},
                 ),
             ],
@@ -412,13 +421,13 @@ def register_callbacks(app):
         finally:
             conn.close()
 
-    # Update content and Elo badge when either team changes or toggle flips
+    # Update content and Elo badge when either team changes
     @app.callback(
         [Output("mp-content", "children"), Output("mp-elo-badge", "children")],
-        [Input("mp-your-team", "value"), Input("mp-opp-team", "value"), Input("mp-indices-toggle", "value")],
+        [Input("mp-your-team", "value"), Input("mp-opp-team", "value")],
         prevent_initial_call=True,
     )
-    def update_matchup(your_team, opp_team, show_indices):
+    def update_matchup(your_team, opp_team):
         if not your_team or not opp_team:
             msg = "Select both teams to view match-up analysis"
             return (
@@ -476,7 +485,7 @@ def register_callbacks(app):
 
                 map_rows = []
                 for m in mode_maps:
-                    map_rows.append(_map_row(m, row_idx, show_indices=bool(show_indices)))
+                    map_rows.append(_map_row(m, row_idx))
                     row_idx += 1
 
                 section = dbc.Card(

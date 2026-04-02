@@ -43,7 +43,7 @@ def test_build_matchup_data(db):
     assert tunisia["h2h"]["losses"] == 0
 
 
-def test_build_matchup_data_includes_wl_and_avoid(db):
+def test_build_matchup_data_includes_strength_and_delta(db):
     from cdm_stats.dashboard.tabs.matchup_prep import _build_matchup_data
     dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
     oug_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'OUG'").fetchone()[0]
@@ -52,11 +52,35 @@ def test_build_matchup_data_includes_wl_and_avoid(db):
         for m in mode_maps:
             assert "your_wl" in m
             assert "opp_wl" in m
-            assert "your_avoid" in m
-            assert "opp_avoid" in m
-            assert "your_target" in m
-            assert "opp_target" in m
+            assert "your_strength" in m
+            assert "opp_strength" in m
+            assert "delta" in m
             assert "your_pick_wl" in m
             assert "your_defend_wl" in m
             assert "opp_pick_wl" in m
             assert "opp_defend_wl" in m
+
+
+def test_build_matchup_data_no_avoidance_keys(db):
+    from cdm_stats.dashboard.tabs.matchup_prep import _build_matchup_data
+    dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
+    oug_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'OUG'").fetchone()[0]
+    data = _build_matchup_data(db, dvs_id, oug_id)
+    for mode_maps in data.values():
+        for m in mode_maps:
+            assert "your_avoid" not in m
+            assert "opp_avoid" not in m
+            assert "your_target" not in m
+            assert "opp_target" not in m
+
+
+def test_build_matchup_data_delta_sign(db):
+    """DVS won on Tunisia, OUG lost. DVS should have positive delta on Tunisia."""
+    from cdm_stats.dashboard.tabs.matchup_prep import _build_matchup_data
+    dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
+    oug_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'OUG'").fetchone()[0]
+    data = _build_matchup_data(db, dvs_id, oug_id)
+    tunisia = next(m for m in data["SnD"] if m["map_name"] == "Tunisia")
+    # DVS won, so your_strength > opp_strength, delta > 0
+    assert tunisia["delta"] is not None
+    assert tunisia["delta"] > 0
