@@ -57,20 +57,32 @@ def update_elo(conn: sqlite3.Connection, match_id: int) -> None:
     expected1 = 1 / (1 + 10 ** ((elo2 - elo1) / 400))
     expected2 = 1 - expected1
 
-    # Margin-weighted result: 3-0 → 1.0/0.0, 3-1 → 0.85/0.15, 3-2 → 0.7/0.3
-    maps_won_by_winner = conn.execute(
-        "SELECT COUNT(*) FROM map_results WHERE match_id = ? AND winner_team_id = ?",
-        (match_id, winner_id),
-    ).fetchone()[0]
-    maps_won_by_loser = conn.execute(
-        "SELECT COUNT(*) FROM map_results WHERE match_id = ? AND winner_team_id != ?",
-        (match_id, winner_id),
-    ).fetchone()[0]
-    margin = maps_won_by_winner - maps_won_by_loser  # 3, 2, or 1
-    winner_score = {3: 1.0, 2: 0.85, 1: 0.7}.get(margin, 1.0)
-    loser_score = 1.0 - winner_score
+    # Compute continuous margin-weighted dominance score
+    map_rows = conn.execute(
+        """SELECT mr.winner_team_id, mr.picking_team_score, mr.non_picking_team_score, m.mode
+           FROM map_results mr
+           JOIN maps m ON mr.map_id = m.map_id
+           WHERE mr.match_id = ?
+           ORDER BY mr.slot""",
+        (match_id,),
+    ).fetchall()
 
-    result1 = winner_score if winner_id == team1_id else loser_score
+    signed_margins = []
+    for map_winner_id, pick_score, non_pick_score, mode in map_rows:
+        winner_score = max(pick_score, non_pick_score)
+        loser_score = min(pick_score, non_pick_score)
+        norm = normalize_margin(winner_score, loser_score, mode)
+        # Positive if series winner won this map, negative if series loser won
+        if map_winner_id == winner_id:
+            signed_margins.append(norm)
+        else:
+            signed_margins.append(-norm)
+
+    avg_dominance = sum(signed_margins) / len(signed_margins) if signed_margins else 0.0
+    winner_actual = max(0.5, 0.5 + avg_dominance * 0.5)
+    loser_actual = 1.0 - winner_actual
+
+    result1 = winner_actual if winner_id == team1_id else loser_actual
     result2 = 1.0 - result1
 
     new_elo1 = elo1 + K_FACTOR * (result1 - expected1)

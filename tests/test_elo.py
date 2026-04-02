@@ -95,3 +95,53 @@ def test_normalize_margin_close_game():
     # 250-248 HP = margin 2, normalized = 2/250 = 0.008
     result = normalize_margin(250, 248, "HP")
     assert abs(result - 2 / 250) < 0.001
+
+
+BLOWOUT_CSV = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score
+2026-02-10,DVS,ELV,DVS,1,Tunisia,DVS,9,0
+2026-02-10,DVS,ELV,DVS,2,Summit,DVS,250,80
+2026-02-10,DVS,ELV,DVS,3,Raid,DVS,4,0"""
+
+CLOSE_CSV = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score
+2026-02-15,DVS,Q9,DVS,1,Tunisia,DVS,6,5
+2026-02-15,DVS,Q9,DVS,2,Summit,DVS,250,248
+2026-02-15,DVS,Q9,DVS,3,Raid,DVS,4,3"""
+
+
+def test_blowout_moves_elo_more_than_close_win(db):
+    """A 3-0 blowout should produce a larger Elo gain than a 3-0 nail-biter."""
+    dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
+
+    # Ingest blowout match
+    ingest_csv(db, io.StringIO(BLOWOUT_CSV))
+    blowout_elo = get_current_elo(db, dvs_id)
+    blowout_gain = blowout_elo - 1000
+
+    # Reset: delete elo rows for clean comparison
+    db.execute("DELETE FROM team_elo")
+    db.execute("DELETE FROM map_results")
+    db.execute("DELETE FROM matches")
+
+    # Ingest close match
+    ingest_csv(db, io.StringIO(CLOSE_CSV))
+    close_elo = get_current_elo(db, dvs_id)
+    close_gain = close_elo - 1000
+
+    assert blowout_gain > close_gain
+    assert blowout_gain > 0
+    assert close_gain > 0
+
+
+def test_elo_winner_always_gains(db):
+    """Even when losses are more lopsided than wins, the series winner should not lose Elo."""
+    # DVS wins 3-2 but loses maps by larger margins than wins
+    mixed_csv = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score
+2026-03-01,DVS,OUG,DVS,1,Tunisia,DVS,6,5
+2026-03-01,DVS,OUG,DVS,2,Summit,OUG,250,100
+2026-03-01,DVS,OUG,DVS,3,Raid,DVS,4,3
+2026-03-01,DVS,OUG,DVS,4,Slums,OUG,9,1
+2026-03-01,DVS,OUG,DVS,5,Hacienda,DVS,250,240"""
+    ingest_csv(db, io.StringIO(mixed_csv))
+    dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
+    dvs_elo = get_current_elo(db, dvs_id)
+    assert dvs_elo >= 1000  # must not lose Elo for winning
