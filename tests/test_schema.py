@@ -57,7 +57,11 @@ def test_create_tables_creates_all_tables(db):
         "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
     )
     tables = [row[0] for row in cursor.fetchall()]
-    assert tables == ["map_bans", "map_results", "maps", "matches", "team_elo", "team_map_notes", "teams"]
+    assert tables == [
+        "map_bans", "map_results", "maps", "matches",
+        "scrim_maps", "scrim_player_stats",
+        "team_elo", "team_map_notes", "teams",
+    ]
 
 
 def test_create_tables_is_idempotent(db):
@@ -67,7 +71,11 @@ def test_create_tables_is_idempotent(db):
         "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
     )
     tables = [row[0] for row in cursor.fetchall()]
-    assert tables == ["map_bans", "map_results", "maps", "matches", "team_elo", "team_map_notes", "teams"]
+    assert tables == [
+        "map_bans", "map_results", "maps", "matches",
+        "scrim_maps", "scrim_player_stats",
+        "team_elo", "team_map_notes", "teams",
+    ]
 
 
 def test_migrate_adds_match_format_column(raw_db):
@@ -128,3 +136,21 @@ def test_migrate_is_idempotent(raw_db):
     """Running migrate twice does not error or duplicate data."""
     migrate(raw_db)
     migrate(raw_db)  # should not raise
+
+
+def test_scrim_maps_table_exists(db):
+    """scrim_maps table should be created by create_tables."""
+    create_tables(db)
+    rows = db.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='scrim_maps'"
+    ).fetchall()
+    assert len(rows) == 1
+
+
+def test_scrim_player_stats_table_exists(db):
+    """scrim_player_stats table should be created by create_tables."""
+    create_tables(db)
+    rows = db.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='scrim_player_stats'"
+    ).fetchall()
+    assert len(rows) == 1

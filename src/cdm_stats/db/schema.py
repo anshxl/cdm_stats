@@ -1,6 +1,6 @@
 import sqlite3
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 TABLES = [
     """
@@ -77,6 +77,31 @@ TABLES = [
         team_id   INTEGER NOT NULL REFERENCES teams(team_id),
         map_id    INTEGER NOT NULL REFERENCES maps(map_id),
         UNIQUE(match_id, team_id, map_id)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS scrim_maps (
+        scrim_map_id   INTEGER PRIMARY KEY,
+        scrim_date     DATE NOT NULL,
+        week           INTEGER NOT NULL,
+        opponent_id    INTEGER NOT NULL REFERENCES teams(team_id),
+        map_name       TEXT NOT NULL,
+        mode           TEXT NOT NULL CHECK(mode IN ('SnD', 'HP', 'Control')),
+        game_number    INTEGER NOT NULL DEFAULT 1,
+        our_score      INTEGER NOT NULL,
+        opponent_score INTEGER NOT NULL,
+        result         TEXT NOT NULL CHECK(result IN ('W', 'L'))
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS scrim_player_stats (
+        stat_id      INTEGER PRIMARY KEY,
+        scrim_map_id INTEGER NOT NULL REFERENCES scrim_maps(scrim_map_id),
+        player_name  TEXT NOT NULL,
+        kills        INTEGER NOT NULL,
+        deaths       INTEGER NOT NULL,
+        assists      INTEGER NOT NULL,
+        UNIQUE(scrim_map_id, player_name)
     )
     """,
 ]
@@ -157,6 +182,29 @@ def migrate(conn: sqlite3.Connection) -> None:
         cols = [r[1] for r in conn.execute("PRAGMA table_info(matches)").fetchall()]
         if "series_number" not in cols:
             conn.execute("ALTER TABLE matches ADD COLUMN series_number INTEGER NOT NULL DEFAULT 1")
+
+    if version < 3:
+        conn.execute("""CREATE TABLE IF NOT EXISTS scrim_maps (
+            scrim_map_id   INTEGER PRIMARY KEY,
+            scrim_date     DATE NOT NULL,
+            week           INTEGER NOT NULL,
+            opponent_id    INTEGER NOT NULL REFERENCES teams(team_id),
+            map_name       TEXT NOT NULL,
+            mode           TEXT NOT NULL CHECK(mode IN ('SnD', 'HP', 'Control')),
+            game_number    INTEGER NOT NULL DEFAULT 1,
+            our_score      INTEGER NOT NULL,
+            opponent_score INTEGER NOT NULL,
+            result         TEXT NOT NULL CHECK(result IN ('W', 'L'))
+        )""")
+        conn.execute("""CREATE TABLE IF NOT EXISTS scrim_player_stats (
+            stat_id      INTEGER PRIMARY KEY,
+            scrim_map_id INTEGER NOT NULL REFERENCES scrim_maps(scrim_map_id),
+            player_name  TEXT NOT NULL,
+            kills        INTEGER NOT NULL,
+            deaths       INTEGER NOT NULL,
+            assists      INTEGER NOT NULL,
+            UNIQUE(scrim_map_id, player_name)
+        )""")
 
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()
