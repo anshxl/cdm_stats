@@ -95,3 +95,80 @@ def ingest_scrims_team(conn: sqlite3.Connection, file: IO) -> list[dict]:
 
     conn.commit()
     return results
+
+
+def ingest_scrims_players(conn: sqlite3.Connection, file: IO) -> list[dict]:
+    """Ingest scrim player-level CSV. Team CSV must be ingested first."""
+    reader = csv.DictReader(file)
+    results = []
+
+    # Track game_number per (date, opponent, map, mode) to match team CSV ordering
+    game_counts: dict[tuple, int] = {}
+    # Track which (scrim_map_id, player) combos we've seen in this batch
+    seen_in_batch: dict[tuple, int] = {}
+
+    for row in reader:
+        date = row["Date"].strip()
+        opponent_abbr = row["Opponent"].strip()
+        map_name = row["Map"].strip()
+        mode = row["Mode"].strip()
+        player_name = row["Player"].strip()
+        kills = int(row["Kills"].strip())
+        deaths = int(row["Deaths"].strip())
+        assists = int(row["Assists"].strip())
+
+        desc = f"{date} {map_name} {mode} {player_name}"
+
+        opponent_id = get_team_id_by_abbr(conn, opponent_abbr)
+        if not opponent_id:
+            results.append({"status": "error", "row": desc, "errors": f"Unknown opponent: {opponent_abbr}"})
+            continue
+
+        # Determine game_number — same logic as team CSV: sequential per group
+        key = (date, opponent_id, map_name, mode)
+
+        # If we've already seen this player for this key at the current game_number,
+        # that means we've moved to the next game
+        current_game = game_counts.get(key, 1)
+        batch_key = (key, current_game, player_name)
+        if batch_key in seen_in_batch:
+            game_counts[key] = current_game + 1
+            current_game = game_counts[key]
+
+        game_number = current_game
+        seen_in_batch[(key, game_number, player_name)] = True
+
+        # Find matching scrim_maps row
+        scrim_map = conn.execute(
+            """SELECT scrim_map_id FROM scrim_maps
+               WHERE scrim_date = ? AND opponent_id = ? AND map_name = ?
+                 AND mode = ? AND game_number = ?""",
+            (date, opponent_id, map_name, mode, game_number),
+        ).fetchone()
+
+        if not scrim_map:
+            results.append({"status": "error", "row": desc, "errors": "No matching scrim map found"})
+            continue
+
+        scrim_map_id = scrim_map[0]
+
+        # Duplicate check
+        existing = conn.execute(
+            "SELECT stat_id FROM scrim_player_stats WHERE scrim_map_id = ? AND player_name = ?",
+            (scrim_map_id, player_name),
+        ).fetchone()
+
+        if existing:
+            results.append({"status": "skipped", "row": desc})
+            continue
+
+        conn.execute(
+            """INSERT INTO scrim_player_stats
+               (scrim_map_id, player_name, kills, deaths, assists)
+               VALUES (?, ?, ?, ?, ?)""",
+            (scrim_map_id, player_name, kills, deaths, assists),
+        )
+        results.append({"status": "ok", "row": desc})
+
+    conn.commit()
+    return results
