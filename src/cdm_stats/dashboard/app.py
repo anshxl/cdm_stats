@@ -28,6 +28,8 @@ app.layout = dbc.Container([
         dbc.Tab(label="Map Matrix", tab_id="map-matrix"),
         dbc.Tab(label="Match-Up Prep", tab_id="matchup-prep"),
         dbc.Tab(label="Elo Tracker", tab_id="elo-tracker"),
+        dbc.Tab(label="Scrim Performance", tab_id="scrim-performance"),
+        dbc.Tab(label="Player Stats", tab_id="player-stats"),
     ]),
     html.Div(id="tab-content", className="mt-3"),
 ], fluid=True, className="px-0")
@@ -40,6 +42,7 @@ def get_db() -> sqlite3.Connection:
 @app.callback(Output("tab-content", "children"), Input("main-tabs", "active_tab"))
 def render_tab(active_tab: str):
     from cdm_stats.dashboard.tabs import team_profile, map_matrix, matchup_prep, elo_tracker
+    from cdm_stats.dashboard.tabs import scrim_performance, player_stats
     if active_tab == "team-profile":
         return team_profile.layout()
     elif active_tab == "map-matrix":
@@ -48,15 +51,22 @@ def render_tab(active_tab: str):
         return matchup_prep.layout()
     elif active_tab == "elo-tracker":
         return elo_tracker.layout()
+    elif active_tab == "scrim-performance":
+        return scrim_performance.layout()
+    elif active_tab == "player-stats":
+        return player_stats.layout()
     return html.Div("Select a tab")
 
 
 def register_all_callbacks():
     from cdm_stats.dashboard.tabs import team_profile, map_matrix, matchup_prep, elo_tracker
+    from cdm_stats.dashboard.tabs import scrim_performance, player_stats
     team_profile.register_callbacks(app)
     map_matrix.register_callbacks(app)
     matchup_prep.register_callbacks(app)
     elo_tracker.register_callbacks(app)
+    scrim_performance.register_callbacks(app)
+    player_stats.register_callbacks(app)
 
 
 def main():
