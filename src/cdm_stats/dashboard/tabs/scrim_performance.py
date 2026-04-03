@@ -209,11 +209,14 @@ def register_callbacks(app):
             header = html.Thead(html.Tr([
                 html.Th("Map"), html.Th("Mode"), html.Th("Played"),
                 html.Th("W"), html.Th("L"), html.Th("Win%"),
-                html.Th("Avg Score"), html.Th("Avg Opp Score"),
+                html.Th("Avg Margin"),
             ]))
             body_rows = []
             for d in map_data:
                 win_color = COLORS["win"] if d["win_pct"] >= 60 else (COLORS["loss"] if d["win_pct"] <= 40 else COLORS["neutral"])
+                margin = d["avg_margin"]
+                margin_color = COLORS["win"] if margin > 0 else (COLORS["loss"] if margin < 0 else COLORS["text"])
+                margin_str = f"+{margin:.0f}" if margin > 0 else f"{margin:.0f}"
                 body_rows.append(html.Tr([
                     html.Td(d["map_name"]),
                     html.Td(d["mode"], style={"color": MODE_COLORS.get(d["mode"], COLORS["text"])}),
@@ -221,12 +224,11 @@ def register_callbacks(app):
                     html.Td(str(d["wins"])),
                     html.Td(str(d["losses"])),
                     html.Td(f"{d['win_pct']:.0f}%", style={"color": win_color, "fontWeight": "600"}),
-                    html.Td(f"{d['avg_our_score']:.0f}"),
-                    html.Td(f"{d['avg_opp_score']:.0f}"),
+                    html.Td(margin_str, style={"color": margin_color, "fontWeight": "600"}),
                 ]))
             table = dbc.Table(
                 [header, html.Tbody(body_rows)],
-                bordered=True, dark=True, hover=True, size="sm",
+                bordered=True, hover=True, size="sm",
                 style={"backgroundColor": COLORS["card_bg"]},
             )
         else:

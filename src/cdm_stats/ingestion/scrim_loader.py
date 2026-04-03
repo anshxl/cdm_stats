@@ -33,7 +33,8 @@ def ingest_scrims_team(conn: sqlite3.Connection, file: IO) -> list[dict]:
         map_name = row["Map"].strip()
         mode = row["Mode"].strip()
         score_str = row["Score"].strip()
-        result = row["Result"].strip()
+        result_raw = row["Result"].strip()
+        result = {"1": "W", "0": "L"}.get(result_raw, result_raw)
 
         desc = f"{date} vs {opponent_abbr} {map_name} {mode}"
 

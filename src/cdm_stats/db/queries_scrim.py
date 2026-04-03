@@ -60,8 +60,7 @@ def scrim_map_breakdown(
                    COUNT(*) as played,
                    SUM(CASE WHEN result = 'W' THEN 1 ELSE 0 END) as wins,
                    SUM(CASE WHEN result = 'L' THEN 1 ELSE 0 END) as losses,
-                   ROUND(AVG(our_score), 1) as avg_our,
-                   ROUND(AVG(opponent_score), 1) as avg_opp
+                   ROUND(AVG(our_score - opponent_score), 1) as avg_margin
             FROM scrim_maps{where}
             GROUP BY map_name, mode
             ORDER BY mode, map_name""",
@@ -73,7 +72,7 @@ def scrim_map_breakdown(
             "map_name": r[0], "mode": r[1], "played": r[2],
             "wins": r[3], "losses": r[4],
             "win_pct": round(r[3] / r[2] * 100, 2) if r[2] > 0 else 0.0,
-            "avg_our_score": r[5], "avg_opp_score": r[6],
+            "avg_margin": r[5],
         }
         for r in rows
     ]
@@ -143,7 +142,8 @@ def player_summary(
                    SUM(sp.kills) as kills,
                    SUM(sp.deaths) as deaths,
                    SUM(sp.assists) as assists,
-                   COUNT(*) as games
+                   COUNT(*) as games,
+                   ROUND(AVG(CAST(sp.kills AS REAL) / NULLIF(sp.kills + sp.deaths + sp.assists, 0) * 100), 1) as avg_pos_eng_pct
             FROM scrim_player_stats sp
             JOIN scrim_maps sm ON sp.scrim_map_id = sm.scrim_map_id
             {where}
@@ -157,6 +157,7 @@ def player_summary(
             "player_name": r[0], "kills": r[1], "deaths": r[2], "assists": r[3],
             "games": r[4],
             "kd": round(r[1] / r[2], 2) if r[2] > 0 else 0.0,
+            "avg_pos_eng_pct": r[5] or 0.0,
         }
         for r in rows
     ]
@@ -226,7 +227,7 @@ def player_map_breakdown(
 
     rows = conn.execute(
         f"""SELECT sm.map_name, sm.mode,
-                   COUNT(*) as games,
+                   COUNT(DISTINCT sp.scrim_map_id) as games,
                    ROUND(AVG(sp.kills), 1) as avg_kills,
                    ROUND(AVG(sp.deaths), 1) as avg_deaths,
                    ROUND(AVG(sp.assists), 1) as avg_assists,

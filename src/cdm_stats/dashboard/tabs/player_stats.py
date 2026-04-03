@@ -51,12 +51,14 @@ def _player_card(data: dict, color: str) -> dbc.Card:
                 style={"color": COLORS["text"], "marginBottom": "0"},
             ),
             html.Small("K/D", style={"color": COLORS["muted"]}),
-            html.Div([
-                html.Span(f"{data['kills']}K ", style={"color": COLORS["win"]}),
-                html.Span(f"{data['deaths']}D ", style={"color": COLORS["loss"]}),
-                html.Span(f"{data['assists']}A", style={"color": COLORS["neutral"]}),
-            ], className="mt-1"),
-            html.Small(f"{data['games']} maps", style={"color": COLORS["muted"]}),
+            html.Div(
+                f"{data['avg_pos_eng_pct']:.1f}% Pos Eng",
+                style={"color": COLORS["text"], "fontSize": "0.95rem", "marginTop": "4px"},
+            ),
+            html.Small(
+                f"{data['kills']}K / {data['deaths']}D / {data['assists']}A  ·  {data['games']} maps",
+                style={"color": COLORS["muted"], "fontSize": "0.75rem"},
+            ),
         ]),
         style={"backgroundColor": COLORS["card_bg"], "border": f"1px solid {COLORS['border']}"},
     )
@@ -216,7 +218,7 @@ def register_callbacks(app):
                 ]))
             table = dbc.Table(
                 [header, html.Tbody(body_rows)],
-                bordered=True, dark=True, hover=True, size="sm",
+                bordered=True, hover=True, size="sm",
                 style={"backgroundColor": COLORS["card_bg"]},
             )
         else:
