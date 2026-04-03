@@ -154,6 +154,42 @@ def cmd_chart_elo_all(_args: argparse.Namespace) -> None:
     print(f"All-teams Elo trajectory exported to {path}")
 
 
+def cmd_ingest_scrims_team(args: argparse.Namespace) -> None:
+    from cdm_stats.ingestion.scrim_loader import ingest_scrims_team
+
+    conn = get_db()
+    with open(args.csv_file) as f:
+        results = ingest_scrims_team(conn, f)
+
+    for r in results:
+        if r["status"] == "ok":
+            print(f"  OK: {r['row']}")
+        elif r["status"] == "skipped":
+            print(f"  SKIPPED (duplicate): {r['row']}")
+        else:
+            print(f"  ERROR: {r['row']}: {r['errors']}")
+
+    conn.close()
+
+
+def cmd_ingest_scrims_players(args: argparse.Namespace) -> None:
+    from cdm_stats.ingestion.scrim_loader import ingest_scrims_players
+
+    conn = get_db()
+    with open(args.csv_file) as f:
+        results = ingest_scrims_players(conn, f)
+
+    for r in results:
+        if r["status"] == "ok":
+            print(f"  OK: {r['row']}")
+        elif r["status"] == "skipped":
+            print(f"  SKIPPED (duplicate): {r['row']}")
+        else:
+            print(f"  ERROR: {r['row']}: {r['errors']}")
+
+    conn.close()
+
+
 def cmd_backfill(_args: argparse.Namespace) -> None:
     from cdm_stats.ingestion.backfill import backfill_elo
 
@@ -194,6 +230,12 @@ def main() -> None:
     p_ingest_t.add_argument("maps_csv", help="Path to maps CSV file")
     p_ingest_t.add_argument("bans_csv", help="Path to bans CSV file")
 
+    p_scrim_team = sub.add_parser("ingest-scrims-team", help="Ingest scrim team-level CSV")
+    p_scrim_team.add_argument("csv_file", help="Path to scrim team CSV file")
+
+    p_scrim_players = sub.add_parser("ingest-scrims-players", help="Ingest scrim player-level CSV")
+    p_scrim_players.add_argument("csv_file", help="Path to scrim player CSV file")
+
     sub.add_parser("backfill", help="Wipe and recalculate Elo")
 
     args = parser.parse_args()
@@ -202,6 +244,8 @@ def main() -> None:
         "init": cmd_init,
         "ingest": cmd_ingest,
         "ingest-tournament": cmd_ingest_tournament,
+        "ingest-scrims-team": cmd_ingest_scrims_team,
+        "ingest-scrims-players": cmd_ingest_scrims_players,
         "backfill": cmd_backfill,
     }
 
