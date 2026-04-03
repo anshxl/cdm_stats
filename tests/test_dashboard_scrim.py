@@ -63,3 +63,33 @@ def test_scrim_performance_layout():
     from cdm_stats.dashboard.tabs.scrim_performance import layout
     result = layout()
     assert result is not None
+
+
+def test_player_stats_build_summary(scrim_db):
+    from cdm_stats.dashboard.tabs.player_stats import _build_player_cards_data
+    data = _build_player_cards_data(scrim_db)
+    assert len(data) == 5
+    alpha = next(d for d in data if d["player_name"] == "Alpha")
+    assert alpha["kills"] == 20
+    assert alpha["deaths"] == 15
+
+
+def test_player_stats_build_trend(scrim_db):
+    from cdm_stats.dashboard.tabs.player_stats import _build_kd_trend_data
+    rows = _build_kd_trend_data(scrim_db)
+    assert len(rows) >= 1
+    alpha_w1 = next(r for r in rows if r["player_name"] == "Alpha" and r["week"] == 1)
+    assert alpha_w1["kd"] == pytest.approx(20 / 15, abs=0.01)
+
+
+def test_player_stats_build_map_table(scrim_db):
+    from cdm_stats.dashboard.tabs.player_stats import _build_player_map_data
+    rows = _build_player_map_data(scrim_db, player="Alpha")
+    assert len(rows) == 1
+    assert rows[0]["map_name"] == "Tunisia"
+
+
+def test_player_stats_layout():
+    from cdm_stats.dashboard.tabs.player_stats import layout
+    result = layout()
+    assert result is not None
