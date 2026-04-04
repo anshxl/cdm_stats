@@ -104,7 +104,7 @@ Added to `src/cdm_stats/db/schema.py` alongside existing `CREATE TABLE` statemen
 `src/cdm_stats/ingestion/tournament_player_loader.py` with `ingest_tournament_players(conn, file)` function.
 
 - Reads CSV with columns: `Date, Week, Opponent, Map, Mode, Player, Kills, Deaths, Assists` (exact mirror of `scrims_players.csv`).
-- For each row, resolves `opponent_id` via `get_team_id_by_abbr`, then looks up the matching `map_results.result_id` by joining `matches` on `match_date` and `(team1_id, team2_id)` containing our team + `opponent_id`, filtered to the matching `map_name` (via `maps.map_name`) and mode.
+- For each row, resolves `opponent_id` via `get_team_id_by_abbr` and `map_id` via `get_map_id`, then looks up the matching `map_results.result_id` by `(match_date, opponent_id on either side of the match, map_id)` — unique in practice because a team can't play the same map in two different series on the same day. Errors if >1 row matches.
 - Duplicate detection on `(result_id, player_name)` — skips rows already present.
 - Returns list of `{"status": ok|skipped|error, "row": desc, "errors": ...}` dicts matching the existing scrim loader return contract.
 - Commits in a single transaction.

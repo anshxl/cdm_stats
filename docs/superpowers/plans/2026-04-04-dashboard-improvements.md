@@ -579,7 +579,7 @@ git commit -m "feat(db): add tournament player queries module"
 - Create: `src/cdm_stats/ingestion/tournament_player_loader.py`
 - Test: `tests/test_tournament_player_loader.py`
 
-The loader reads CSV columns `Date, Week, Opponent, Map, Mode, Player, Kills, Deaths, Assists` (mirrors `scrims_players.csv`). Because tournament matches involve two specific teams while the CSV only names the opponent, the loader takes `our_team_abbr` as a parameter to disambiguate. It resolves each row to a `map_results.result_id` by joining through `matches` and `maps`.
+The loader reads CSV columns `Date, Week, Opponent, Map, Mode, Player, Kills, Deaths, Assists` (mirrors `scrims_players.csv`). It resolves each row to a `map_results.result_id` via `(match_date, opponent appears on either side of the match, map_id)` — this combination is unique in practice since a team can't play the same map in two different series on the same day. If more than one row matches, the loader errors on that row.
 
 - [ ] **Step 1: Write failing test**
 
@@ -646,9 +646,7 @@ def db_with_match():
 
 def test_ingest_tournament_players_inserts_rows(db_with_match):
     from cdm_stats.ingestion.tournament_player_loader import ingest_tournament_players
-    results = ingest_tournament_players(
-        db_with_match, io.StringIO(PLAYER_CSV), our_team_abbr="DVS"
-    )
+    results = ingest_tournament_players(db_with_match, io.StringIO(PLAYER_CSV))
     ok = [r for r in results if r["status"] == "ok"]
     assert len(ok) == 4
 
@@ -669,10 +667,8 @@ def test_ingest_tournament_players_inserts_rows(db_with_match):
 
 def test_ingest_tournament_players_skips_duplicates(db_with_match):
     from cdm_stats.ingestion.tournament_player_loader import ingest_tournament_players
-    ingest_tournament_players(db_with_match, io.StringIO(PLAYER_CSV), our_team_abbr="DVS")
-    results = ingest_tournament_players(
-        db_with_match, io.StringIO(PLAYER_CSV), our_team_abbr="DVS"
-    )
+    ingest_tournament_players(db_with_match, io.StringIO(PLAYER_CSV))
+    results = ingest_tournament_players(db_with_match, io.StringIO(PLAYER_CSV))
     skipped = [r for r in results if r["status"] == "skipped"]
     assert len(skipped) == 4
 
@@ -685,9 +681,7 @@ def test_ingest_tournament_players_skips_duplicates(db_with_match):
 def test_ingest_tournament_players_errors_on_unknown_opponent(db_with_match):
     from cdm_stats.ingestion.tournament_player_loader import ingest_tournament_players
     bad_csv = "Date,Week,Opponent,Map,Mode,Player,Kills,Deaths,Assists\n2026-02-15,1,ZZZ,Tunisia,SnD,Alpha,20,15,5"
-    results = ingest_tournament_players(
-        db_with_match, io.StringIO(bad_csv), our_team_abbr="DVS"
-    )
+    results = ingest_tournament_players(db_with_match, io.StringIO(bad_csv))
     assert len(results) == 1
     assert results[0]["status"] == "error"
     assert "ZZZ" in results[0]["errors"]
@@ -696,9 +690,7 @@ def test_ingest_tournament_players_errors_on_unknown_opponent(db_with_match):
 def test_ingest_tournament_players_errors_on_missing_match(db_with_match):
     from cdm_stats.ingestion.tournament_player_loader import ingest_tournament_players
     bad_csv = "Date,Week,Opponent,Map,Mode,Player,Kills,Deaths,Assists\n2099-01-01,1,OUG,Tunisia,SnD,Alpha,20,15,5"
-    results = ingest_tournament_players(
-        db_with_match, io.StringIO(bad_csv), our_team_abbr="DVS"
-    )
+    results = ingest_tournament_players(db_with_match, io.StringIO(bad_csv))
     assert len(results) == 1
     assert results[0]["status"] == "error"
 ```
@@ -723,20 +715,16 @@ from cdm_stats.db.queries import get_team_id_by_abbr, get_map_id
 def ingest_tournament_players(
     conn: sqlite3.Connection,
     file: IO,
-    our_team_abbr: str,
 ) -> list[dict]:
     """Ingest tournament player-level CSV.
 
     CSV columns: Date, Week, Opponent, Map, Mode, Player, Kills, Deaths, Assists.
-    Matches are resolved by (match_date, our_team_id, opponent_id) and the map
-    within that match. Matches must already be ingested.
+    Matches are resolved by (match_date, opponent_id appears on either side,
+    map_id) — unique in practice because a team can't play the same map in two
+    different series on the same day. Matches must already be ingested.
     """
     reader = csv.DictReader(file)
     results: list[dict] = []
-
-    our_team_id = get_team_id_by_abbr(conn, our_team_abbr)
-    if our_team_id is None:
-        raise ValueError(f"Unknown our_team_abbr: {our_team_abbr}")
 
     for row in reader:
         date = row["Date"].strip()
@@ -763,25 +751,28 @@ def ingest_tournament_players(
                             "errors": f"Unknown map: {map_name} ({mode})"})
             continue
 
-        # Find the match_results row: match on date matching these two teams,
-        # then the specific map in that match.
-        result_row = conn.execute(
+        # Find the map_result: match on date where opponent is on either side,
+        # then the specific map in that match. Unique in practice.
+        result_rows = conn.execute(
             """SELECT mr.result_id
                FROM map_results mr
                JOIN matches mt ON mr.match_id = mt.match_id
                WHERE mt.match_date = ?
-                 AND ((mt.team1_id = ? AND mt.team2_id = ?)
-                      OR (mt.team1_id = ? AND mt.team2_id = ?))
+                 AND (mt.team1_id = ? OR mt.team2_id = ?)
                  AND mr.map_id = ?""",
-            (date, our_team_id, opponent_id, opponent_id, our_team_id, map_id),
-        ).fetchone()
+            (date, opponent_id, opponent_id, map_id),
+        ).fetchall()
 
-        if not result_row:
+        if not result_rows:
             results.append({"status": "error", "row": desc,
                             "errors": "No matching map_result found"})
             continue
+        if len(result_rows) > 1:
+            results.append({"status": "error", "row": desc,
+                            "errors": "Multiple matching map_results — ambiguous"})
+            continue
 
-        result_id = result_row[0]
+        result_id = result_rows[0][0]
 
         existing = conn.execute(
             "SELECT stat_id FROM tournament_player_stats WHERE result_id = ? AND player_name = ?",
