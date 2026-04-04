@@ -6,6 +6,7 @@ from dash import html, dcc
 from dash.dependencies import Input, Output
 
 from cdm_stats.dashboard.app import get_db
+from cdm_stats.dashboard.components.week_pills import week_pills, pill_value_to_range
 from cdm_stats.dashboard.helpers import COLORS, MODE_COLORS
 from cdm_stats.db.queries_scrim import (
     scrim_win_loss, scrim_map_breakdown, scrim_weekly_trend,
@@ -126,11 +127,7 @@ def layout():
             ], width=2),
             dbc.Col([
                 html.Label("Weeks", style={"color": COLORS["text"]}),
-                dcc.RangeSlider(
-                    id="scrim-week-slider",
-                    min=1, max=13, step=1, value=[1, 13],
-                    marks={i: f"W{i}" for i in range(1, 14)},
-                ),
+                html.Div(id="scrim-week-pills-container"),
             ], width=8),
         ], className="mb-3"),
         html.Div(id="scrim-summary-cards"),
@@ -161,21 +158,14 @@ def register_callbacks(app):
         return [{"label": "All", "value": "All"}] + [{"label": r[0], "value": r[0]} for r in rows]
 
     @app.callback(
-        Output("scrim-week-slider", "min"),
-        Output("scrim-week-slider", "max"),
-        Output("scrim-week-slider", "marks"),
-        Output("scrim-week-slider", "value"),
+        Output("scrim-week-pills-container", "children"),
         Input("scrim-mode-filter", "value"),
     )
-    def update_week_slider(_mode):
+    def render_scrim_week_pills(_mode):
         conn = get_db()
         weeks = _get_available_weeks(conn)
         conn.close()
-        if not weeks:
-            return 1, 1, {1: "W1"}, [1, 1]
-        mn, mx = min(weeks), max(weeks)
-        marks = {w: f"W{w}" for w in weeks}
-        return mn, mx, marks, [mn, mx]
+        return week_pills("scrim-week-pills", weeks)
 
     @app.callback(
         Output("scrim-summary-cards", "children"),
@@ -183,13 +173,13 @@ def register_callbacks(app):
         Output("scrim-trend-chart", "figure"),
         Input("scrim-mode-filter", "value"),
         Input("scrim-map-filter", "value"),
-        Input("scrim-week-slider", "value"),
+        Input("scrim-week-pills", "value"),
     )
-    def update_scrim_tab(mode, map_name, week_range):
+    def update_scrim_tab(mode, map_name, week_value):
         conn = get_db()
         mode_val = mode if mode != "All" else None
         map_val = map_name if map_name != "All" else None
-        wr = tuple(week_range) if week_range else None
+        wr = pill_value_to_range(week_value)
 
         summary = _build_summary_data(conn, mode=mode_val, map_name=map_val, week_range=wr)
         cards = [

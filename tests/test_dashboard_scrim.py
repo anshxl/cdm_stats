@@ -93,3 +93,13 @@ def test_player_stats_layout():
     from cdm_stats.dashboard.tabs.player_stats import layout
     result = layout()
     assert result is not None
+
+
+def test_scrim_performance_layout_uses_week_pills():
+    """Scrim layout renders the week_pills component, not a RangeSlider."""
+    from cdm_stats.dashboard.tabs.scrim_performance import layout
+    import json
+    result = layout()
+    serialized = json.dumps(result.to_plotly_json(), default=str)
+    assert "scrim-week-pills" in serialized
+    assert "scrim-week-slider" not in serialized
