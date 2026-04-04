@@ -6,40 +6,55 @@ from dash import html, dcc
 from dash.dependencies import Input, Output
 
 from cdm_stats.dashboard.app import get_db
+from cdm_stats.dashboard.components.week_pills import week_pills, pill_value_to_range
 from cdm_stats.dashboard.helpers import COLORS, MODE_COLORS
-from cdm_stats.db.queries_scrim import (
-    player_summary, player_weekly_trend, player_map_breakdown,
-)
+from cdm_stats.db import queries_scrim, queries_tournament_player
 
 PLAYER_COLORS = [
     "#636EFA", "#EF553B", "#00CC96", "#AB63FA", "#FFA15A",
 ]
 
 
+def _queries_for(source: str):
+    """Pick the query module for the selected source."""
+    if source == "scrim":
+        return queries_scrim
+    return queries_tournament_player
+
+
 def _build_player_cards_data(
     conn: sqlite3.Connection,
+    source: str = "tournament",
     player: str | None = None,
     mode: str | None = None,
     week_range: tuple[int, int] | None = None,
 ) -> list[dict]:
-    return player_summary(conn, player=player, mode=mode, week_range=week_range)
+    return _queries_for(source).player_summary(
+        conn, player=player, mode=mode, week_range=week_range,
+    )
 
 
 def _build_kd_trend_data(
     conn: sqlite3.Connection,
+    source: str = "tournament",
     player: str | None = None,
     mode: str | None = None,
 ) -> list[dict]:
-    return player_weekly_trend(conn, player=player, mode=mode)
+    return _queries_for(source).player_weekly_trend(
+        conn, player=player, mode=mode,
+    )
 
 
 def _build_player_map_data(
     conn: sqlite3.Connection,
+    source: str = "tournament",
     player: str | None = None,
     mode: str | None = None,
     week_range: tuple[int, int] | None = None,
 ) -> list[dict]:
-    return player_map_breakdown(conn, player=player, mode=mode, week_range=week_range)
+    return _queries_for(source).player_map_breakdown(
+        conn, player=player, mode=mode, week_range=week_range,
+    )
 
 
 def _player_card(data: dict, color: str) -> dbc.Card:
@@ -95,16 +110,44 @@ def _kd_trend_figure(trend_data: list[dict]) -> go.Figure:
     return fig
 
 
-def _get_available_players(conn: sqlite3.Connection) -> list[str]:
+def _get_available_players(conn: sqlite3.Connection, source: str) -> list[str]:
+    table = "tournament_player_stats" if source == "tournament" else "scrim_player_stats"
     rows = conn.execute(
-        "SELECT DISTINCT player_name FROM scrim_player_stats ORDER BY player_name"
+        f"SELECT DISTINCT player_name FROM {table} ORDER BY player_name"
     ).fetchall()
+    return [r[0] for r in rows]
+
+
+def _get_available_weeks(conn: sqlite3.Connection, source: str) -> list[int]:
+    if source == "tournament":
+        rows = conn.execute(
+            "SELECT DISTINCT week FROM tournament_player_stats ORDER BY week"
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT DISTINCT week FROM scrim_maps ORDER BY week"
+        ).fetchall()
     return [r[0] for r in rows]
 
 
 def layout():
     return dbc.Container([
         dbc.Row([
+            dbc.Col([
+                html.Label("Source", style={"color": COLORS["text"]}),
+                dbc.RadioItems(
+                    id="player-source-filter",
+                    options=[
+                        {"label": "Tournament", "value": "tournament"},
+                        {"label": "Scrim", "value": "scrim"},
+                    ],
+                    value="tournament",
+                    inline=True,
+                    inputClassName="btn-check",
+                    labelClassName="btn btn-outline-info btn-sm me-1",
+                    labelCheckedClassName="active",
+                ),
+            ], width=3),
             dbc.Col([
                 html.Label("Player", style={"color": COLORS["text"]}),
                 dcc.Dropdown(
@@ -128,12 +171,8 @@ def layout():
             ], width=2),
             dbc.Col([
                 html.Label("Weeks", style={"color": COLORS["text"]}),
-                dcc.RangeSlider(
-                    id="player-week-slider",
-                    min=1, max=13, step=1, value=[1, 13],
-                    marks={i: f"W{i}" for i in range(1, 14)},
-                ),
-            ], width=8),
+                html.Div(id="player-week-pills-container"),
+            ], width=5),
         ], className="mb-3"),
         html.Div(id="player-summary-cards"),
         html.H5("K/D Trend", style={"color": COLORS["text"]}, className="mt-4 mb-2"),
@@ -146,57 +185,64 @@ def layout():
 def register_callbacks(app):
     @app.callback(
         Output("player-filter", "options"),
-        Input("player-filter", "id"),
+        Input("player-source-filter", "value"),
     )
-    def populate_players(_):
+    def populate_players(source):
         conn = get_db()
-        players = _get_available_players(conn)
+        players = _get_available_players(conn, source)
         conn.close()
         return [{"label": "All", "value": "All"}] + [{"label": p, "value": p} for p in players]
 
     @app.callback(
-        Output("player-week-slider", "min"),
-        Output("player-week-slider", "max"),
-        Output("player-week-slider", "marks"),
-        Output("player-week-slider", "value"),
-        Input("player-filter", "id"),
+        Output("player-week-pills-container", "children"),
+        Input("player-source-filter", "value"),
     )
-    def update_player_week_slider(_):
+    def render_player_week_pills(source):
         conn = get_db()
-        rows = conn.execute("SELECT DISTINCT week FROM scrim_maps ORDER BY week").fetchall()
+        weeks = _get_available_weeks(conn, source)
         conn.close()
-        weeks = [r[0] for r in rows]
-        if not weeks:
-            return 1, 1, {1: "W1"}, [1, 1]
-        mn, mx = min(weeks), max(weeks)
-        marks = {w: f"W{w}" for w in weeks}
-        return mn, mx, marks, [mn, mx]
+        return week_pills("player-week-pills", weeks)
 
     @app.callback(
         Output("player-summary-cards", "children"),
         Output("player-kd-chart", "figure"),
         Output("player-map-table", "children"),
+        Input("player-source-filter", "value"),
         Input("player-filter", "value"),
         Input("player-mode-filter", "value"),
-        Input("player-week-slider", "value"),
+        Input("player-week-pills", "value"),
     )
-    def update_player_tab(player, mode, week_range):
+    def update_player_tab(source, player, mode, week_value):
         conn = get_db()
         player_val = player if player != "All" else None
         mode_val = mode if mode != "All" else None
-        wr = tuple(week_range) if week_range else None
+        wr = pill_value_to_range(week_value)
 
-        card_data = _build_player_cards_data(conn, player=player_val, mode=mode_val, week_range=wr)
-        cards = []
-        for i, d in enumerate(card_data):
-            color = PLAYER_COLORS[i % len(PLAYER_COLORS)]
-            cards.append(dbc.Col(_player_card(d, color), width=True))
-        card_row = dbc.Row(cards) if cards else html.P("No player data found.", style={"color": COLORS["muted"]})
+        card_data = _build_player_cards_data(
+            conn, source=source, player=player_val, mode=mode_val, week_range=wr,
+        )
+        if not card_data and source == "tournament":
+            card_row = dbc.Alert(
+                "No tournament player data ingested yet.",
+                color="info",
+            )
+        elif not card_data:
+            card_row = html.P("No player data found.", style={"color": COLORS["muted"]})
+        else:
+            cards = []
+            for i, d in enumerate(card_data):
+                color = PLAYER_COLORS[i % len(PLAYER_COLORS)]
+                cards.append(dbc.Col(_player_card(d, color), width=True))
+            card_row = dbc.Row(cards)
 
-        trend_data = _build_kd_trend_data(conn, player=player_val, mode=mode_val)
+        trend_data = _build_kd_trend_data(
+            conn, source=source, player=player_val, mode=mode_val,
+        )
         fig = _kd_trend_figure(trend_data)
 
-        map_data = _build_player_map_data(conn, player=player_val, mode=mode_val, week_range=wr)
+        map_data = _build_player_map_data(
+            conn, source=source, player=player_val, mode=mode_val, week_range=wr,
+        )
         if map_data:
             header = html.Thead(html.Tr([
                 html.Th("Map"), html.Th("Mode"), html.Th("Games"),
