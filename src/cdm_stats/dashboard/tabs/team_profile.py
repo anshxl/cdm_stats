@@ -497,12 +497,19 @@ def register_callbacks(app):
     # Populate team dropdown when tab loads
     @app.callback(
         Output("tp-team-select", "options"),
+        Output("tp-team-select", "value"),
         Input("tp-team-select", "id"),  # fires once on load
     )
     def populate_teams(_):
         conn = get_db()
         try:
-            return team_dropdown_options(conn)
+            options = team_dropdown_options(conn)
+            gl_id = None
+            for opt in options:
+                if opt["label"] == "GL":
+                    gl_id = opt["value"]
+                    break
+            return options, gl_id
         finally:
             conn.close()
 

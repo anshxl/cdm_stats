@@ -121,8 +121,70 @@ def _build_figure(traces: list[dict]) -> go.Figure:
     return fig
 
 
+def _build_current_figure(traces: list[dict]) -> go.Figure:
+    """Bar chart of each team's latest Elo, sorted descending."""
+    entries = []
+    color_idx = 0
+    for trace in traces:
+        if len(trace["elos"]) <= 1:
+            continue
+        entries.append({
+            "abbr": trace["abbr"],
+            "elo": trace["elos"][-1],
+            "color": TEAM_COLORS[color_idx % len(TEAM_COLORS)],
+        })
+        color_idx += 1
+    entries.sort(key=lambda e: e["elo"], reverse=True)
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=[e["abbr"] for e in entries],
+        y=[e["elo"] for e in entries],
+        marker={"color": [e["color"] for e in entries]},
+        text=[f"{e['elo']:.0f}" for e in entries],
+        textposition="outside",
+        hovertemplate="%{x}: %{y:.0f}<extra></extra>",
+    ))
+    fig.add_hline(y=SEED_ELO, line_dash="dash", line_color="gray", opacity=0.4,
+                  annotation_text="Seed (1000)", annotation_position="bottom right")
+    fig.update_layout(
+        plot_bgcolor=COLORS["page_bg"],
+        paper_bgcolor=COLORS["page_bg"],
+        font={"color": COLORS["text"]},
+        margin={"l": 60, "r": 20, "t": 40, "b": 60},
+        height=500,
+        xaxis={"title": "Team", "gridcolor": COLORS["border"]},
+        yaxis={
+            "title": "Current Elo Rating",
+            "gridcolor": COLORS["border"],
+            "range": (
+                [min(e["elo"] for e in entries) - 20, max(e["elo"] for e in entries) + 20]
+                if entries else None
+            ),
+        },
+        showlegend=False,
+    )
+    return fig
+
+
 def layout():
     return dbc.Container([
+        dbc.Row([
+            dbc.Col([
+                dbc.RadioItems(
+                    id="elo-view-toggle",
+                    options=[
+                        {"label": "Trajectory", "value": "trajectory"},
+                        {"label": "Current Standings", "value": "current"},
+                    ],
+                    value="trajectory",
+                    inline=True,
+                    inputClassName="btn-check",
+                    labelClassName="btn btn-outline-info btn-sm me-1",
+                    labelCheckedClassName="active",
+                ),
+            ], width="auto"),
+        ], className="mb-3 mt-2"),
         dcc.Graph(id="elo-chart"),
     ], fluid=True)
 
@@ -130,10 +192,12 @@ def layout():
 def register_callbacks(app):
     @app.callback(
         Output("elo-chart", "figure"),
-        Input("elo-chart", "id"),
+        Input("elo-view-toggle", "value"),
     )
-    def update_chart(_):
+    def update_chart(view):
         conn = get_db()
         traces = _build_elo_traces(conn)
         conn.close()
+        if view == "current":
+            return _build_current_figure(traces)
         return _build_figure(traces)

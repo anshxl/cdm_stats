@@ -1,0 +1,136 @@
+Date,Week,Opponent,Map,Mode,Player,Kills,Deaths,Assists
+2026-03-14,1,ETs,Summit,HP,Abhiz,38,23,16
+2026-03-14,1,ETs,Summit,HP,Prevail,38,25,8
+2026-03-14,1,ETs,Summit,HP,Skullguy,40,25,14
+2026-03-14,1,ETs,Summit,HP,Viper,28,23,17
+2026-03-14,1,ETs,Summit,HP,Warden,43,25,14
+2026-03-14,1,ETs,Crossroads Strike,Control,Abhiz,31,15,11
+2026-03-14,1,ETs,Crossroads Strike,Control,Prevail,32,25,12
+2026-03-14,1,ETs,Crossroads Strike,Control,Skullguy,25,22,8
+2026-03-14,1,ETs,Crossroads Strike,Control,Viper,33,22,14
+2026-03-14,1,ETs,Crossroads Strike,Control,Warden,28,24,10
+2026-03-14,1,ETs,Slums,SnD,Abhiz,8,10,5
+2026-03-14,1,ETs,Slums,SnD,Prevail,12,10,1
+2026-03-14,1,ETs,Slums,SnD,Skullguy,14,5,4
+2026-03-14,1,ETs,Slums,SnD,Viper,12,10,4
+2026-03-14,1,ETs,Slums,SnD,Warden,11,7,4
+2026-03-19,2,ALU,Coastal,SnD,Abhiz,15,13,4
+2026-03-19,2,ALU,Coastal,SnD,Prevail,15,16,4
+2026-03-19,2,ALU,Coastal,SnD,Skullguy,10,12,6
+2026-03-19,2,ALU,Coastal,SnD,Viper,16,10,5
+2026-03-19,2,ALU,Coastal,SnD,Warden,11,15,2
+2026-03-19,2,ALU,Standoff,Control,Abhiz,19,26,6
+2026-03-19,2,ALU,Standoff,Control,Prevail,20,30,7
+2026-03-19,2,ALU,Standoff,Control,Skullguy,17,25,3
+2026-03-19,2,ALU,Standoff,Control,Viper,23,27,5
+2026-03-19,2,ALU,Standoff,Control,Warden,21,31,9
+2026-03-19,2,ALU,Arsenal,HP,Abhiz,24,30,15
+2026-03-19,2,ALU,Arsenal,HP,Prevail,23,33,11
+2026-03-19,2,ALU,Arsenal,HP,Skullguy,19,30,15
+2026-03-19,2,ALU,Arsenal,HP,Viper,30,37,9
+2026-03-19,2,ALU,Arsenal,HP,Warden,21,37,8
+2026-03-20,2,OUG,Coastal,SnD,Abhiz,13,14,6
+2026-03-20,2,OUG,Coastal,SnD,Prevail,18,17,3
+2026-03-20,2,OUG,Coastal,SnD,Skullguy,13,13,6
+2026-03-20,2,OUG,Coastal,SnD,Viper,13,11,5
+2026-03-20,2,OUG,Coastal,SnD,Warden,14,14,7
+2026-03-20,2,OUG,Meltdown,SnD,Abhiz,13,12,4
+2026-03-20,2,OUG,Meltdown,SnD,Prevail,13,14,6
+2026-03-20,2,OUG,Meltdown,SnD,Skullguy,15,8,3
+2026-03-20,2,OUG,Meltdown,SnD,Viper,12,12,5
+2026-03-20,2,OUG,Meltdown,SnD,Warden,12,10,6
+2026-03-20,2,OUG,Standoff,Control,Abhiz,18,23,5
+2026-03-20,2,OUG,Standoff,Control,Prevail,18,27,2
+2026-03-20,2,OUG,Standoff,Control,Skullguy,15,20,4
+2026-03-20,2,OUG,Standoff,Control,Viper,16,25,2
+2026-03-20,2,OUG,Standoff,Control,Warden,21,24,6
+2026-03-20,2,OUG,Arsenal,HP,Abhiz,27,34,10
+2026-03-20,2,OUG,Arsenal,HP,Prevail,28,37,13
+2026-03-20,2,OUG,Arsenal,HP,Skullguy,29,34,11
+2026-03-20,2,OUG,Arsenal,HP,Viper,34,39,11
+2026-03-20,2,OUG,Arsenal,HP,Warden,27,37,6
+2026-03-21,2,HF,Coastal,SnD,Abhiz,8,9,6
+2026-03-21,2,HF,Coastal,SnD,Prevail,11,10,1
+2026-03-21,2,HF,Coastal,SnD,Skullguy,15,7,2
+2026-03-21,2,HF,Coastal,SnD,Viper,13,9,5
+2026-03-21,2,HF,Coastal,SnD,Warden,10,7,6
+2026-03-21,2,HF,Crossroads Strike,Control,Abhiz,23,17,5
+2026-03-21,2,HF,Crossroads Strike,Control,Prevail,29,18,4
+2026-03-21,2,HF,Crossroads Strike,Control,Skullguy,23,14,2
+2026-03-21,2,HF,Crossroads Strike,Control,Viper,18,24,12
+2026-03-21,2,HF,Crossroads Strike,Control,Warden,27,23,6
+2026-03-21,2,HF,Takeoff,HP,Abhiz,39,26,10
+2026-03-21,2,HF,Takeoff,HP,Prevail,42,34,18
+2026-03-21,2,HF,Takeoff,HP,Skullguy,37,31,15
+2026-03-21,2,HF,Takeoff,HP,Viper,33,32,13
+2026-03-21,2,HF,Takeoff,HP,Warden,38,38,19
+2026-03-26,3,Wolves,Raid,Control,Abhiz,52,28,13
+2026-03-26,3,Wolves,Raid,Control,Prevail,31,42,12
+2026-03-26,3,Wolves,Raid,Control,Skullguy,31,29,5
+2026-03-26,3,Wolves,Raid,Control,Viper,38,42,7
+2026-03-26,3,Wolves,Raid,Control,Warden,36,42,8
+2026-03-26,3,Wolves,Hacienda,HP,Abhiz,25,44,12
+2026-03-26,3,Wolves,Hacienda,HP,Prevail,33,41,20
+2026-03-26,3,Wolves,Hacienda,HP,Skullguy,21,44,13
+2026-03-26,3,Wolves,Hacienda,HP,Viper,37,41,12
+2026-03-26,3,Wolves,Hacienda,HP,Warden,31,39,12
+2026-03-26,3,Wolves,Firing Range,SnD,Abhiz,5,9,5
+2026-03-26,3,Wolves,Firing Range,SnD,Prevail,2,10,2
+2026-03-26,3,Wolves,Firing Range,SnD,Skullguy,5,9,0
+2026-03-26,3,Wolves,Firing Range,SnD,Viper,4,10,4
+2026-03-26,3,Wolves,Firing Range,SnD,Warden,5,10,1
+2026-03-27,3,XROCK,Coastal,SnD,Abhiz,9,12,5
+2026-03-27,3,XROCK,Coastal,SnD,Prevail,16,14,1
+2026-03-27,3,XROCK,Coastal,SnD,Skullguy,16,10,9
+2026-03-27,3,XROCK,Coastal,SnD,Viper,12,11,2
+2026-03-27,3,XROCK,Coastal,SnD,Warden,10,11,6
+2026-03-27,3,XROCK,Combine,HP,Abhiz,41,37,22
+2026-03-27,3,XROCK,Combine,HP,Prevail,61,46,7
+2026-03-27,3,XROCK,Combine,HP,Skullguy,51,47,27
+2026-03-27,3,XROCK,Combine,HP,Viper,62,40,18
+2026-03-27,3,XROCK,Combine,HP,Warden,38,50,29
+2026-03-27,3,XROCK,Crossroads Strike,Control,Abhiz,23,24,7
+2026-03-27,3,XROCK,Crossroads Strike,Control,Prevail,19,34,9
+2026-03-27,3,XROCK,Crossroads Strike,Control,Skullguy,26,21,5
+2026-03-27,3,XROCK,Crossroads Strike,Control,Viper,36,24,6
+2026-03-27,3,XROCK,Crossroads Strike,Control,Warden,28,28,8
+2026-04-02,4,TSM,Slums,SnD,Abhiz,14,9,8
+2026-04-02,4,TSM,Slums,SnD,Prevail,10,13,3
+2026-04-02,4,TSM,Slums,SnD,Skullguy,15,6,2
+2026-04-02,4,TSM,Slums,SnD,Viper,7,10,2
+2026-04-02,4,TSM,Slums,SnD,Warden,10,11,5
+2026-04-02,4,TSM,Arsenal,HP,Abhiz,29,32,8
+2026-04-02,4,TSM,Arsenal,HP,Prevail,23,34,11
+2026-04-02,4,TSM,Arsenal,HP,Skullguy,19,29,9
+2026-04-02,4,TSM,Arsenal,HP,Viper,20,27,6
+2026-04-02,4,TSM,Arsenal,HP,Warden,20,33,5
+2026-04-02,4,TSM,Crossroads Strike,Control,Abhiz,33,9,3
+2026-04-02,4,TSM,Crossroads Strike,Control,Prevail,31,14,8
+2026-04-02,4,TSM,Crossroads Strike,Control,Skullguy,14,8,5
+2026-04-02,4,TSM,Crossroads Strike,Control,Viper,20,13,8
+2026-04-02,4,TSM,Crossroads Strike,Control,Warden,22,15,6
+2026-04-02,4,TSM,Coastal,SnD,Abhiz,15,11,2
+2026-04-02,4,TSM,Coastal,SnD,Prevail,12,14,4
+2026-04-02,4,TSM,Coastal,SnD,Skullguy,14,13,2
+2026-04-02,4,TSM,Coastal,SnD,Viper,10,11,3
+2026-04-02,4,TSM,Coastal,SnD,Warden,12,14,5
+2026-04-02,4,TSM,Takeoff,HP,Abhiz,54,36,19
+2026-04-02,4,TSM,Takeoff,HP,Prevail,35,37,19
+2026-04-02,4,TSM,Takeoff,HP,Skullguy,40,40,24
+2026-04-02,4,TSM,Takeoff,HP,Viper,48,37,17
+2026-04-02,4,TSM,Takeoff,HP,Warden,45,42,15
+2026-04-04,4,GAL,Hacienda,HP,Abhiz,41,34,18
+2026-04-04,4,GAL,Hacienda,HP,Prevail,48,30,21
+2026-04-04,4,GAL,Hacienda,HP,Skullguy,30,27,16
+2026-04-04,4,GAL,Hacienda,HP,Viper,47,35,17
+2026-04-04,4,GAL,Hacienda,HP,Warden,36,35,15
+2026-04-04,4,GAL,Standoff,Control,Abhiz,39,36,14
+2026-04-04,4,GAL,Standoff,Control,Prevail,41,46,14
+2026-04-04,4,GAL,Standoff,Control,Skullguy,34,28,10
+2026-04-04,4,GAL,Standoff,Control,Viper,45,31,7
+2026-04-04,4,GAL,Standoff,Control,Warden,31,30,12
+2026-04-04,4,GAL,Coastal,SnD,Abhiz,12,10,2
+2026-04-04,4,GAL,Coastal,SnD,Prevail,4,9,1
+2026-04-04,4,GAL,Coastal,SnD,Skullguy,8,6,2
+2026-04-04,4,GAL,Coastal,SnD,Viper,17,3,5
+2026-04-04,4,GAL,Coastal,SnD,Warden,10,11,4

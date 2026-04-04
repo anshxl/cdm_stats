@@ -420,12 +420,19 @@ def register_callbacks(app):
 
     @app.callback(
         Output("mp-opp-team", "options"),
+        Output("mp-opp-team", "value"),
         Input("mp-opp-team", "id"),
     )
     def populate_opp_team(_):
         conn = get_db()
         try:
-            return team_dropdown_options(conn)
+            options = team_dropdown_options(conn)
+            elv_id = None
+            for opt in options:
+                if opt["label"] == "ELV":
+                    elv_id = opt["value"]
+                    break
+            return options, elv_id
         finally:
             conn.close()
 

@@ -131,6 +131,9 @@ def _get_available_weeks(conn: sqlite3.Connection, source: str) -> list[int]:
 
 
 def layout():
+    conn = get_db()
+    weeks = _get_available_weeks(conn, "tournament")
+    conn.close()
     return dbc.Container([
         dbc.Row([
             dbc.Col([
@@ -171,7 +174,10 @@ def layout():
             ], width=2),
             dbc.Col([
                 html.Label("Weeks", style={"color": COLORS["text"]}),
-                html.Div(id="player-week-pills-container"),
+                html.Div(
+                    week_pills("player-week-pills", weeks),
+                    id="player-week-pills-container",
+                ),
             ], width=5),
         ], className="mb-3"),
         html.Div(id="player-summary-cards"),

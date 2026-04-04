@@ -11,7 +11,7 @@ Date,Week,Opponent,Map,Mode,Score,Result
 24-Feb,1,XROCK,Takeoff,HP,250-70,1
 24-Feb,1,XROCK,Arsenal,HP,250-83,1
 24-Feb,1,XROCK,Raid,Control,3-2,1
-24-Feb,1,XROCK,Crossroads,Control,3-2,1
+24-Feb,1,XROCK,Crossroads Strike,Control,3-2,1
 26-Feb,1,ALU,Combine,HP,172-250,0
 26-Feb,1,ALU,Takeoff,HP,161-250,0
 26-Feb,1,ALU,Hacienda,HP,142-250,0
@@ -24,14 +24,14 @@ Date,Week,Opponent,Map,Mode,Score,Result
 27-Feb,1,XROCK,Takeoff,HP,250-104,1
 27-Feb,1,XROCK,Summit,HP,250-96,1
 27-Feb,1,XROCK,Raid,Control,4-3,1
-27-Feb,1,XROCK,Crossroads,Control,4-2,1
+27-Feb,1,XROCK,Crossroads Strike,Control,4-2,1
 27-Feb,1,XROCK,Firing Range,SnD,9-2,1
 27-Feb,1,XROCK,Tunisia,SnD,9-6,1
 2-Mar,2,Q9,Combine,HP,222-250,0
 2-Mar,2,Q9,Hacienda,HP,250-197,1
 2-Mar,2,Q9,Arsenal,HP,250-119,1
 2-Mar,2,Q9,Standoff,Control,2-4,0
-2-Mar,2,Q9,Crossroads,Control,1-4,0
+2-Mar,2,Q9,Crossroads Strike,Control,1-4,0
 2-Mar,2,Q9,Slums,SnD,3-9,0
 2-Mar,2,ALU,Takeoff,HP,174-250,0
 2-Mar,2,ALU,Combine,HP,250-215,1
@@ -45,7 +45,7 @@ Date,Week,Opponent,Map,Mode,Score,Result
 3-Mar,2,DVS,Combine,HP,250-215,1
 3-Mar,2,DVS,Raid,Control,1-4,0
 3-Mar,2,DVS,Standoff,Control,2-4,0
-3-Mar,2,DVS,Crossroads,Control,2-4,0
+3-Mar,2,DVS,Crossroads Strike,Control,2-4,0
 3-Mar,2,DVS,Slums,SnD,6-9,0
 3-Mar,2,DVS,Coastal,SnD,7-9,0
 4-Mar,2,XROCK,Summit,HP,250-130,1
@@ -54,9 +54,9 @@ Date,Week,Opponent,Map,Mode,Score,Result
 4-Mar,2,XROCK,Coastal,SnD,9-6,1
 4-Mar,2,XROCK,Slums,SnD,8-9,0
 4-Mar,2,XROCK,Tunisia,SnD,9-5,1
-5-Mar,2,Q9,Crossroads,Control,3-4,0
+5-Mar,2,Q9,Crossroads Strike,Control,3-4,0
 5-Mar,2,Q9,Standoff,Control,2-4,0
-6-Mar,2,T2P,Crossroads,Control,4-3,1
+6-Mar,2,T2P,Crossroads Strike,Control,4-3,1
 6-Mar,2,T2P,Standoff,Control,4-0,1
 6-Mar,2,T2P,Raid,Control,4-0,1
 6-Mar,2,T2P,Slums,SnD,9-5,1
@@ -65,27 +65,27 @@ Date,Week,Opponent,Map,Mode,Score,Result
 7-Mar,2,Wolves,Hacienda,HP,250-98,1
 7-Mar,2,Wolves,Takeoff,HP,250-104,1
 7-Mar,2,Wolves,Raid,Control,4-3,1
-7-Mar,2,Wolves,Crossroads,Control,4-3,1
+7-Mar,2,Wolves,Crossroads Strike,Control,4-3,1
 7-Mar,2,Wolves,Standoff,Control,4-2,1
 7-Mar,2,Wolves,Tunisia,SnD,9-7,1
 7-Mar,2,Wolves,Coastal,SnD,9-5,1
 10-Mar,3,OUG,Combine,HP,114-250,0
 10-Mar,3,OUG,Raid,Control,1-4,0
-10-Mar,3,OUG,Crossroads,Control,4-2,1
+10-Mar,3,OUG,Crossroads Strike,Control,4-2,1
 14-Mar,3,Q9,Arsenal,HP,250-140,1
-14-Mar,3,Q9,Crossroads,Control,2-4,0
+14-Mar,3,Q9,Crossroads Strike,Control,2-4,0
 14-Mar,3,Q9,Hacienda,HP,200-250,0
 14-Mar,3,Q9,Raid,Control,2-4,0
 14-Mar,3,Q9,Slums,SnD,5-9,0
 16-Mar,4,XROCK,Summit,HP,250-167,1
 16-Mar,4,XROCK,Hacienda,HP,250-66,1
 16-Mar,4,XROCK,Standoff,Control,4-0,1
-16-Mar,4,XROCK,Crossroads,Control,3-4,0
+16-Mar,4,XROCK,Crossroads Strike,Control,3-4,0
 16-Mar,4,ELV,Hacienda,HP,223-250,0
 16-Mar,4,ELV,Combine,HP,210-250,0
 16-Mar,4,ELV,Arsenal,HP,100-250,0
 16-Mar,4,ELV,Takeoff,HP,211-250,0
-16-Mar,4,ELV,Crossroads,Control,0-4,0
+16-Mar,4,ELV,Crossroads Strike,Control,0-4,0
 16-Mar,4,ELV,Standoff,Control,4-0,1
 16-Mar,4,ELV,Raid,Control,3-4,0
 16-Mar,4,ELV,Tunisia,SnD,5-9,0
@@ -99,14 +99,14 @@ Date,Week,Opponent,Map,Mode,Score,Result
 17-Mar,4,GAL,Arsenal,HP,250-204,1
 17-Mar,4,GAL,Takeoff,HP,196-250,0
 17-Mar,4,GAL,Combine,HP,250-89,1
-17-Mar,4,GAL,Crossroads,Control,1-4,0
+17-Mar,4,GAL,Crossroads Strike,Control,1-4,0
 17-Mar,4,GAL,Raid,Control,4-3,1
 17-Mar,4,GAL,Tunisia,SnD,9-8,1
 17-Mar,4,GAL,Slums,SnD,9-8,1
 18-Mar,4,TSM,Hacienda,HP,250-224,1
 18-Mar,4,TSM,Arsenal,HP,250-210,1
 18-Mar,4,TSM,Combine,HP,250-77,1
-18-Mar,4,TSM,Crossroads,Control,4-2,1
+18-Mar,4,TSM,Crossroads Strike,Control,4-2,1
 18-Mar,4,TSM,Standoff,Control,4-0,1
 18-Mar,4,TSM,Slums,SnD,5-9,0
 18-Mar,4,TSM,Coastal,SnD,9-6,1
@@ -114,7 +114,7 @@ Date,Week,Opponent,Map,Mode,Score,Result
 18-Mar,4,ELV,Hacienda,HP,194-250,0
 18-Mar,4,ELV,Arsenal,HP,250-235,1
 18-Mar,4,ELV,Raid,Control,4-1,1
-18-Mar,4,ELV,Crossroads,Control,4-2,1
+18-Mar,4,ELV,Crossroads Strike,Control,4-2,1
 18-Mar,4,ELV,Standoff,Control,4-1,1
 18-Mar,4,ELV,Tunisia,SnD,7-1,1
 18-Mar,4,ELV,Firing Range,SnD,7-5,1
@@ -122,7 +122,7 @@ Date,Week,Opponent,Map,Mode,Score,Result
 19-Mar,4,Q9,Arsenal,HP,250-246,1
 19-Mar,4,Q9,Summit,HP,250-176,1
 19-Mar,4,Q9,Standoff,Control,4-1,1
-19-Mar,4,Q9,Crossroads,Control,4-3,1
+19-Mar,4,Q9,Crossroads Strike,Control,4-3,1
 19-Mar,4,Q9,Tunisia,SnD,4-9,0
 19-Mar,4,Q9,Meltdown,SnD,5-9,0
 21-Mar,4,ALU,Summit,HP,180-250,0
@@ -130,16 +130,16 @@ Date,Week,Opponent,Map,Mode,Score,Result
 23-Mar,5,ALU,Meltdown,SnD,7-9,0
 23-Mar,5,ALU,Arsenal,HP,188-250,0
 23-Mar,5,ALU,Hacienda,HP,141-250,0
-23-Mar,5,ALU,Crossroads,Control,3-4,0
+23-Mar,5,ALU,Crossroads Strike,Control,3-4,0
 23-Mar,5,DVS,Hacienda,HP,250-133,1
 23-Mar,5,DVS,Arsenal,HP,250-202,1
 23-Mar,5,DVS,Raid,Control,2-4,0
-23-Mar,5,DVS,Crossroads,Control,4-1,1
+23-Mar,5,DVS,Crossroads Strike,Control,4-1,1
 23-Mar,5,DVS,Firing Range,SnD,9-6,1
 23-Mar,5,DVS,Slums,SnD,5-9,0
 24-Mar,5,Q9,Arsenal,HP,180-250,0
 24-Mar,5,Q9,Hacienda,HP,250-241,1
-24-Mar,5,Q9,Crossroads,Control,0-4,0
+24-Mar,5,Q9,Crossroads Strike,Control,0-4,0
 24-Mar,5,Q9,Raid,Control,4-1,1
 24-Mar,5,Q9,Meltdown,SnD,8-9,0
 24-Mar,5,Q9,Slums,SnD,8-9,0
@@ -153,11 +153,11 @@ Date,Week,Opponent,Map,Mode,Score,Result
 25-Mar,5,DVS,Arsenal,HP,250-146,1
 25-Mar,5,DVS,Hacienda,HP,250-205,1
 25-Mar,5,DVS,Raid,Control,1-4,0
-25-Mar,5,DVS,Crossroads,Control,4-2,1
+25-Mar,5,DVS,Crossroads Strike,Control,4-2,1
 25-Mar,5,DVS,Tunisia,SnD,9-3,1
 25-Mar,5,ALU,Arsenal,HP,186-250,0
 25-Mar,5,ALU,Hacienda,HP,250-136,1
-25-Mar,5,ALU,Crossroads,Control,3-4,0
+25-Mar,5,ALU,Crossroads Strike,Control,3-4,0
 25-Mar,5,ALU,Firing Range,SnD,9-7,1
 25-Mar,5,ALU,Coastal,SnD,6-9,0
 25-Mar,5,ALU,Summit,HP,200-250,0
@@ -168,13 +168,13 @@ Date,Week,Opponent,Map,Mode,Score,Result
 26-Mar,5,ALU,Hacienda,HP,225-250,0
 26-Mar,5,ALU,Takeoff,HP,250-248,1
 26-Mar,5,ALU,Standoff,Control,4-2,1
-26-Mar,5,ALU,Crossroads,Control,1-4,0
+26-Mar,5,ALU,Crossroads Strike,Control,1-4,0
 26-Mar,5,ALU,Coastal,SnD,8-9,0
 28-Mar,5,XROCK,Summit,HP,250-146,1
 28-Mar,5,XROCK,Coastal,SnD,5-9,0
 31-Mar,6,OUG,Hacienda,HP,226-250,0
 31-Mar,6,OUG,Arsenal,HP,250-244,1
-31-Mar,6,OUG,Crossroads,Control,4-0,1
+31-Mar,6,OUG,Crossroads Strike,Control,4-0,1
 31-Mar,6,OUG,Raid,Control,2-4,0
 31-Mar,6,OUG,Coastal,SnD,6-9,0
 31-Mar,6,XROCK,Combine,HP,250-205,1
@@ -188,7 +188,36 @@ Date,Week,Opponent,Map,Mode,Score,Result
 1-Apr,6,Wolves,Combine,HP,102-250,0
 1-Apr,6,Wolves,Summit,HP,250-223,1
 1-Apr,6,Wolves,Standoff,Control,4-3,1
-1-Apr,6,Wolves,Crossroads,Control,3-4,0
+1-Apr,6,Wolves,Crossroads Strike,Control,3-4,0
 1-Apr,6,Wolves,Raid,Control,4-3,1
 1-Apr,6,Wolves,Tunisia,SnD,3-9,0
 1-Apr,6,Wolves,Meltdown,SnD,6-9,0
+2-Apr,6,Wolves,Summit,HP,209-250,0
+2-Apr,6,Wolves,Arsenal,HP,249-250,0
+2-Apr,6,Wolves,Combine,HP,155-250,0
+2-Apr,6,Wolves,Meltdown,SnD,8-9,0
+3-Apr,6,Q9,Hacienda,HP,245-250,0
+3-Apr,6,Q9,Combine,HP,250-238,1
+3-Apr,6,Q9,Raid,Control,4-2,1
+3-Apr,6,Q9,Standoff,Control,4-2,1
+3-Apr,6,Q9,Coastal,SnD,6-9,0
+3-Apr,6,Q9,Meltdown,SnD,9-8,1
+3-Apr,6,TSM,Summit,HP,250-244,1
+3-Apr,6,TSM,Hacienda,HP,250-190,1
+3-Apr,6,TSM,Arsenal,HP,250-173,1
+2-Apr,6,ALU,Combine,HP,180-250,0
+2-Apr,6,ALU,Takeoff,HP,224-250,0
+2-Apr,6,ALU,Standoff,Control,4-3,1
+2-Apr,6,ALU,Crossroads Strike,Control,0-4,0
+2-Apr,6,ALU,Meltdown,SnD,4-9,0
+2-Apr,6,ALU,Tunisia,SnD,6-9,0
+4-Apr,6,ELV,Takeoff,HP,250-225,1
+4-Apr,6,ELV,Arsenal,HP,249-250,0
+4-Apr,6,ELV,Combine,HP,120-250,0
+4-Apr,6,ELV,Standoff,Control,4-0,1
+4-Apr,6,ELV,Raid,Control,3-4,0
+4-Apr,6,ELV,Slums,SnD,9-8,1
+4-Apr,6,OUG,Combine,HP,205-250,0
+4-Apr,6,OUG,Summit,HP,250-249,1
+4-Apr,6,OUG,Coastal,SnD,5-9,0
+4-Apr,6,OUG,Standoff,Control,4-3,1

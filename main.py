@@ -190,6 +190,24 @@ def cmd_ingest_scrims_players(args: argparse.Namespace) -> None:
     conn.close()
 
 
+def cmd_ingest_tournament_players(args: argparse.Namespace) -> None:
+    from cdm_stats.ingestion.tournament_player_loader import ingest_tournament_players
+
+    conn = get_db()
+    with open(args.csv_file) as f:
+        results = ingest_tournament_players(conn, f)
+
+    for r in results:
+        if r["status"] == "ok":
+            print(f"  OK: {r['row']}")
+        elif r["status"] == "skipped":
+            print(f"  SKIPPED (duplicate): {r['row']}")
+        else:
+            print(f"  ERROR: {r['row']}: {r['errors']}")
+
+    conn.close()
+
+
 def cmd_backfill(_args: argparse.Namespace) -> None:
     from cdm_stats.ingestion.backfill import backfill_elo
 
@@ -236,6 +254,9 @@ def main() -> None:
     p_scrim_players = sub.add_parser("ingest-scrims-players", help="Ingest scrim player-level CSV")
     p_scrim_players.add_argument("csv_file", help="Path to scrim player CSV file")
 
+    p_tp = sub.add_parser("ingest-tournament-players", help="Ingest tournament player-level CSV")
+    p_tp.add_argument("csv_file", help="Path to tournament player CSV file")
+
     sub.add_parser("backfill", help="Wipe and recalculate Elo")
 
     args = parser.parse_args()
@@ -246,6 +267,7 @@ def main() -> None:
         "ingest-tournament": cmd_ingest_tournament,
         "ingest-scrims-team": cmd_ingest_scrims_team,
         "ingest-scrims-players": cmd_ingest_scrims_players,
+        "ingest-tournament-players": cmd_ingest_tournament_players,
         "backfill": cmd_backfill,
     }
 
