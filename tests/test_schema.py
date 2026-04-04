@@ -61,6 +61,7 @@ def test_create_tables_creates_all_tables(db):
         "map_bans", "map_results", "maps", "matches",
         "scrim_maps", "scrim_player_stats",
         "team_elo", "team_map_notes", "teams",
+        "tournament_player_stats",
     ]
 
 
@@ -75,6 +76,7 @@ def test_create_tables_is_idempotent(db):
         "map_bans", "map_results", "maps", "matches",
         "scrim_maps", "scrim_player_stats",
         "team_elo", "team_map_notes", "teams",
+        "tournament_player_stats",
     ]
 
 
@@ -154,3 +156,53 @@ def test_scrim_player_stats_table_exists(db):
         "SELECT name FROM sqlite_master WHERE type='table' AND name='scrim_player_stats'"
     ).fetchall()
     assert len(rows) == 1
+
+
+def test_tournament_player_stats_table_exists():
+    import sqlite3
+    from cdm_stats.db.schema import create_tables, migrate
+
+    conn = sqlite3.connect(":memory:")
+    create_tables(conn)
+    migrate(conn)
+
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(tournament_player_stats)").fetchall()]
+    assert cols == ["stat_id", "result_id", "week", "player_name", "kills", "deaths", "assists"]
+
+    # Unique (result_id, player_name)
+    idx_rows = conn.execute("PRAGMA index_list(tournament_player_stats)").fetchall()
+    unique_indexes = [r for r in idx_rows if r[2] == 1]
+    assert len(unique_indexes) >= 1
+    conn.close()
+
+
+def test_schema_version_is_4():
+    import sqlite3
+    from cdm_stats.db.schema import create_tables, SCHEMA_VERSION
+
+    assert SCHEMA_VERSION == 4
+    conn = sqlite3.connect(":memory:")
+    create_tables(conn)
+    version = conn.execute("PRAGMA user_version").fetchone()[0]
+    assert version == 4
+    conn.close()
+
+
+def test_migration_v3_to_v4_adds_tournament_player_stats():
+    import sqlite3
+    from cdm_stats.db.schema import create_tables, migrate
+
+    conn = sqlite3.connect(":memory:")
+    create_tables(conn)
+    # Simulate old DB at v3
+    conn.execute("DROP TABLE tournament_player_stats")
+    conn.execute("PRAGMA user_version = 3")
+    conn.commit()
+
+    migrate(conn)
+
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(tournament_player_stats)").fetchall()]
+    assert "result_id" in cols
+    assert "week" in cols
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == 4
+    conn.close()

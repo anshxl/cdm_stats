@@ -1,6 +1,6 @@
 import sqlite3
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 TABLES = [
     """
@@ -104,6 +104,18 @@ TABLES = [
         UNIQUE(scrim_map_id, player_name)
     )
     """,
+    """
+    CREATE TABLE IF NOT EXISTS tournament_player_stats (
+        stat_id      INTEGER PRIMARY KEY,
+        result_id    INTEGER NOT NULL REFERENCES map_results(result_id),
+        week         INTEGER NOT NULL,
+        player_name  TEXT NOT NULL,
+        kills        INTEGER NOT NULL,
+        deaths       INTEGER NOT NULL,
+        assists      INTEGER NOT NULL,
+        UNIQUE(result_id, player_name)
+    )
+    """,
 ]
 
 
@@ -204,6 +216,18 @@ def migrate(conn: sqlite3.Connection) -> None:
             deaths       INTEGER NOT NULL,
             assists      INTEGER NOT NULL,
             UNIQUE(scrim_map_id, player_name)
+        )""")
+
+    if version < 4:
+        conn.execute("""CREATE TABLE IF NOT EXISTS tournament_player_stats (
+            stat_id      INTEGER PRIMARY KEY,
+            result_id    INTEGER NOT NULL REFERENCES map_results(result_id),
+            week         INTEGER NOT NULL,
+            player_name  TEXT NOT NULL,
+            kills        INTEGER NOT NULL,
+            deaths       INTEGER NOT NULL,
+            assists      INTEGER NOT NULL,
+            UNIQUE(result_id, player_name)
         )""")
 
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
