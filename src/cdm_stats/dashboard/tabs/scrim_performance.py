@@ -102,6 +102,9 @@ def _get_available_maps(conn: sqlite3.Connection) -> list[str]:
 
 
 def layout():
+    conn = get_db()
+    weeks = _get_available_weeks(conn)
+    conn.close()
     return dbc.Container([
         dbc.Row([
             dbc.Col([
@@ -127,7 +130,10 @@ def layout():
             ], width=2),
             dbc.Col([
                 html.Label("Weeks", style={"color": COLORS["text"]}),
-                html.Div(id="scrim-week-pills-container"),
+                html.Div(
+                    week_pills("scrim-week-pills", weeks),
+                    id="scrim-week-pills-container",
+                ),
             ], width=8),
         ], className="mb-3"),
         html.Div(id="scrim-summary-cards"),
