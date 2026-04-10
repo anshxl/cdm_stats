@@ -188,8 +188,6 @@ FACE_VALUE_MATCH_CSV = """date,team1,team2,two_v_two_winner,slot,map_name,winner
 
 
 def _fresh_db():
-    from cdm_stats.db.schema import create_tables
-    from cdm_stats.ingestion.seed import seed_teams, seed_maps
     conn = sqlite3.connect(":memory:")
     create_tables(conn)
     seed_teams(conn)
