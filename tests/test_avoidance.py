@@ -72,3 +72,38 @@ def test_pick_context_distribution(db):
     assert dist["Opener"] == 1
     assert dist.get("Neutral", 0) == 0
     assert dist.get("Must-Win", 0) == 0
+
+
+# DVS picks Tunisia (slot 1) at face value, DVS "wins" 6-3, but the map is DQ'd.
+# OUG picks Summit (slot 2, HP), OUG wins 250-220.
+# DVS picks Raid (slot 3, Control), DVS wins 3-1.
+# OUG picks Slums (slot 4, SnD), DVS wins 6-2.
+DQ_PICK_CSV = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score,series_winner,picked_by,dq
+2026-01-15,DVS,OUG,DVS,1,Tunisia,DVS,6,3,DVS,,1
+2026-01-15,DVS,OUG,DVS,2,Summit,OUG,250,220,,,
+2026-01-15,DVS,OUG,DVS,3,Raid,DVS,3,1,,,
+2026-01-15,DVS,OUG,DVS,4,Slums,DVS,6,2,,,"""
+
+
+def test_pick_win_loss_excludes_dq(db):
+    """DVS's DQ'd Tunisia pick-win must not count toward pick W-L."""
+    ingest_csv(db, io.StringIO(DQ_PICK_CSV))
+    dvs, _, tunisia, _, _ = _get_ids(db)
+    result = pick_win_loss(db, dvs, tunisia)
+    assert result == {"wins": 0, "losses": 0}
+
+
+def test_defend_win_loss_excludes_dq(db):
+    """OUG's DQ'd Tunisia defend-loss must not count toward defend W-L."""
+    ingest_csv(db, io.StringIO(DQ_PICK_CSV))
+    _, oug, tunisia, _, _ = _get_ids(db)
+    result = defend_win_loss(db, oug, tunisia)
+    assert result == {"wins": 0, "losses": 0}
+
+
+def test_pick_context_distribution_excludes_dq(db):
+    """DVS's DQ'd Opener pick on Tunisia must not appear in the context distribution."""
+    ingest_csv(db, io.StringIO(DQ_PICK_CSV))
+    dvs, _, tunisia, _, _ = _get_ids(db)
+    dist = pick_context_distribution(db, dvs, tunisia)
+    assert dist == {"Opener": 0, "Neutral": 0, "Must-Win": 0, "Close-Out": 0}
