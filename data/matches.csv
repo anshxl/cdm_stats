@@ -1,4 +1,4 @@
-date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score,series_winner,picked_by
+date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score,series_winner,picked_by,dq
 2026-03-13,OUG,ETs,OUG,1,Tunisia,OUG,9,3
 2026-03-13,OUG,ETs,OUG,2,Hacienda,OUG,250,128
 2026-03-13,OUG,ETs,OUG,3,Crossroads Strike,OUG,4,0,
@@ -76,7 +76,7 @@ date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score,
 2026-03-20,GAL,HF,GAL,3,Crossroads Strike,GAL,4,0
 2026-03-20,GL,OUG,GL,1,Coastal,GL,10,8,GL
 2026-03-20,GL,OUG,GL,2,Arsenal,OUG,250,192,
-2026-03-20,GL,OUG,GL,3,Standoff,OUG,4,1,
+2026-03-20,GL,OUG,GL,3,Standoff,OUG,4,1,,,1
 2026-03-20,GL,OUG,GL,4,Meltdown,GL,9,7,
 2026-03-20,GAL,ALU,ALU,1,Coastal,GAL,9,2
 2026-03-20,GAL,ALU,ALU,2,Hacienda,ALU,250,105
@@ -236,3 +236,7 @@ date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score,
 2026-04-09,OUG,TSM,TSM,1,Coastal,OUG,9,7
 2026-04-09,OUG,TSM,TSM,2,Hacienda,OUG,250,103
 2026-04-09,OUG,TSM,TSM,3,Standoff,OUG,4,2
+2026-04-10,GL,ELV,GL,1,Meltdown,GL,9,4
+2026-04-10,GL,ELV,GL,2,Hacienda,ELV,250,138
+2026-04-10,GL,ELV,GL,3,Raid,GL,4,3
+2026-04-10,GL,ELV,GL,4,Slums,GL,9,6
