@@ -221,3 +221,24 @@ def test_ingest_picking_team_score_when_picker_loses(db):
         "SELECT picking_team_score, non_picking_team_score FROM map_results WHERE slot = 2"
     ).fetchone()
     assert row == (250, 220)
+
+
+DQ_CSV = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score,series_winner,picked_by,dq
+2026-01-15,DVS,OUG,DVS,1,Tunisia,DVS,6,3,,,
+2026-01-15,DVS,OUG,DVS,2,Summit,OUG,250,80,,,1
+2026-01-15,DVS,OUG,DVS,3,Raid,DVS,3,1,,,
+2026-01-15,DVS,OUG,DVS,4,Slums,DVS,6,2,,,"""
+
+
+def test_csv_loader_reads_dq_flag(db):
+    ingest_csv(db, io.StringIO(DQ_CSV))
+    rows = db.execute(
+        "SELECT slot, dq FROM map_results ORDER BY slot"
+    ).fetchall()
+    assert rows == [(1, 0), (2, 1), (3, 0), (4, 0)]
+
+
+def test_csv_loader_blank_dq_defaults_to_zero(db):
+    ingest_csv(db, io.StringIO(FOUR_MAP_CSV))  # no dq column at all
+    rows = db.execute("SELECT dq FROM map_results").fetchall()
+    assert all(r[0] == 0 for r in rows)

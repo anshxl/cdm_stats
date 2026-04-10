@@ -138,6 +138,8 @@ def ingest_csv(conn: sqlite3.Connection, file: IO[str]) -> list[dict]:
             winner_id = get_team_id_by_abbr(conn, row["winner"])
             winner_score = int(row["winner_score"])
             loser_score = int(row["loser_score"])
+            dq_val = (row.get("dq") or "").strip()
+            dq = 1 if dq_val == "1" else 0
 
             # Derive picker
             if slot == 1:
@@ -171,7 +173,7 @@ def ingest_csv(conn: sqlite3.Connection, file: IO[str]) -> list[dict]:
             map_result_data.append((
                 slot, map_id, picker_id, winner_id,
                 picking_team_score, non_picking_team_score,
-                t1_series, t2_series, pick_context,
+                t1_series, t2_series, pick_context, dq,
             ))
 
             # Update running scores and prev loser
