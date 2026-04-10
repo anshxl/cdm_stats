@@ -172,3 +172,45 @@ def test_recalculate_all_elo(db):
     ).fetchall()
     dates = [r[0] for r in rows]
     assert dates == sorted(dates)
+
+
+DQ_MATCH_CSV = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score,series_winner,picked_by,dq
+2026-03-20,DVS,OUG,DVS,1,Tunisia,DVS,6,4,,,
+2026-03-20,DVS,OUG,DVS,2,Summit,OUG,250,80,,,1
+2026-03-20,DVS,OUG,DVS,3,Raid,DVS,4,2,,,
+2026-03-20,DVS,OUG,DVS,4,Slums,DVS,6,3,,,"""
+
+FACE_VALUE_MATCH_CSV = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score,series_winner,picked_by,dq
+2026-03-20,DVS,OUG,DVS,1,Tunisia,DVS,6,4,,,
+2026-03-20,DVS,OUG,DVS,2,Summit,OUG,250,80,,,
+2026-03-20,DVS,OUG,DVS,3,Raid,DVS,4,2,,,
+2026-03-20,DVS,OUG,DVS,4,Slums,DVS,6,3,,,"""
+
+
+def _fresh_db():
+    from cdm_stats.db.schema import create_tables
+    from cdm_stats.ingestion.seed import seed_teams, seed_maps
+    conn = sqlite3.connect(":memory:")
+    create_tables(conn)
+    seed_teams(conn)
+    seed_maps(conn)
+    return conn
+
+
+def test_dq_map_excluded_from_elo_margin():
+    """A DQ'd map's margin must not drag down the series winner's Elo gain."""
+    conn_dq = _fresh_db()
+    ingest_csv(conn_dq, io.StringIO(DQ_MATCH_CSV))
+    dvs_id = conn_dq.execute("SELECT team_id FROM teams WHERE abbreviation='DVS'").fetchone()[0]
+    dvs_elo_dq = get_current_elo(conn_dq, dvs_id)
+    conn_dq.close()
+
+    conn_face = _fresh_db()
+    ingest_csv(conn_face, io.StringIO(FACE_VALUE_MATCH_CSV))
+    dvs_elo_face = get_current_elo(conn_face, dvs_id)
+    conn_face.close()
+
+    # With DQ excluded, DVS's dominance score drops the huge negative margin
+    # from Summit (OUG 250-80), so DVS should gain meaningfully more Elo.
+    assert dvs_elo_dq > dvs_elo_face
+    assert dvs_elo_dq - dvs_elo_face > 2.0  # sanity: the delta is non-trivial

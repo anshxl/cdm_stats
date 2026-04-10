@@ -62,7 +62,7 @@ def update_elo(conn: sqlite3.Connection, match_id: int) -> None:
         """SELECT mr.winner_team_id, mr.picking_team_score, mr.non_picking_team_score, m.mode
            FROM map_results mr
            JOIN maps m ON mr.map_id = m.map_id
-           WHERE mr.match_id = ?
+           WHERE mr.match_id = ? AND mr.dq = 0
            ORDER BY mr.slot""",
         (match_id,),
     ).fetchall()
