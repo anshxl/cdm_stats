@@ -55,3 +55,33 @@ def test_insert_match(db):
     assert match_id is not None
     row = db.execute("SELECT * FROM matches WHERE match_id = ?", (match_id,)).fetchone()
     assert row is not None
+
+
+def test_insert_map_result_stores_dq(db):
+    from cdm_stats.db.queries import insert_match, insert_map_result
+    dvs = get_team_id_by_abbr(db, "DVS")
+    oug = get_team_id_by_abbr(db, "OUG")
+    tunisia = get_map_id(db, "Tunisia", "SnD")
+
+    match_id = insert_match(db, "2026-01-15", dvs, oug, dvs, dvs)
+    insert_map_result(db, match_id, 1, tunisia, dvs, dvs, 6, 3, 0, 0, "Opener", dq=1)
+
+    row = db.execute(
+        "SELECT dq FROM map_results WHERE match_id = ? AND slot = 1", (match_id,)
+    ).fetchone()
+    assert row[0] == 1
+
+
+def test_insert_map_result_dq_defaults_to_zero(db):
+    from cdm_stats.db.queries import insert_match, insert_map_result
+    dvs = get_team_id_by_abbr(db, "DVS")
+    oug = get_team_id_by_abbr(db, "OUG")
+    tunisia = get_map_id(db, "Tunisia", "SnD")
+
+    match_id = insert_match(db, "2026-01-15", dvs, oug, dvs, dvs)
+    insert_map_result(db, match_id, 1, tunisia, dvs, dvs, 6, 3, 0, 0, "Opener")
+
+    row = db.execute(
+        "SELECT dq FROM map_results WHERE match_id = ? AND slot = 1", (match_id,)
+    ).fetchone()
+    assert row[0] == 0

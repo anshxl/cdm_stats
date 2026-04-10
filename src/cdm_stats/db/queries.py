@@ -61,16 +61,17 @@ def insert_map_result(
     team1_score_before: int,
     team2_score_before: int,
     pick_context: str,
+    dq: int = 0,
 ) -> int:
     cursor = conn.execute(
         """INSERT INTO map_results
            (match_id, slot, map_id, picked_by_team_id, winner_team_id,
             picking_team_score, non_picking_team_score,
-            team1_score_before, team2_score_before, pick_context)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            team1_score_before, team2_score_before, pick_context, dq)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (match_id, slot, map_id, picked_by_team_id, winner_team_id,
          picking_team_score, non_picking_team_score,
-         team1_score_before, team2_score_before, pick_context),
+         team1_score_before, team2_score_before, pick_context, dq),
     )
     return cursor.lastrowid
 
