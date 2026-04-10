@@ -75,7 +75,6 @@ def map_strength(
            FROM map_results mr
            JOIN matches m ON mr.match_id = m.match_id
            WHERE mr.map_id = ?
-             AND mr.dq = 0
              AND (m.team1_id = ? OR m.team2_id = ?)
            ORDER BY m.match_date""",
         (map_id, team_id, team_id),

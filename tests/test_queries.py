@@ -85,3 +85,22 @@ def test_insert_map_result_dq_defaults_to_zero(db):
         "SELECT dq FROM map_results WHERE match_id = ? AND slot = 1", (match_id,)
     ).fetchone()
     assert row[0] == 0
+
+
+def test_get_team_map_wl_excludes_dq(db):
+    import io
+    from cdm_stats.ingestion.csv_loader import ingest_csv
+    from cdm_stats.db.queries import get_team_map_wl
+
+    dq_csv = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score,series_winner,picked_by,dq
+2026-02-01,DVS,OUG,DVS,1,Tunisia,OUG,6,3,DVS,,1
+2026-02-01,DVS,OUG,DVS,2,Summit,DVS,250,100,,,
+2026-02-01,DVS,OUG,DVS,3,Raid,DVS,3,1,,,
+2026-02-01,DVS,OUG,DVS,4,Slums,DVS,6,2,,,"""
+    ingest_csv(db, io.StringIO(dq_csv))
+
+    dvs = get_team_id_by_abbr(db, "DVS")
+    rows = get_team_map_wl(db, dvs)
+    tunisia_row = next((r for r in rows if r["map_name"] == "Tunisia"), None)
+    # DVS's only Tunisia result was DQ'd → Tunisia should not appear at all
+    assert tunisia_row is None

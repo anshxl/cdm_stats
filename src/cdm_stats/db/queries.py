@@ -132,6 +132,7 @@ def get_team_map_wl(
                JOIN matches m ON mr.match_id = m.match_id
                WHERE (m.team1_id = ? OR m.team2_id = ?)
                  AND m.match_format LIKE ? || '%'
+                 AND mr.dq = 0
                GROUP BY m2.map_name, m2.mode
                ORDER BY m2.mode, wins DESC""",
             (team_id, team_id, team_id, team_id, format_filter),
@@ -145,6 +146,7 @@ def get_team_map_wl(
                JOIN maps m2 ON mr.map_id = m2.map_id
                JOIN matches m ON mr.match_id = m.match_id
                WHERE (m.team1_id = ? OR m.team2_id = ?)
+                 AND mr.dq = 0
                GROUP BY m2.map_name, m2.mode
                ORDER BY m2.mode, wins DESC""",
             (team_id, team_id, team_id, team_id),
