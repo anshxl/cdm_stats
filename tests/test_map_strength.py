@@ -112,3 +112,33 @@ def test_all_team_map_strengths(db):
     dvs, _, tunisia, _, _ = _get_ids(db)
     assert (dvs, tunisia) in strengths
     assert strengths[(dvs, tunisia)]["rating"] is not None
+
+
+DQ_STRENGTH_CSV = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score,series_winner,picked_by,dq
+2026-02-01,DVS,OUG,DVS,1,Tunisia,OUG,6,3,DVS,,1
+2026-02-01,DVS,OUG,DVS,2,Summit,DVS,250,100,,,
+2026-02-01,DVS,OUG,DVS,3,Raid,DVS,3,1,,,
+2026-02-01,DVS,OUG,DVS,4,Slums,DVS,6,2,,,"""
+
+
+def test_map_strength_excludes_dq():
+    from cdm_stats.db.schema import create_tables
+    from cdm_stats.ingestion.seed import seed_teams, seed_maps
+    from cdm_stats.metrics.map_strength import map_strength
+
+    conn = sqlite3.connect(":memory:")
+    create_tables(conn)
+    seed_teams(conn)
+    seed_maps(conn)
+    ingest_csv(conn, io.StringIO(DQ_STRENGTH_CSV))
+
+    dvs = conn.execute("SELECT team_id FROM teams WHERE abbreviation='DVS'").fetchone()[0]
+    tunisia = conn.execute(
+        "SELECT map_id FROM maps WHERE map_name='Tunisia' AND mode='SnD'"
+    ).fetchone()[0]
+
+    result = map_strength(conn, dvs, tunisia)
+    # DVS's only Tunisia result was DQ'd → no data
+    assert result["total_played"] == 0
+    assert result["rating"] is None
+    conn.close()
