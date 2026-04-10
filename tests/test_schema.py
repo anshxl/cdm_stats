@@ -176,21 +176,50 @@ def test_tournament_player_stats_table_exists():
     conn.close()
 
 
-def test_schema_version_is_4():
+def test_schema_version_is_5():
     import sqlite3
     from cdm_stats.db.schema import create_tables, SCHEMA_VERSION
 
-    assert SCHEMA_VERSION == 4
+    assert SCHEMA_VERSION == 5
     conn = sqlite3.connect(":memory:")
     create_tables(conn)
     version = conn.execute("PRAGMA user_version").fetchone()[0]
-    assert version == 4
+    assert version == 5
+    conn.close()
+
+
+def test_map_results_has_dq_column():
+    import sqlite3
+    from cdm_stats.db.schema import create_tables
+
+    conn = sqlite3.connect(":memory:")
+    create_tables(conn)
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(map_results)").fetchall()]
+    assert "dq" in cols
+    conn.close()
+
+
+def test_migration_v4_to_v5_adds_dq_column():
+    import sqlite3
+    from cdm_stats.db.schema import create_tables, migrate
+
+    conn = sqlite3.connect(":memory:")
+    create_tables(conn)
+    conn.execute("ALTER TABLE map_results DROP COLUMN dq")
+    conn.execute("PRAGMA user_version = 4")
+    conn.commit()
+
+    migrate(conn)
+
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(map_results)").fetchall()]
+    assert "dq" in cols
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == 5
     conn.close()
 
 
 def test_migration_v3_to_v4_adds_tournament_player_stats():
     import sqlite3
-    from cdm_stats.db.schema import create_tables, migrate
+    from cdm_stats.db.schema import create_tables, migrate, SCHEMA_VERSION
 
     conn = sqlite3.connect(":memory:")
     create_tables(conn)
@@ -204,5 +233,5 @@ def test_migration_v3_to_v4_adds_tournament_player_stats():
     cols = [r[1] for r in conn.execute("PRAGMA table_info(tournament_player_stats)").fetchall()]
     assert "result_id" in cols
     assert "week" in cols
-    assert conn.execute("PRAGMA user_version").fetchone()[0] == 4
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
     conn.close()

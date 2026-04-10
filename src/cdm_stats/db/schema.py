@@ -1,6 +1,6 @@
 import sqlite3
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 TABLES = [
     """
@@ -48,6 +48,7 @@ TABLES = [
         pick_context           TEXT NOT NULL CHECK(pick_context IN (
                                    'Opener', 'Neutral', 'Must-Win', 'Close-Out', 'Coin-Toss', 'Unknown'
                                )),
+        dq                     INTEGER NOT NULL DEFAULT 0 CHECK(dq IN (0, 1)),
         UNIQUE(match_id, slot)
     )
     """,
@@ -229,6 +230,13 @@ def migrate(conn: sqlite3.Connection) -> None:
             assists      INTEGER NOT NULL,
             UNIQUE(result_id, player_name)
         )""")
+
+    if version < 5:
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(map_results)").fetchall()]
+        if "dq" not in cols:
+            conn.execute(
+                "ALTER TABLE map_results ADD COLUMN dq INTEGER NOT NULL DEFAULT 0 CHECK(dq IN (0, 1))"
+            )
 
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()
