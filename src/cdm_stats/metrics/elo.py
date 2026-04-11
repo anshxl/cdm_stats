@@ -57,7 +57,6 @@ def update_elo(conn: sqlite3.Connection, match_id: int) -> None:
     expected1 = 1 / (1 + 10 ** ((elo2 - elo1) / 400))
     expected2 = 1 - expected1
 
-    # Compute continuous margin-weighted dominance score
     map_rows = conn.execute(
         """SELECT mr.winner_team_id, mr.picking_team_score, mr.non_picking_team_score, m.mode
            FROM map_results mr
@@ -67,19 +66,29 @@ def update_elo(conn: sqlite3.Connection, match_id: int) -> None:
         (match_id,),
     ).fetchall()
 
-    signed_margins = []
-    for map_winner_id, pick_score, non_pick_score, mode in map_rows:
-        winner_score = max(pick_score, non_pick_score)
-        loser_score = min(pick_score, non_pick_score)
-        norm = normalize_margin(winner_score, loser_score, mode)
-        # Positive if series winner won this map, negative if series loser won
-        if map_winner_id == winner_id:
-            signed_margins.append(norm)
-        else:
-            signed_margins.append(-norm)
+    # Map-count anchor: actual is driven by the series map-count differential
+    # (excluding DQ'd maps); margin is a small ±0.05 modifier. No floor — a
+    # scrappy series winner with poor map margins can score below 0.5.
+    total_maps = len(map_rows)
+    if total_maps == 0:
+        winner_actual = 0.5
+    else:
+        winner_map_wins = sum(1 for r in map_rows if r[0] == winner_id)
+        diff = 2 * winner_map_wins - total_maps
+        base = 0.5 + 0.4 * (diff / total_maps)
 
-    avg_dominance = sum(signed_margins) / len(signed_margins) if signed_margins else 0.0
-    winner_actual = max(0.5, 0.5 + avg_dominance * 0.5)
+        signed_margins = []
+        for map_winner_id, pick_score, non_pick_score, mode in map_rows:
+            norm = normalize_margin(
+                max(pick_score, non_pick_score),
+                min(pick_score, non_pick_score),
+                mode,
+            )
+            signed_margins.append(norm if map_winner_id == winner_id else -norm)
+        avg_margin = sum(signed_margins) / total_maps
+
+        winner_actual = max(0.0, min(1.0, base + avg_margin * 0.05))
+
     loser_actual = 1.0 - winner_actual
 
     result1 = winner_actual if winner_id == team1_id else loser_actual
