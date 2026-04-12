@@ -6,25 +6,27 @@ from dash import html, dcc
 from dash.dependencies import Input, Output
 
 from cdm_stats.dashboard.app import get_db
-from cdm_stats.dashboard.helpers import COLORS, get_all_teams
+from cdm_stats.dashboard.helpers import COLORS, get_all_teams, team_logo_src
 from cdm_stats.metrics.elo import get_elo_history, SEED_ELO
 
-# 14 distinct colors for 14 CDL teams — avoids Plotly's default 10-color wrap
+# 14 distinct colors for 14 CDL teams — tuned for the Twilight Ops dark canvas.
+# Each hue is bright enough to read on #0a0e18 but desaturated enough to avoid
+# the neon-default-Plotly look.
 TEAM_COLORS = [
-    "#636EFA",  # blue
-    "#EF553B",  # red
-    "#00CC96",  # green
-    "#AB63FA",  # purple
-    "#FFA15A",  # orange
-    "#19D3F3",  # cyan
-    "#FF6692",  # pink
-    "#B6E880",  # lime
-    "#FF97FF",  # magenta
-    "#FECB52",  # yellow
-    "#1F77B4",  # steel blue
-    "#2CA02C",  # forest green
-    "#D62728",  # crimson
-    "#8C564B",  # brown
+    "#7dd3fc",  # sky
+    "#fb923c",  # orange
+    "#5eead4",  # mint
+    "#f472b6",  # rose
+    "#facc15",  # gold
+    "#c084fc",  # lavender
+    "#a3e635",  # lime
+    "#fb7185",  # coral
+    "#60a5fa",  # azure
+    "#fbbf24",  # amber
+    "#34d399",  # emerald
+    "#e879f9",  # fuchsia
+    "#22d3ee",  # cyan
+    "#fda4af",  # blush
 ]
 
 
@@ -80,6 +82,7 @@ def _build_elo_traces(conn: sqlite3.Connection) -> list[dict]:
 def _build_figure(traces: list[dict]) -> go.Figure:
     fig = go.Figure()
     color_idx = 0
+    plotted: list[tuple[dict, str]] = []
     for trace in traces:
         if len(trace["elos"]) <= 1:
             continue
@@ -94,18 +97,42 @@ def _build_figure(traces: list[dict]) -> go.Figure:
             marker={"size": 5, "color": color},
             line={"width": 2, "color": color},
         ))
+        plotted.append((trace, color))
         color_idx += 1
-    fig.add_hline(y=SEED_ELO, line_dash="dash", line_color="gray", opacity=0.4,
+    fig.add_hline(y=SEED_ELO, line_dash="dash", line_color="#7d8aa3", opacity=0.4,
                   annotation_text="Seed (1000)", annotation_position="bottom right")
-    fig.add_vrect(x0=0, x1=6, fillcolor="gray", opacity=0.05, line_width=0,
+    fig.add_vrect(x0=0, x1=6, fillcolor="#7d8aa3", opacity=0.06, line_width=0,
                   annotation_text="Low Confidence Zone", annotation_position="top left",
-                  annotation_font_color="#666")
+                  annotation_font_color="#7d8aa3")
+
+    # Drop a logo at the right end of every team line that has one. Sized in
+    # data units relative to the visible range so it stays roughly stable.
+    if plotted:
+        all_elos = [e for trace, _ in plotted for e in trace["elos"]]
+        y_range = max(all_elos) - min(all_elos)
+        x_max = max(t["weeks"][-1] for t, _ in plotted)
+        logo_h = max(y_range * 0.05, 8)
+        logo_w = max(x_max * 0.04, 0.3)
+        for trace, _ in plotted:
+            src = team_logo_src(trace["abbr"])
+            if not src:
+                continue
+            fig.add_layout_image(dict(
+                source=src,
+                xref="x", yref="y",
+                x=trace["weeks"][-1], y=trace["elos"][-1],
+                sizex=logo_w, sizey=logo_h,
+                xanchor="left", yanchor="middle",
+                sizing="contain",
+                layer="above",
+            ))
+
     max_week = max((t["weeks"][-1] for t in traces if t["weeks"]), default=1)
     fig.update_layout(
         plot_bgcolor=COLORS["page_bg"],
         paper_bgcolor=COLORS["page_bg"],
         font={"color": COLORS["text"]},
-        margin={"l": 60, "r": 20, "t": 40, "b": 60},
+        margin={"l": 60, "r": 60, "t": 40, "b": 60},
         height=500,
         xaxis={
             "title": "Week",
@@ -113,6 +140,8 @@ def _build_figure(traces: list[dict]) -> go.Figure:
             "tickvals": list(range(0, max_week + 1)),
             "ticktext": ["Start"] + [f"W{w}" for w in range(1, max_week + 1)],
             "gridcolor": COLORS["border"],
+            # Pad the right edge so end-of-line team logos aren't clipped.
+            "range": [-0.3, max_week + max(max_week * 0.06, 0.6)],
         },
         yaxis={"title": "Elo Rating", "gridcolor": COLORS["border"]},
         legend={"font": {"size": 10}},
@@ -145,8 +174,31 @@ def _build_current_figure(traces: list[dict]) -> go.Figure:
         textposition="outside",
         hovertemplate="%{x}: %{y:.0f}<extra></extra>",
     ))
-    fig.add_hline(y=SEED_ELO, line_dash="dash", line_color="gray", opacity=0.4,
+    fig.add_hline(y=SEED_ELO, line_dash="dash", line_color="#7d8aa3", opacity=0.4,
                   annotation_text="Seed (1000)", annotation_position="bottom right")
+
+    if entries:
+        y_min = min(e["elo"] for e in entries) - 20
+        y_max = max(e["elo"] for e in entries) + 60  # extra headroom for logos
+        # Bars sit at integer x positions; size logos in those units.
+        logo_w = 0.7
+        logo_h = (y_max - y_min) * 0.07
+        for i, e in enumerate(entries):
+            src = team_logo_src(e["abbr"])
+            if not src:
+                continue
+            fig.add_layout_image(dict(
+                source=src,
+                xref="x", yref="y",
+                x=i, y=e["elo"] + (y_max - y_min) * 0.045,
+                sizex=logo_w, sizey=logo_h,
+                xanchor="center", yanchor="bottom",
+                sizing="contain",
+                layer="above",
+            ))
+    else:
+        y_min, y_max = None, None
+
     fig.update_layout(
         plot_bgcolor=COLORS["page_bg"],
         paper_bgcolor=COLORS["page_bg"],
@@ -157,10 +209,7 @@ def _build_current_figure(traces: list[dict]) -> go.Figure:
         yaxis={
             "title": "Current Elo Rating",
             "gridcolor": COLORS["border"],
-            "range": (
-                [min(e["elo"] for e in entries) - 20, max(e["elo"] for e in entries) + 20]
-                if entries else None
-            ),
+            "range": [y_min, y_max] if entries else None,
         },
         showlegend=False,
     )

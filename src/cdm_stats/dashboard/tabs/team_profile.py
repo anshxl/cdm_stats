@@ -1,13 +1,16 @@
 import sqlite3
 
 import dash_bootstrap_components as dbc
-from dash import html, callback_context, ALL
+from dash import html, dcc, callback_context, ALL
 from dash.dependencies import Input, Output, State
 
 from cdm_stats.dashboard.app import get_db
+from cdm_stats.dashboard.components.team_badge import (
+    team_badge, team_dropdown_options_rich,
+)
 from cdm_stats.dashboard.helpers import (
     COLORS, MODE_COLORS, LOW_SAMPLE_THRESHOLD,
-    wl_color, team_dropdown_options, get_all_maps,
+    wl_color, get_all_maps,
 )
 from cdm_stats.metrics.avoidance import (
     pick_win_loss, defend_win_loss, pick_context_distribution,
@@ -243,7 +246,7 @@ def _map_strength_card(conn: sqlite3.Connection, team_id: int, records: list[dic
         detail = html.Div(
             detail_children,
             id={"type": "tp-expand", "index": f"{rec['map_name']}-{rec['mode']}"},
-            style={"display": "none", "padding": "4px 12px 8px", "backgroundColor": "#0d1525"},
+            style={"display": "none", "padding": "4px 12px 8px", "backgroundColor": "#0d1322"},
         )
 
         rows.append(html.Div([main_row, detail]))
@@ -272,10 +275,10 @@ def _context_distribution_card(conn: sqlite3.Connection, team_id: int, records: 
     )
 
     context_colors = {
-        "Opener": "#60a5fa",
-        "Neutral": "#a78bfa",
-        "Must-Win": "#f87171",
-        "Close-Out": "#4ade80",
+        "Opener":    "#60a5fa",  # azure
+        "Neutral":   "#a78bfa",  # lavender
+        "Must-Win":  "#ef6f6c",  # softened coral
+        "Close-Out": "#5eead4",  # mint teal
     }
 
     rows = []
@@ -322,7 +325,7 @@ def _context_distribution_card(conn: sqlite3.Connection, team_id: int, records: 
                 ),
                 html.Div(
                     bar_segments,
-                    style={"flex": "1", "display": "flex", "borderRadius": "4px", "overflow": "hidden", "backgroundColor": "#2a2a4a"},
+                    style={"flex": "1", "display": "flex", "borderRadius": "4px", "overflow": "hidden", "backgroundColor": "#1c2640"},
                 ),
                 html.Span(
                     f"n={total_picks}",
@@ -455,8 +458,16 @@ def _elo_card(conn: sqlite3.Connection, team_id: int, abbr: str) -> dbc.Card:
     body = dbc.CardBody(
         html.Div(
             [
-                html.Span(abbr, style={"fontWeight": "600", "marginRight": "12px"}),
-                html.Span(elo_display, style={"fontSize": "1.5rem", "fontWeight": "700", "color": COLORS["your_team"]}),
+                team_badge(abbr, COLORS["your_team"], size=24, font_size="0.95rem"),
+                html.Span(
+                    elo_display,
+                    style={
+                        "fontSize": "1.5rem",
+                        "fontWeight": "700",
+                        "color": COLORS["your_team"],
+                        "marginLeft": "12px",
+                    },
+                ),
             ] + badge,
             style={"display": "flex", "alignItems": "center"},
         )
@@ -479,11 +490,12 @@ def layout():
         dbc.Row([
             dbc.Col([
                 html.Label("Select Team", style={"color": COLORS["text"], "fontWeight": "600"}),
-                dbc.Select(
+                dcc.Dropdown(
                     id="tp-team-select",
                     options=[],
                     placeholder="Choose a team...",
-                    style={"backgroundColor": COLORS["card_bg"], "color": COLORS["text"], "border": f"1px solid {COLORS['border']}"},
+                    clearable=False,
+                    optionHeight=36,
                 ),
             ], width=3),
         ], className="mb-3 mt-2", style={"padding": "0 12px"}),
@@ -503,12 +515,11 @@ def register_callbacks(app):
     def populate_teams(_):
         conn = get_db()
         try:
-            options = team_dropdown_options(conn)
-            gl_id = None
-            for opt in options:
-                if opt["label"] == "GL":
-                    gl_id = opt["value"]
-                    break
+            options = team_dropdown_options_rich(conn)
+            gl_id = next(
+                (opt["value"] for opt in options if opt.get("search") == "GL"),
+                None,
+            )
             return options, gl_id
         finally:
             conn.close()
@@ -526,12 +537,38 @@ def register_callbacks(app):
         team_id = int(team_id)
         conn = get_db()
         try:
-            abbr = conn.execute("SELECT abbreviation FROM teams WHERE team_id = ?", (team_id,)).fetchone()[0]
+            row = conn.execute(
+                "SELECT abbreviation, team_name FROM teams WHERE team_id = ?",
+                (team_id,),
+            ).fetchone()
+            abbr, full_name = row[0], row[1]
 
             records = _build_map_record_data(conn, team_id)
             ban_data = get_team_ban_summary(conn, team_id)
 
+            header = html.Div(
+                [
+                    team_badge(abbr, COLORS["your_team"], size=56, font_size="1.6rem"),
+                    html.Span(
+                        full_name,
+                        style={
+                            "color": COLORS["muted"],
+                            "fontSize": "0.95rem",
+                            "marginLeft": "14px",
+                            "letterSpacing": "0.04em",
+                            "textTransform": "uppercase",
+                        },
+                    ),
+                ],
+                style={
+                    "display": "flex",
+                    "alignItems": "center",
+                    "padding": "8px 12px 16px",
+                },
+            )
+
             return html.Div([
+                header,
                 dbc.Row([
                     dbc.Col(_map_strength_card(conn, team_id, records), md=6),
                     dbc.Col([

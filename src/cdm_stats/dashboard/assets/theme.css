@@ -1,0 +1,352 @@
+/* ============================================================
+   CDM Stats — Twilight Ops theme
+   Color & shader layer only. Do not change layout here.
+   Loaded automatically by Dash from src/cdm_stats/dashboard/assets/.
+   ============================================================ */
+
+:root {
+  --tw-ink:        #0a0e18;  /* page bg base */
+  --tw-ink-2:      #0d1322;  /* secondary surface */
+  --tw-slate:      #131a2a;  /* card bg */
+  --tw-slate-2:    #1a2233;  /* card hover */
+  --tw-hairline:   #222d46;  /* borders */
+  --tw-hairline-2: #2c3a58;  /* borders, stronger */
+  --tw-text:       #e8ecf4;
+  --tw-muted:      #7d8aa3;
+
+  --tw-mint:       #5eead4;
+  --tw-sky:        #7dd3fc;
+  --tw-amber:      #f5b544;
+  --tw-orange:     #fb923c;
+  --tw-coral:      #ef6f6c;
+  --tw-lavender:   #c084fc;
+
+  --tw-glow-mint:  rgba(94, 234, 212, 0.18);
+  --tw-glow-amber: rgba(245, 181, 68, 0.22);
+  --tw-glow-deep:  rgba(0, 0, 0, 0.55);
+}
+
+/* ---------- Page canvas ----------------------------------- */
+/* Layered radial gradients give the canvas depth without
+   adding noise — top-left mint, top-right amber, base ink. */
+html, body {
+  background-color: var(--tw-ink);
+  color: var(--tw-text);
+  background-image:
+    radial-gradient(1100px 700px at 12% -10%,  rgba(94, 234, 212, 0.07), transparent 60%),
+    radial-gradient(900px 600px  at 92% 0%,    rgba(251, 146, 60, 0.06), transparent 65%),
+    radial-gradient(1400px 900px at 50% 110%,  rgba(96, 165, 250, 0.05), transparent 70%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Remove Bootstrap Darkly's default body bg so the gradient shows */
+.dash-bootstrap, .container-fluid, main {
+  background-color: transparent !important;
+}
+
+/* ---------- Navbar ---------------------------------------- */
+/* Hairline gold underline gives the navbar an "intelligence
+   briefing" feel without being loud. */
+.navbar {
+  background-color: rgba(19, 26, 42, 0.85) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--tw-hairline);
+  box-shadow:
+    0 1px 0 0 rgba(245, 181, 68, 0.35),
+    0 8px 24px -12px var(--tw-glow-deep);
+}
+
+.navbar-brand {
+  letter-spacing: 0.02em;
+  background: linear-gradient(135deg, var(--tw-text) 0%, var(--tw-mint) 120%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+}
+
+/* ---------- Tabs ------------------------------------------ */
+.nav-tabs {
+  border-bottom: 1px solid var(--tw-hairline);
+  padding-left: 8px;
+}
+
+.nav-tabs .nav-link {
+  color: var(--tw-muted) !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-bottom: 2px solid transparent !important;
+  margin-right: 4px;
+  padding: 10px 16px !important;
+  transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
+  border-radius: 0 !important;
+}
+
+.nav-tabs .nav-link:hover {
+  color: var(--tw-text) !important;
+  background-color: rgba(125, 211, 252, 0.04) !important;
+}
+
+.nav-tabs .nav-link.active {
+  color: var(--tw-mint) !important;
+  border-bottom-color: var(--tw-mint) !important;
+  background: linear-gradient(180deg, transparent 0%, rgba(94, 234, 212, 0.06) 100%) !important;
+  text-shadow: 0 0 18px var(--tw-glow-mint);
+}
+
+/* ---------- Cards ----------------------------------------- */
+.card {
+  background-color: var(--tw-slate) !important;
+  border: 1px solid var(--tw-hairline) !important;
+  border-radius: 10px !important;
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.02) inset,
+    0 18px 40px -24px var(--tw-glow-deep);
+  transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+  overflow: hidden;
+}
+
+.card:hover {
+  border-color: var(--tw-hairline-2) !important;
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.03) inset,
+    0 24px 50px -24px var(--tw-glow-deep),
+    0 0 0 1px rgba(94, 234, 212, 0.05);
+}
+
+.card-header {
+  background: linear-gradient(180deg,
+                rgba(255, 255, 255, 0.02) 0%,
+                rgba(255, 255, 255, 0.00) 100%) !important;
+  border-bottom: 1px solid var(--tw-hairline) !important;
+  padding: 12px 16px !important;
+}
+
+/* ---------- Form controls --------------------------------- */
+
+/* Dash 4's dcc.Dropdown reads its colors from --Dash-* design tokens.
+   Override them at :root so the change reaches the Radix popover that
+   renders the open menu into document.body (a class scoped to
+   .dash-dropdown wouldn't catch the popover content). */
+:root {
+  --Dash-Fill-Inverse-Strong: var(--tw-slate);
+  --Dash-Stroke-Strong:       var(--tw-hairline);
+  --Dash-Stroke-Weak:         var(--tw-hairline);
+  --Dash-Text-Strong:         var(--tw-text);
+  --Dash-Text-Primary:        var(--tw-text);
+  --Dash-Text-Weak:           var(--tw-muted);
+  --Dash-Text-Disabled:       var(--tw-muted);
+  --Dash-Fill-Interactive-Strong: var(--tw-mint);
+  --Dash-Fill-Interactive-Weak:   rgba(94, 234, 212, 0.08);
+  --Dash-Fill-Primary-Hover:      rgba(94, 234, 212, 0.06);
+  --Dash-Fill-Primary-Active:     rgba(94, 234, 212, 0.12);
+  --Dash-Fill-Disabled:           var(--tw-hairline);
+  --Dash-Shading-Strong:          rgba(0, 0, 0, 0.55);
+  --Dash-Shading-Weak:            rgba(0, 0, 0, 0.35);
+}
+
+/* Trigger surface — the dropdown control itself */
+.dash-dropdown {
+  background: var(--tw-slate) !important;
+  color: var(--tw-text) !important;
+}
+
+.dash-dropdown:hover {
+  border-color: var(--tw-hairline-2) !important;
+}
+
+.dash-dropdown:focus,
+.dash-dropdown[data-state="open"] {
+  border-color: var(--tw-mint) !important;
+  outline-color: var(--tw-mint) !important;
+  box-shadow: 0 0 0 3px var(--tw-glow-mint);
+}
+
+.dash-dropdown-placeholder,
+.dash-dropdown-value {
+  color: var(--tw-text) !important;
+}
+
+.dash-dropdown-trigger-icon {
+  color: var(--tw-muted) !important;
+  fill: var(--tw-muted) !important;
+}
+
+/* Open menu (popover content) — rendered into document.body by Radix */
+.dash-dropdown-content {
+  background: var(--tw-slate) !important;
+  border: 1px solid var(--tw-hairline) !important;
+  color: var(--tw-text) !important;
+  box-shadow:
+    0 24px 60px -20px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(94, 234, 212, 0.04);
+}
+
+.dash-dropdown-option {
+  color: var(--tw-text) !important;
+  background: transparent !important;
+}
+
+.dash-dropdown-option:hover,
+.dash-dropdown-option[data-highlighted],
+.dash-dropdown-option[data-state="checked"] {
+  background: rgba(94, 234, 212, 0.10) !important;
+  color: var(--tw-mint) !important;
+}
+
+/* The clickable label inside an option (added by dash-options-list) */
+.dash-options-list-option {
+  color: var(--tw-text) !important;
+  background: transparent !important;
+}
+
+.dash-options-list-option:not(:has(input[disabled])):hover,
+.dash-options-list-option:not(:has(input[disabled])):focus-within {
+  color: var(--tw-mint) !important;
+}
+
+/* Search input inside the dropdown menu */
+.dash-dropdown-search-container {
+  background: var(--tw-ink-2) !important;
+  border-color: var(--tw-hairline) !important;
+}
+
+.dash-dropdown-search {
+  color: var(--tw-text) !important;
+  background: transparent !important;
+}
+
+.dash-dropdown-search::placeholder {
+  color: var(--tw-muted) !important;
+}
+
+/* Plain text inputs (not inside a dropdown) */
+input[type="text"],
+input[type="number"],
+input[type="search"] {
+  background-color: var(--tw-slate) !important;
+  border: 1px solid var(--tw-hairline) !important;
+  color: var(--tw-text) !important;
+  border-radius: 6px !important;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="search"]:focus {
+  border-color: var(--tw-mint) !important;
+  box-shadow: 0 0 0 3px var(--tw-glow-mint) !important;
+  outline: none;
+}
+
+/* ---------- Buttons / pills ------------------------------- */
+.btn {
+  border-radius: 6px !important;
+  letter-spacing: 0.01em;
+  transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn-primary {
+  background-color: var(--tw-mint) !important;
+  border-color: var(--tw-mint) !important;
+  color: #082018 !important;
+  font-weight: 600;
+  box-shadow: 0 6px 18px -8px var(--tw-glow-mint);
+}
+
+.btn-primary:hover {
+  background-color: #6ff0d6 !important;
+  border-color: #6ff0d6 !important;
+  box-shadow: 0 10px 24px -10px var(--tw-glow-mint);
+}
+
+.btn-secondary, .btn-outline-secondary {
+  background-color: transparent !important;
+  border-color: var(--tw-hairline-2) !important;
+  color: var(--tw-text) !important;
+}
+
+.btn-secondary:hover, .btn-outline-secondary:hover {
+  border-color: var(--tw-mint) !important;
+  color: var(--tw-mint) !important;
+  background-color: rgba(94, 234, 212, 0.05) !important;
+}
+
+/* ---------- Tables ---------------------------------------- */
+.table {
+  color: var(--tw-text) !important;
+  border-color: var(--tw-hairline) !important;
+}
+
+.table thead th {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+  border-bottom: 1px solid var(--tw-hairline-2) !important;
+  color: var(--tw-muted) !important;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+}
+
+.table tbody tr {
+  transition: background-color 140ms ease;
+}
+
+.table tbody tr:hover {
+  background-color: rgba(125, 211, 252, 0.03) !important;
+}
+
+.table td, .table th {
+  border-color: var(--tw-hairline) !important;
+}
+
+/* ---------- Misc Bootstrap overrides ---------------------- */
+hr {
+  border-color: var(--tw-hairline) !important;
+  opacity: 1;
+}
+
+.text-muted {
+  color: var(--tw-muted) !important;
+}
+
+a {
+  color: var(--tw-sky);
+  text-decoration: none;
+  transition: color 140ms ease;
+}
+
+a:hover {
+  color: var(--tw-mint);
+}
+
+/* ---------- Scrollbars ------------------------------------ */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--tw-ink);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #1f2a3d, #2c3a58);
+  border-radius: 6px;
+  border: 2px solid var(--tw-ink);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #2c3a58, #3a4a6e);
+}
+
+/* ---------- Selection ------------------------------------- */
+::selection {
+  background-color: rgba(94, 234, 212, 0.30);
+  color: var(--tw-text);
+}

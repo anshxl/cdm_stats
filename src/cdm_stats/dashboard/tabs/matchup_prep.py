@@ -1,13 +1,16 @@
 import sqlite3
 
 import dash_bootstrap_components as dbc
-from dash import html, callback_context, ALL
+from dash import html, dcc, callback_context, ALL
 from dash.dependencies import Input, Output, State
 
 from cdm_stats.dashboard.app import get_db
 from cdm_stats.dashboard.helpers import (
     COLORS, MODE_COLORS, LOW_SAMPLE_THRESHOLD,
-    wl_color, team_dropdown_options, get_all_maps,
+    wl_color, get_all_maps,
+)
+from cdm_stats.dashboard.components.team_badge import (
+    team_badge, team_dropdown_options_rich,
 )
 from cdm_stats.metrics.avoidance import pick_win_loss, defend_win_loss
 from cdm_stats.metrics.map_strength import map_strength
@@ -261,7 +264,7 @@ def _map_row(m: dict, row_idx: int) -> html.Div:
             ),
         ],
         id={"type": "mp-expand", "index": row_idx},
-        style={"display": "none", "padding": "6px 12px 10px 24px", "backgroundColor": "#0d1525"},
+        style={"display": "none", "padding": "6px 12px 10px 24px", "backgroundColor": "#0d1322"},
     )
 
     return html.Div([main_row, detail])
@@ -340,15 +343,12 @@ def layout():
                 dbc.Col(
                     [
                         html.Label("Your Team", style={"color": COLORS["your_team"], "fontWeight": "600"}),
-                        dbc.Select(
+                        dcc.Dropdown(
                             id="mp-your-team",
                             options=[],
                             placeholder="Select your team...",
-                            style={
-                                "backgroundColor": COLORS["card_bg"],
-                                "color": COLORS["text"],
-                                "border": f"1px solid {COLORS['border']}",
-                            },
+                            clearable=False,
+                            optionHeight=36,
                         ),
                     ],
                     width=3,
@@ -369,15 +369,12 @@ def layout():
                 dbc.Col(
                     [
                         html.Label("Opponent", style={"color": COLORS["opponent"], "fontWeight": "600"}),
-                        dbc.Select(
+                        dcc.Dropdown(
                             id="mp-opp-team",
                             options=[],
                             placeholder="Select opponent...",
-                            style={
-                                "backgroundColor": COLORS["card_bg"],
-                                "color": COLORS["text"],
-                                "border": f"1px solid {COLORS['border']}",
-                            },
+                            clearable=False,
+                            optionHeight=36,
                         ),
                     ],
                     width=3,
@@ -407,13 +404,13 @@ def register_callbacks(app):
     def populate_your_team(_):
         conn = get_db()
         try:
-            options = team_dropdown_options(conn)
-            # Default to GL
-            gl_id = None
-            for opt in options:
-                if opt["label"] == "GL":
-                    gl_id = opt["value"]
-                    break
+            options = team_dropdown_options_rich(conn)
+            # Default to GL — use the per-option search field since rich
+            # labels are Dash components, not strings.
+            gl_id = next(
+                (opt["value"] for opt in options if opt.get("search") == "GL"),
+                None,
+            )
             return options, gl_id
         finally:
             conn.close()
@@ -426,12 +423,11 @@ def register_callbacks(app):
     def populate_opp_team(_):
         conn = get_db()
         try:
-            options = team_dropdown_options(conn)
-            opp_id = None
-            for opt in options:
-                if opt["label"] == "SPG":
-                    opp_id = opt["value"]
-                    break
+            options = team_dropdown_options_rich(conn)
+            opp_id = next(
+                (opt["value"] for opt in options if opt.get("search") == "SPG"),
+                None,
+            )
             return options, opp_id
         finally:
             conn.close()
@@ -474,16 +470,18 @@ def register_callbacks(app):
 
             elo_badge = html.Div(
                 [
+                    team_badge(your_abbr, COLORS["your_team"], size=28, font_size="1rem"),
                     html.Span(
-                        f"{your_abbr} {your_elo:.0f}",
-                        style={"color": COLORS["your_team"], "fontWeight": "600", "marginRight": "6px"},
+                        f" {your_elo:.0f}",
+                        style={"color": COLORS["your_team"], "fontWeight": "600", "margin": "0 6px 0 6px"},
                     ),
                     html.Span(" LOW CONFIDENCE", style={"color": COLORS["neutral"], "fontSize": "0.7rem", "marginRight": "12px"})
                     if your_low else html.Span(style={"marginRight": "12px"}),
-                    html.Span("vs ", style={"color": COLORS["muted"], "marginRight": "6px"}),
+                    html.Span("vs", style={"color": COLORS["muted"], "margin": "0 8px"}),
+                    team_badge(opp_abbr, COLORS["opponent"], size=28, font_size="1rem"),
                     html.Span(
-                        f"{opp_abbr} {opp_elo:.0f}",
-                        style={"color": COLORS["opponent"], "fontWeight": "600", "marginRight": "6px"},
+                        f" {opp_elo:.0f}",
+                        style={"color": COLORS["opponent"], "fontWeight": "600", "margin": "0 6px"},
                     ),
                     html.Span(" LOW CONFIDENCE", style={"color": COLORS["neutral"], "fontSize": "0.7rem"})
                     if opp_low else html.Span(),

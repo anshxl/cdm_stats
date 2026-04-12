@@ -11,7 +11,11 @@ from cdm_stats.dashboard.helpers import COLORS, MODE_COLORS
 from cdm_stats.db import queries_scrim, queries_tournament_player
 
 PLAYER_COLORS = [
-    "#636EFA", "#EF553B", "#00CC96", "#AB63FA", "#FFA15A",
+    "#7dd3fc",  # sky
+    "#fb923c",  # orange
+    "#5eead4",  # mint
+    "#f472b6",  # rose
+    "#facc15",  # gold
 ]
 
 

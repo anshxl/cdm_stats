@@ -16,10 +16,31 @@ app = dash.Dash(
 )
 
 app.layout = dbc.Container([
-    dbc.NavbarSimple(
-        brand="CDM Stats",
-        brand_style={"fontSize": "1.3rem", "fontWeight": "600"},
-        color="#16213e",
+    dbc.Navbar(
+        dbc.Container(
+            dbc.NavbarBrand(
+                [
+                    html.Img(
+                        src="/assets/logos/cdm.png",
+                        alt="CDM",
+                        style={
+                            "height": "36px",
+                            "width": "36px",
+                            "objectFit": "contain",
+                            "marginRight": "12px",
+                            "filter": "drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5))",
+                        },
+                    ),
+                    html.Span(
+                        "CDM Stats",
+                        style={"fontSize": "1.3rem", "fontWeight": "600"},
+                    ),
+                ],
+                className="d-flex align-items-center",
+            ),
+            fluid=True,
+        ),
+        color="#131a2a",
         dark=True,
         className="mb-0",
     ),
