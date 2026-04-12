@@ -427,12 +427,12 @@ def register_callbacks(app):
         conn = get_db()
         try:
             options = team_dropdown_options(conn)
-            elv_id = None
+            opp_id = None
             for opt in options:
-                if opt["label"] == "ELV":
-                    elv_id = opt["value"]
+                if opt["label"] == "SPG":
+                    opp_id = opt["value"]
                     break
-            return options, elv_id
+            return options, opp_id
         finally:
             conn.close()
 
