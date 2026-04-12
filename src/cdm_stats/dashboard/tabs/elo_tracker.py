@@ -7,6 +7,7 @@ from dash.dependencies import Input, Output
 
 from cdm_stats.dashboard.app import get_db
 from cdm_stats.dashboard.helpers import COLORS, get_all_teams, team_logo_src
+from cdm_stats.dashboard.team_colors import team_colors
 from cdm_stats.metrics.elo import get_elo_history, SEED_ELO
 
 # 14 distinct colors for 14 CDL teams — tuned for the Twilight Ops dark canvas.
@@ -157,10 +158,15 @@ def _build_current_figure(traces: list[dict]) -> go.Figure:
     for trace in traces:
         if len(trace["elos"]) <= 1:
             continue
+        # Fall back to the high-contrast palette when a team has no
+        # registry entry, so unfilled rows still render distinctly.
+        fallback = TEAM_COLORS[color_idx % len(TEAM_COLORS)]
+        primary, secondary = team_colors(trace["abbr"], fallback)
         entries.append({
             "abbr": trace["abbr"],
             "elo": trace["elos"][-1],
-            "color": TEAM_COLORS[color_idx % len(TEAM_COLORS)],
+            "primary": primary,
+            "secondary": secondary,
         })
         color_idx += 1
     entries.sort(key=lambda e: e["elo"], reverse=True)
@@ -169,7 +175,13 @@ def _build_current_figure(traces: list[dict]) -> go.Figure:
     fig.add_trace(go.Bar(
         x=[e["abbr"] for e in entries],
         y=[e["elo"] for e in entries],
-        marker={"color": [e["color"] for e in entries]},
+        marker={
+            "color": [e["primary"] for e in entries],
+            "line": {
+                "color": [e["secondary"] for e in entries],
+                "width": 2,
+            },
+        },
         text=[f"{e['elo']:.0f}" for e in entries],
         textposition="outside",
         hovertemplate="%{x}: %{y:.0f}<extra></extra>",
