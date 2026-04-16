@@ -187,9 +187,28 @@ def layout():
         html.Div(id="player-summary-cards"),
         html.H5("K/D Trend", style={"color": COLORS["text"]}, className="mt-4 mb-2"),
         dcc.Graph(id="player-kd-chart"),
-        html.H5("Per-Map Breakdown", style={"color": COLORS["text"]}, className="mt-4 mb-2"),
         html.Div(id="player-map-table"),
     ], fluid=True)
+
+
+MODE_ORDER = {"SnD": 0, "HP": 1, "Control": 2}
+
+
+def _mode_legend() -> html.Div:
+    return html.Div(
+        [
+            html.Span(
+                mode,
+                style={
+                    "color": MODE_COLORS[mode],
+                    "fontWeight": "600",
+                    "marginRight": "14px",
+                },
+            )
+            for mode in ("SnD", "HP", "Control")
+        ],
+        style={"fontSize": "0.8rem", "marginBottom": "6px", "color": COLORS["muted"]},
+    )
 
 
 def register_callbacks(app):
@@ -253,18 +272,28 @@ def register_callbacks(app):
         map_data = _build_player_map_data(
             conn, source=source, player=player_val, mode=mode_val, week_range=wr,
         )
+        title_suffix = player_val if player_val else "Team Aggregate"
+        title = html.H5(
+            f"Per-Map Breakdown — {title_suffix}",
+            style={"color": COLORS["text"]},
+            className="mt-4 mb-2",
+        )
         if map_data:
+            sorted_map_data = sorted(
+                map_data,
+                key=lambda d: (MODE_ORDER.get(d["mode"], 99), d["map_name"]),
+            )
             header = html.Thead(html.Tr([
-                html.Th("Map"), html.Th("Mode"), html.Th("Games"),
+                html.Th("Map"), html.Th("Games"),
                 html.Th("Avg K/D"), html.Th("Avg Kills"), html.Th("Avg Deaths"),
                 html.Th("Avg Assists"), html.Th("Pos Eng %"),
             ]))
             body_rows = []
-            for d in map_data:
+            for d in sorted_map_data:
                 kd_color = COLORS["win"] if d["avg_kd"] >= 1.0 else COLORS["loss"]
+                map_color = MODE_COLORS.get(d["mode"], COLORS["text"])
                 body_rows.append(html.Tr([
-                    html.Td(d["map_name"]),
-                    html.Td(d["mode"], style={"color": MODE_COLORS.get(d["mode"], COLORS["text"])}),
+                    html.Td(d["map_name"], style={"color": map_color, "fontWeight": "600"}),
                     html.Td(str(d["games"])),
                     html.Td(f"{d['avg_kd']:.2f}", style={"color": kd_color, "fontWeight": "600"}),
                     html.Td(f"{d['avg_kills']:.1f}"),
@@ -272,13 +301,17 @@ def register_callbacks(app):
                     html.Td(f"{d['avg_assists']:.1f}"),
                     html.Td(f"{d['avg_pos_eng_pct']:.1f}%"),
                 ]))
-            table = dbc.Table(
+            table_body = dbc.Table(
                 [header, html.Tbody(body_rows)],
                 bordered=True, hover=True, size="sm",
                 style={"backgroundColor": COLORS["card_bg"]},
             )
+            table = html.Div([title, _mode_legend(), table_body])
         else:
-            table = html.P("No player data found.", style={"color": COLORS["muted"]})
+            table = html.Div([
+                title,
+                html.P("No player data found.", style={"color": COLORS["muted"]}),
+            ])
 
         conn.close()
         return card_row, fig, table

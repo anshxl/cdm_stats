@@ -115,6 +115,43 @@ def scrim_weekly_trend(
     ]
 
 
+def scrim_map_results_detail(
+    conn: sqlite3.Connection,
+    map_name: str,
+    week_range: tuple[int, int] | None = None,
+    limit: int = 5,
+) -> list[dict]:
+    """Return individual scrim results on a specific map.
+
+    If week_range is given, returns all matches within that range (no limit).
+    Otherwise returns up to `limit` most recent matches.
+    Sorted by date descending.
+    """
+    conditions = ["sm.map_name = ?"]
+    params: list = [map_name]
+    if week_range:
+        conditions.append("sm.week BETWEEN ? AND ?")
+        params.extend(week_range)
+
+    sql = f"""SELECT sm.scrim_date, sm.week, t.abbreviation,
+                     sm.our_score, sm.opponent_score, sm.result
+              FROM scrim_maps sm
+              JOIN teams t ON sm.opponent_id = t.team_id
+              WHERE {' AND '.join(conditions)}
+              ORDER BY sm.scrim_date DESC, sm.scrim_map_id DESC"""
+    if week_range is None:
+        sql += f" LIMIT {int(limit)}"
+
+    rows = conn.execute(sql, params).fetchall()
+    return [
+        {
+            "date": r[0], "week": r[1], "opponent": r[2],
+            "our_score": r[3], "opp_score": r[4], "result": r[5],
+        }
+        for r in rows
+    ]
+
+
 def player_summary(
     conn: sqlite3.Connection,
     player: str | None = None,
