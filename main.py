@@ -105,6 +105,24 @@ def cmd_chart_elo(args: argparse.Namespace) -> None:
     print(f"Elo trajectory exported to {path}")
 
 
+def cmd_ingest_playoffs(args: argparse.Namespace) -> None:
+    from cdm_stats.ingestion.playoff_loader import ingest_playoffs
+
+    conn = get_db()
+    with open(args.csv_file) as f:
+        results = ingest_playoffs(conn, f)
+
+    for r in results:
+        if r["status"] == "ok":
+            print(f"  OK: {r['match']}")
+        elif r["status"] == "skipped":
+            print(f"  SKIPPED (duplicate): {r['match']}")
+        else:
+            print(f"  ERROR: {r['match']}: {r['errors']}")
+
+    conn.close()
+
+
 def cmd_ingest_tournament(args: argparse.Namespace) -> None:
     from cdm_stats.ingestion.tournament_loader import ingest_tournament
     from cdm_stats.db.schema import migrate
@@ -248,6 +266,9 @@ def main() -> None:
     p_ingest_t.add_argument("maps_csv", help="Path to maps CSV file")
     p_ingest_t.add_argument("bans_csv", help="Path to bans CSV file")
 
+    p_ingest_pf = sub.add_parser("ingest-playoffs", help="Ingest CDL playoff series from CSV")
+    p_ingest_pf.add_argument("csv_file", help="Path to playoffs CSV file")
+
     p_scrim_team = sub.add_parser("ingest-scrims-team", help="Ingest scrim team-level CSV")
     p_scrim_team.add_argument("csv_file", help="Path to scrim team CSV file")
 
@@ -265,6 +286,7 @@ def main() -> None:
         "init": cmd_init,
         "ingest": cmd_ingest,
         "ingest-tournament": cmd_ingest_tournament,
+        "ingest-playoffs": cmd_ingest_playoffs,
         "ingest-scrims-team": cmd_ingest_scrims_team,
         "ingest-scrims-players": cmd_ingest_scrims_players,
         "ingest-tournament-players": cmd_ingest_tournament_players,

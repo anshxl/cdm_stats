@@ -1,0 +1,18 @@
+date,round,format,team1,team2,die_roll_winner,slot,map_name,winner,winner_score,loser_score,picked_by,series_winner,dq
+2026-04-19,LCQ,Bo5,GAL,Wolves,Wolves,1,Firing Range,GAL,10,8,Wolves
+2026-04-19,LCQ,Bo5,GAL,Wolves,Wolves,2,Takeoff,Wolves,250,135,GAL
+2026-04-19,LCQ,Bo5,GAL,Wolves,Wolves,3,Crossroads Strike,Wolves,4,1
+2026-04-19,LCQ,Bo5,GAL,Wolves,Wolves,4,Meltdown,Wolves,9,7,GAL
+2026-04-19,LCQ,Bo5,Q9,ELV,ELV,1,Meltdown,ELV,9,7,ELV
+2026-04-19,LCQ,Bo5,Q9,ELV,ELV,2,Hacienda,Q9,250,164,Q9
+2026-04-19,LCQ,Bo5,Q9,ELV,ELV,3,Crossroads Strike,ELV,4,3
+2026-04-19,LCQ,Bo5,Q9,ELV,ELV,4,Coastal,Q9,9,5,Q9
+2026-04-19,LCQ,Bo5,Q9,ELV,ELV,5,Combine,ELV,250,234,ELV
+2026-04-19,LCQ,Bo5,OUG,TSM,TSM,1,Meltdown,OUG,9,3,TSM
+2026-04-19,LCQ,Bo5,OUG,TSM,TSM,2,Takeoff,OUG,250,85,OUG
+2026-04-19,LCQ,Bo5,OUG,TSM,TSM,3,Raid,OUG,4,1
+2026-04-19,LCQ,Bo5,DVS,XROCK,XROCK,1,Firing Range,XROCK,9,4,XROCK
+2026-04-19,LCQ,Bo5,DVS,XROCK,XROCK,2,Summit,DVS,250,232,DVS
+2026-04-19,LCQ,Bo5,DVS,XROCK,XROCK,3,Standoff,XROCK,4,2
+2026-04-19,LCQ,Bo5,DVS,XROCK,XROCK,4,Tunisia,DVS,9,4,DVS
+2026-04-19,LCQ,Bo5,DVS,XROCK,XROCK,5,Combine,DVS,250,218,XROCK

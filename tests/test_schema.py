@@ -176,15 +176,15 @@ def test_tournament_player_stats_table_exists():
     conn.close()
 
 
-def test_schema_version_is_5():
+def test_schema_version_is_6():
     import sqlite3
     from cdm_stats.db.schema import create_tables, SCHEMA_VERSION
 
-    assert SCHEMA_VERSION == 5
+    assert SCHEMA_VERSION == 6
     conn = sqlite3.connect(":memory:")
     create_tables(conn)
     version = conn.execute("PRAGMA user_version").fetchone()[0]
-    assert version == 5
+    assert version == 6
     conn.close()
 
 
@@ -201,11 +201,12 @@ def test_map_results_has_dq_column():
 
 def test_migration_v4_to_v5_adds_dq_column():
     import sqlite3
-    from cdm_stats.db.schema import create_tables, migrate
+    from cdm_stats.db.schema import create_tables, migrate, SCHEMA_VERSION
 
     conn = sqlite3.connect(":memory:")
     create_tables(conn)
     conn.execute("ALTER TABLE map_results DROP COLUMN dq")
+    conn.execute("ALTER TABLE matches DROP COLUMN round")
     conn.execute("PRAGMA user_version = 4")
     conn.commit()
 
@@ -213,7 +214,7 @@ def test_migration_v4_to_v5_adds_dq_column():
 
     cols = [r[1] for r in conn.execute("PRAGMA table_info(map_results)").fetchall()]
     assert "dq" in cols
-    assert conn.execute("PRAGMA user_version").fetchone()[0] == 5
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
     conn.close()
 
 
@@ -234,4 +235,60 @@ def test_migration_v3_to_v4_adds_tournament_player_stats():
     assert "result_id" in cols
     assert "week" in cols
     assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
+    conn.close()
+
+
+def test_matches_has_round_column():
+    """Fresh DB after create_tables has matches.round column."""
+    import sqlite3
+    from cdm_stats.db.schema import create_tables
+
+    conn = sqlite3.connect(":memory:")
+    create_tables(conn)
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(matches)").fetchall()]
+    assert "round" in cols
+    conn.close()
+
+
+def test_matches_round_is_nullable():
+    """matches.round column is nullable (existing rows can have NULL)."""
+    import sqlite3
+    from cdm_stats.db.schema import create_tables
+
+    conn = sqlite3.connect(":memory:")
+    create_tables(conn)
+    info = conn.execute("PRAGMA table_info(matches)").fetchall()
+    round_col = [r for r in info if r[1] == "round"][0]
+    assert round_col[3] == 0  # notnull = 0 means nullable
+    conn.close()
+
+
+def test_migration_v5_to_v6_adds_round_column():
+    """Migration from v5 to v6 adds matches.round column without losing data."""
+    import sqlite3
+    from cdm_stats.db.schema import create_tables, migrate, SCHEMA_VERSION
+    from cdm_stats.ingestion.seed import seed_teams
+
+    assert SCHEMA_VERSION == 6  # bumped
+
+    conn = sqlite3.connect(":memory:")
+    create_tables(conn)
+    seed_teams(conn)
+    # Insert a row, then drop the round column and revert to v5
+    conn.execute(
+        "INSERT INTO matches (match_date, team1_id, team2_id, two_v_two_winner_id, series_winner_id) "
+        "VALUES ('2026-01-01', 1, 2, 1, 1)"
+    )
+    conn.execute("ALTER TABLE matches DROP COLUMN round")
+    conn.execute("PRAGMA user_version = 5")
+    conn.commit()
+
+    migrate(conn)
+
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(matches)").fetchall()]
+    assert "round" in cols
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
+    # Existing row preserved with NULL round
+    row = conn.execute("SELECT round FROM matches WHERE match_id = 1").fetchone()
+    assert row[0] is None
     conn.close()

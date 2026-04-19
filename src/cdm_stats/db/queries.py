@@ -39,12 +39,14 @@ def insert_match(
     series_winner_id: int,
     match_format: str = "CDL_BO5",
     series_number: int = 1,
+    round_: str | None = None,
 ) -> int:
     cursor = conn.execute(
         """INSERT INTO matches (match_date, team1_id, team2_id, two_v_two_winner_id,
-                                series_winner_id, match_format, series_number)
-           VALUES (?, ?, ?, ?, ?, ?, ?)""",
-        (match_date, team1_id, team2_id, two_v_two_winner_id, series_winner_id, match_format, series_number),
+                                series_winner_id, match_format, series_number, round)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+        (match_date, team1_id, team2_id, two_v_two_winner_id, series_winner_id,
+         match_format, series_number, round_),
     )
     return cursor.lastrowid
 

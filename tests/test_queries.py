@@ -48,6 +48,29 @@ def test_get_mode_for_slot():
     assert get_mode_for_slot(5) == "HP"
 
 
+def test_insert_match_with_round(db):
+    """insert_match accepts an optional round parameter and stores it."""
+    team1 = get_team_id_by_abbr(db, "DVS")
+    team2 = get_team_id_by_abbr(db, "OUG")
+    match_id = insert_match(
+        db, "2026-05-01", team1, team2, team1, team1,
+        match_format="CDL_PLAYOFF_BO5", round_="Upper QF",
+    )
+    db.commit()
+    row = db.execute("SELECT round FROM matches WHERE match_id = ?", (match_id,)).fetchone()
+    assert row[0] == "Upper QF"
+
+
+def test_insert_match_default_round_is_null(db):
+    """When round is not specified, the column stays NULL."""
+    team1 = get_team_id_by_abbr(db, "DVS")
+    team2 = get_team_id_by_abbr(db, "OUG")
+    match_id = insert_match(db, "2026-05-01", team1, team2, team1, team1)
+    db.commit()
+    row = db.execute("SELECT round FROM matches WHERE match_id = ?", (match_id,)).fetchone()
+    assert row[0] is None
+
+
 def test_insert_match(db):
     atl = get_team_id_by_abbr(db, "DVS")
     lat = get_team_id_by_abbr(db, "OUG")

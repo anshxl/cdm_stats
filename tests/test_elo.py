@@ -195,6 +195,61 @@ def _fresh_db():
     return conn
 
 
+def test_k_by_format_lookup():
+    """K_BY_FORMAT exposes the per-format K values."""
+    from cdm_stats.metrics.elo import K_BY_FORMAT
+    assert K_BY_FORMAT["CDL_BO5"] == 32
+    assert K_BY_FORMAT["CDL_PLAYOFF_BO5"] == 40
+    assert K_BY_FORMAT["CDL_PLAYOFF_BO7"] == 40
+    assert K_BY_FORMAT["TOURNAMENT_BO5"] == 32
+    assert K_BY_FORMAT["TOURNAMENT_BO7"] == 32
+
+
+def test_playoff_match_uses_k40(db):
+    """Playoff matches produce a larger Elo swing than identical regular-season matches."""
+    from cdm_stats.db.queries import get_team_id_by_abbr, insert_match, insert_map_result, get_map_id
+
+    dvs_id = get_team_id_by_abbr(db, "DVS")
+    oug_id = get_team_id_by_abbr(db, "OUG")
+    tunisia_id = get_map_id(db, "Tunisia", "SnD")
+
+    # Insert one regular-season match (DVS sweeps OUG 1-0 with a single map for clarity)
+    reg_match_id = insert_match(
+        db, "2026-01-01", dvs_id, oug_id, dvs_id, dvs_id,
+        match_format="CDL_BO5",
+    )
+    insert_map_result(
+        db, reg_match_id, 1, tunisia_id, dvs_id, dvs_id, 6, 3, 0, 0, "Opener",
+    )
+    db.commit()
+    update_elo(db, reg_match_id)
+    reg_dvs_elo = get_current_elo(db, dvs_id)
+
+    # Reset for clean comparison
+    db.execute("DELETE FROM team_elo")
+    db.execute("DELETE FROM map_results")
+    db.execute("DELETE FROM matches")
+    db.commit()
+
+    # Insert identical playoff match
+    pf_match_id = insert_match(
+        db, "2026-05-01", dvs_id, oug_id, dvs_id, dvs_id,
+        match_format="CDL_PLAYOFF_BO5", round_="Upper QF",
+    )
+    insert_map_result(
+        db, pf_match_id, 1, tunisia_id, dvs_id, dvs_id, 6, 3, 0, 0, "Opener",
+    )
+    db.commit()
+    update_elo(db, pf_match_id)
+    pf_dvs_elo = get_current_elo(db, dvs_id)
+
+    # K=40 vs K=32 → playoff Elo swing is 40/32 = 1.25x bigger
+    reg_delta = reg_dvs_elo - 1000
+    pf_delta = pf_dvs_elo - 1000
+    assert pf_delta > reg_delta
+    assert abs(pf_delta / reg_delta - 40 / 32) < 0.001
+
+
 def test_dq_map_excluded_from_elo_margin():
     """A DQ'd map's margin must not drag down the series winner's Elo gain."""
     conn_dq = _fresh_db()

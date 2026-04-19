@@ -4,6 +4,14 @@ K_FACTOR = 32
 SEED_ELO = 1000.0
 LOW_CONFIDENCE_THRESHOLD = 7
 
+K_BY_FORMAT = {
+    "CDL_BO5":         32,
+    "CDL_PLAYOFF_BO5": 40,
+    "CDL_PLAYOFF_BO7": 40,
+    "TOURNAMENT_BO5":  32,
+    "TOURNAMENT_BO7":  32,
+}
+
 MODE_MAX_MARGINS = {"SnD": 9, "HP": 250, "Control": 4}
 
 
@@ -46,10 +54,11 @@ def update_elo(conn: sqlite3.Connection, match_id: int) -> None:
         return
 
     match = conn.execute(
-        "SELECT team1_id, team2_id, series_winner_id, match_date FROM matches WHERE match_id = ?",
+        "SELECT team1_id, team2_id, series_winner_id, match_date, match_format FROM matches WHERE match_id = ?",
         (match_id,),
     ).fetchone()
-    team1_id, team2_id, winner_id, match_date = match
+    team1_id, team2_id, winner_id, match_date, match_format = match
+    k = K_BY_FORMAT.get(match_format, K_FACTOR)
 
     elo1 = get_current_elo(conn, team1_id)
     elo2 = get_current_elo(conn, team2_id)
@@ -94,8 +103,8 @@ def update_elo(conn: sqlite3.Connection, match_id: int) -> None:
     result1 = winner_actual if winner_id == team1_id else loser_actual
     result2 = 1.0 - result1
 
-    new_elo1 = elo1 + K_FACTOR * (result1 - expected1)
-    new_elo2 = elo2 + K_FACTOR * (result2 - expected2)
+    new_elo1 = elo1 + k * (result1 - expected1)
+    new_elo2 = elo2 + k * (result2 - expected2)
 
     conn.execute(
         "INSERT INTO team_elo (team_id, match_id, elo_after, match_date) VALUES (?, ?, ?, ?)",

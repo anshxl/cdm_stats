@@ -1,6 +1,6 @@
 import sqlite3
 
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 TABLES = [
     """
@@ -30,6 +30,7 @@ TABLES = [
             CHECK(match_format IN ('CDL_BO5', 'CDL_PLAYOFF_BO5', 'CDL_PLAYOFF_BO7',
                                     'TOURNAMENT_BO5', 'TOURNAMENT_BO7')),
         series_number       INTEGER NOT NULL DEFAULT 1,
+        round               TEXT,
         CHECK(team1_id != team2_id)
     )
     """,
@@ -237,6 +238,11 @@ def migrate(conn: sqlite3.Connection) -> None:
             conn.execute(
                 "ALTER TABLE map_results ADD COLUMN dq INTEGER NOT NULL DEFAULT 0 CHECK(dq IN (0, 1))"
             )
+
+    if version < 6:
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(matches)").fetchall()]
+        if "round" not in cols:
+            conn.execute("ALTER TABLE matches ADD COLUMN round TEXT")
 
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()
