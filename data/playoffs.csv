@@ -23,3 +23,7 @@ date,round,format,team1,team2,die_roll_winner,slot,map_name,winner,winner_score,
 2026-04-23,Quarterfinals,Bo5,GL,ELV,GL,1,Tunisia,GL,9,3,GL
 2026-04-23,Quarterfinals,Bo5,GL,ELV,GL,2,Hacienda,GL,250,249,ELV
 2026-04-23,Quarterfinals,Bo5,GL,ELV,GL,3,Raid,GL,4,3,
+2026-04-24,Round1,Bo5,Q9,OUG,Q9,1,Coastal,Q9,11,9,Q9
+2026-04-24,Round1,Bo5,Q9,OUG,Q9,2,Hacienda,OUG,250,179,OUG
+2026-04-24,Round1,Bo5,Q9,OUG,Q9,3,Standoff,Q9,4,2
+2026-04-24,Round1,Bo5,Q9,OUG,Q9,4,Meltdown,Q9,11,9,OUG
