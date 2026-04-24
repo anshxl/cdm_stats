@@ -23,14 +23,14 @@ FORMAT_WIN_THRESHOLD = {
 FORMAT_BAN_MODES = {
     "TOURNAMENT_BO5": {"HP", "SnD", "Control"},
     "TOURNAMENT_BO7": {"HP", "SnD"},
-    "CDL_PLAYOFF_BO5": {"SnD", "HP"},
-    "CDL_PLAYOFF_BO7": {"SnD", "HP"},
+    "CDL_PLAYOFF_BO5": {"HP", "SnD", "Control"},
+    "CDL_PLAYOFF_BO7": {"HP", "SnD"},
 }
 
 FORMAT_EXPECTED_BANS = {
     "TOURNAMENT_BO5": 6,
     "TOURNAMENT_BO7": 4,
-    "CDL_PLAYOFF_BO5": 4,
+    "CDL_PLAYOFF_BO5": 6,
     "CDL_PLAYOFF_BO7": 4,
 }
 

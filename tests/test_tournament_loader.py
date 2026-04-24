@@ -169,9 +169,11 @@ PLAYOFF_BO5_MAPS = """date,team1,team2,format,higher_seed,map,winner,team1_score
 
 PLAYOFF_BO5_BANS = """date,team1,team2,format,banned_by,map
 2026-03-10,ELV,ALU,CDL_PLAYOFF_BO5,ELV,Firing Range
-2026-03-10,ELV,ALU,CDL_PLAYOFF_BO5,ALU,Meltdown
 2026-03-10,ELV,ALU,CDL_PLAYOFF_BO5,ELV,Hacienda
-2026-03-10,ELV,ALU,CDL_PLAYOFF_BO5,ALU,Takeoff"""
+2026-03-10,ELV,ALU,CDL_PLAYOFF_BO5,ELV,Standoff
+2026-03-10,ELV,ALU,CDL_PLAYOFF_BO5,ALU,Meltdown
+2026-03-10,ELV,ALU,CDL_PLAYOFF_BO5,ALU,Takeoff
+2026-03-10,ELV,ALU,CDL_PLAYOFF_BO5,ALU,Crossroads Strike"""
 
 
 def test_playoff_bo5_creates_match_with_format(db):
@@ -227,8 +229,8 @@ def test_playoff_bo5_scores_oriented_when_picker_loses(db):
     assert row == (250, 200)
 
 
-def test_playoff_bo5_creates_4_bans(db):
+def test_playoff_bo5_creates_6_bans(db):
     from cdm_stats.ingestion.tournament_loader import ingest_tournament
     ingest_tournament(db, io.StringIO(PLAYOFF_BO5_MAPS), io.StringIO(PLAYOFF_BO5_BANS))
     count = db.execute("SELECT COUNT(*) FROM map_bans").fetchone()[0]
-    assert count == 4
+    assert count == 6

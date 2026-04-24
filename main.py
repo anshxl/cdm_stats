@@ -123,6 +123,24 @@ def cmd_ingest_playoffs(args: argparse.Namespace) -> None:
     conn.close()
 
 
+def cmd_ingest_playoff_bans(args: argparse.Namespace) -> None:
+    from cdm_stats.ingestion.playoff_bans_loader import ingest_playoff_bans
+
+    conn = get_db()
+    with open(args.csv_file) as f:
+        results = ingest_playoff_bans(conn, f)
+
+    for r in results:
+        if r["status"] == "ok":
+            print(f"  OK: {r['match']} ({r['bans']} bans)")
+        elif r["status"] == "skipped":
+            print(f"  SKIPPED: {r['match']} ({r.get('reason', '')})")
+        else:
+            print(f"  ERROR: {r['match']}: {r['errors']}")
+
+    conn.close()
+
+
 def cmd_ingest_tournament(args: argparse.Namespace) -> None:
     from cdm_stats.ingestion.tournament_loader import ingest_tournament
     from cdm_stats.db.schema import migrate
@@ -269,6 +287,9 @@ def main() -> None:
     p_ingest_pf = sub.add_parser("ingest-playoffs", help="Ingest CDL playoff series from CSV")
     p_ingest_pf.add_argument("csv_file", help="Path to playoffs CSV file")
 
+    p_ingest_pfb = sub.add_parser("ingest-playoff-bans", help="Ingest CDL playoff bans from CSV")
+    p_ingest_pfb.add_argument("csv_file", help="Path to playoff bans CSV file")
+
     p_scrim_team = sub.add_parser("ingest-scrims-team", help="Ingest scrim team-level CSV")
     p_scrim_team.add_argument("csv_file", help="Path to scrim team CSV file")
 
@@ -287,6 +308,7 @@ def main() -> None:
         "ingest": cmd_ingest,
         "ingest-tournament": cmd_ingest_tournament,
         "ingest-playoffs": cmd_ingest_playoffs,
+        "ingest-playoff-bans": cmd_ingest_playoff_bans,
         "ingest-scrims-team": cmd_ingest_scrims_team,
         "ingest-scrims-players": cmd_ingest_scrims_players,
         "ingest-tournament-players": cmd_ingest_tournament_players,
