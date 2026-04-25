@@ -27,3 +27,7 @@ date,round,format,team1,team2,die_roll_winner,slot,map_name,winner,winner_score,
 2026-04-24,Round1,Bo5,Q9,OUG,Q9,2,Hacienda,OUG,250,179,OUG
 2026-04-24,Round1,Bo5,Q9,OUG,Q9,3,Standoff,Q9,4,2
 2026-04-24,Round1,Bo5,Q9,OUG,Q9,4,Meltdown,Q9,11,9,OUG
+2026-04-24,Round1,Bo5,GAL,DVS,GAL,1,Slums,DVS,11,9,GAL
+2026-04-24,Round1,Bo5,GAL,DVS,GAL,2,Takeoff,GAL,250,74,DVS
+2026-04-24,Round1,Bo5,GAL,DVS,GAL,3,Raid,GAL,4,1
+2026-04-24,Round1,Bo5,GAL,DVS,GAL,4,Coastal,GAL,10,8,DVS
