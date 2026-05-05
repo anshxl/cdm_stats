@@ -31,3 +31,26 @@ date,round,format,team1,team2,die_roll_winner,slot,map_name,winner,winner_score,
 2026-04-24,Round1,Bo5,GAL,DVS,GAL,2,Takeoff,GAL,250,74,DVS
 2026-04-24,Round1,Bo5,GAL,DVS,GAL,3,Raid,GAL,4,1
 2026-04-24,Round1,Bo5,GAL,DVS,GAL,4,Coastal,GAL,10,8,DVS
+2026-04-25,Round2,Bo7,Wolves,Q9,Wolves,1,Meltdown,Q9,9,5,Wolves
+2026-04-25,Round2,Bo7,Wolves,Q9,Wolves,2,Hacienda,Q9,250,158,Q9
+2026-04-25,Round2,Bo7,Wolves,Q9,Wolves,3,Crossroads Strike,Q9,4,2,Wolves
+2026-04-25,Round2,Bo7,Wolves,Q9,Wolves,4,Tunisia,Wolves,11,9,Q9
+2026-04-25,Round2,Bo7,Wolves,Q9,Wolves,5,Takeoff,Wolves,250,224,Wolves
+2026-04-25,Round2,Bo7,Wolves,Q9,Wolves,6,Standoff,Q9,4,3,Q9
+2026-04-25,Round2,Bo7,ELV,GAL,ELV,1,Firing Range,GAL,9,4,ELV
+2026-04-25,Round2,Bo7,ELV,GAL,ELV,2,Summit,ELV,250,131,GAL
+2026-04-25,Round2,Bo7,ELV,GAL,ELV,3,Raid,ELV,4,1,ELV
+2026-04-25,Round2,Bo7,ELV,GAL,ELV,4,Slums,ELV,9,6,GAL
+2026-04-25,Round2,Bo7,ELV,GAL,ELV,5,Combine,GAL,250,156,ELV
+2026-04-25,Round2,Bo7,ELV,GAL,ELV,6,Crossroads Strike,ELV,4,2,GAL
+2026-04-26,UB Finals,Bo7,ALU,GL,ALU,1,Meltdown,ALU,9,7,ALU
+2026-04-26,UB Finals,Bo7,ALU,GL,ALU,2,Combine,ALU,250,158,GL
+2026-04-26,UB Finals,Bo7,ALU,GL,ALU,3,Crossroads Strike,ALU,4,3,ALU
+2026-04-26,UB Finals,Bo7,ALU,GL,ALU,4,Slums,GL,9,6,GL
+2026-04-26,UB Finals,Bo7,ALU,GL,ALU,5,Arsenal,ALU,250,73,ALU
+2026-04-26,Quarterfinals,Bo7,Q9,ELV,ELV,1,Meltdown,ELV,9,5,ELV
+2026-04-26,Quarterfinals,Bo7,Q9,ELV,ELV,2,Hacienda,ELV,250,202,Q9
+2026-04-26,Quarterfinals,Bo7,Q9,ELV,ELV,3,Raid,Q9,4,3,ELV
+2026-04-26,Quarterfinals,Bo7,Q9,ELV,ELV,4,Tunisia,Q9,9,3,Q9
+2026-04-26,Quarterfinals,Bo7,Q9,ELV,ELV,5,Takeoff,ELV,250,145,ELV
+2026-04-26,Quarterfinals,Bo7,Q9,ELV,ELV,6,Crossroads Strike,ELV,4,0,Q9
