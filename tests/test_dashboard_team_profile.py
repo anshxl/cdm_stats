@@ -28,6 +28,13 @@ def db():
     conn.close()
 
 
+def test_build_map_record_data_filters_by_season(db):
+    from cdm_stats.dashboard.tabs.team_profile import _build_map_record_data
+    dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
+    # No season-2 match data → no map records
+    assert _build_map_record_data(db, dvs_id, season=2) == []
+
+
 def test_build_map_record_data(db):
     from cdm_stats.dashboard.tabs.team_profile import _build_map_record_data
     dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]

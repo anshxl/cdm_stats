@@ -1,6 +1,6 @@
 import sqlite3
 
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
 
 TABLES = [
     """
@@ -31,6 +31,7 @@ TABLES = [
                                     'TOURNAMENT_BO5', 'TOURNAMENT_BO7')),
         series_number       INTEGER NOT NULL DEFAULT 1,
         round               TEXT,
+        season              INTEGER NOT NULL DEFAULT 1,
         CHECK(team1_id != team2_id)
     )
     """,
@@ -92,7 +93,8 @@ TABLES = [
         game_number    INTEGER NOT NULL DEFAULT 1,
         our_score      INTEGER NOT NULL,
         opponent_score INTEGER NOT NULL,
-        result         TEXT NOT NULL CHECK(result IN ('W', 'L'))
+        result         TEXT NOT NULL CHECK(result IN ('W', 'L')),
+        season         INTEGER NOT NULL DEFAULT 1
     )
     """,
     """
@@ -243,6 +245,14 @@ def migrate(conn: sqlite3.Connection) -> None:
         cols = [r[1] for r in conn.execute("PRAGMA table_info(matches)").fetchall()]
         if "round" not in cols:
             conn.execute("ALTER TABLE matches ADD COLUMN round TEXT")
+
+    if version < 7:
+        match_cols = [r[1] for r in conn.execute("PRAGMA table_info(matches)").fetchall()]
+        if "season" not in match_cols:
+            conn.execute("ALTER TABLE matches ADD COLUMN season INTEGER NOT NULL DEFAULT 1")
+        scrim_cols = [r[1] for r in conn.execute("PRAGMA table_info(scrim_maps)").fetchall()]
+        if "season" not in scrim_cols:
+            conn.execute("ALTER TABLE scrim_maps ADD COLUMN season INTEGER NOT NULL DEFAULT 1")
 
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()

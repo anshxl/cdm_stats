@@ -41,6 +41,45 @@ def scrim_db():
     conn.close()
 
 
+@pytest.fixture
+def two_season_scrim_db():
+    """Season 1 = TEAM_CSV/PLAYER_CSV; Season 2 = one extra DVS win on Raid."""
+    conn = sqlite3.connect(":memory:")
+    create_tables(conn)
+    migrate(conn)
+    seed_teams(conn)
+    seed_maps(conn)
+    ingest_scrims_team(conn, io.StringIO(TEAM_CSV), season=1)
+    ingest_scrims_players(conn, io.StringIO(PLAYER_CSV), season=1)
+    s2_team = """Date,Week,Opponent,Map,Mode,Score,Result
+2026-06-10,1,DVS,Raid,Control,3-2,W"""
+    ingest_scrims_team(conn, io.StringIO(s2_team), season=2)
+    yield conn
+    conn.close()
+
+
+def test_scrim_win_loss_defaults_to_season_1(two_season_scrim_db):
+    from cdm_stats.db.queries_scrim import scrim_win_loss
+    result = scrim_win_loss(two_season_scrim_db)
+    assert result["wins"] == 4
+    assert result["losses"] == 2
+
+
+def test_scrim_win_loss_season_2(two_season_scrim_db):
+    from cdm_stats.db.queries_scrim import scrim_win_loss
+    result = scrim_win_loss(two_season_scrim_db, season=2)
+    assert result["wins"] == 1
+    assert result["losses"] == 0
+    assert result["total"] == 1
+
+
+def test_scrim_map_breakdown_season_2(two_season_scrim_db):
+    from cdm_stats.db.queries_scrim import scrim_map_breakdown
+    rows = scrim_map_breakdown(two_season_scrim_db, season=2)
+    assert len(rows) == 1
+    assert rows[0]["map_name"] == "Raid"
+
+
 def test_scrim_win_loss_all(scrim_db):
     from cdm_stats.db.queries_scrim import scrim_win_loss
     result = scrim_win_loss(scrim_db)

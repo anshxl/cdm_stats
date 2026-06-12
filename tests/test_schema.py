@@ -176,15 +176,15 @@ def test_tournament_player_stats_table_exists():
     conn.close()
 
 
-def test_schema_version_is_6():
+def test_schema_version_is_7():
     import sqlite3
     from cdm_stats.db.schema import create_tables, SCHEMA_VERSION
 
-    assert SCHEMA_VERSION == 6
+    assert SCHEMA_VERSION == 7
     conn = sqlite3.connect(":memory:")
     create_tables(conn)
     version = conn.execute("PRAGMA user_version").fetchone()[0]
-    assert version == 6
+    assert version == 7
     conn.close()
 
 
@@ -263,13 +263,92 @@ def test_matches_round_is_nullable():
     conn.close()
 
 
+def test_matches_has_season_column():
+    """Fresh DB after create_tables has matches.season column."""
+    import sqlite3
+    from cdm_stats.db.schema import create_tables
+
+    conn = sqlite3.connect(":memory:")
+    create_tables(conn)
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(matches)").fetchall()]
+    assert "season" in cols
+    conn.close()
+
+
+def test_scrim_maps_has_season_column():
+    """Fresh DB after create_tables has scrim_maps.season column."""
+    import sqlite3
+    from cdm_stats.db.schema import create_tables
+
+    conn = sqlite3.connect(":memory:")
+    create_tables(conn)
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(scrim_maps)").fetchall()]
+    assert "season" in cols
+    conn.close()
+
+
+def test_season_defaults_to_1():
+    """Rows inserted without a season get season 1."""
+    import sqlite3
+    from cdm_stats.db.schema import create_tables
+    from cdm_stats.ingestion.seed import seed_teams, seed_maps
+
+    conn = sqlite3.connect(":memory:")
+    create_tables(conn)
+    seed_teams(conn)
+    seed_maps(conn)
+    conn.execute(
+        "INSERT INTO matches (match_date, team1_id, team2_id, two_v_two_winner_id, series_winner_id) "
+        "VALUES ('2026-01-01', 1, 2, 1, 1)"
+    )
+    conn.execute(
+        "INSERT INTO scrim_maps (scrim_date, week, opponent_id, map_name, mode, our_score, opponent_score, result) "
+        "VALUES ('2026-01-01', 1, 2, 'Raid', 'Control', 3, 1, 'W')"
+    )
+    conn.commit()
+    assert conn.execute("SELECT season FROM matches").fetchone()[0] == 1
+    assert conn.execute("SELECT season FROM scrim_maps").fetchone()[0] == 1
+    conn.close()
+
+
+def test_migration_v6_to_v7_adds_season_columns_backfilled():
+    """Migration from v6 to v7 adds season columns and backfills existing rows to 1."""
+    import sqlite3
+    from cdm_stats.db.schema import create_tables, migrate, SCHEMA_VERSION
+    from cdm_stats.ingestion.seed import seed_teams
+
+    conn = sqlite3.connect(":memory:")
+    create_tables(conn)
+    seed_teams(conn)
+    conn.execute(
+        "INSERT INTO matches (match_date, team1_id, team2_id, two_v_two_winner_id, series_winner_id) "
+        "VALUES ('2026-01-01', 1, 2, 1, 1)"
+    )
+    conn.execute(
+        "INSERT INTO scrim_maps (scrim_date, week, opponent_id, map_name, mode, our_score, opponent_score, result) "
+        "VALUES ('2026-01-01', 1, 2, 'Raid', 'Control', 3, 1, 'W')"
+    )
+    # Revert to v6 by dropping the new columns
+    conn.execute("ALTER TABLE matches DROP COLUMN season")
+    conn.execute("ALTER TABLE scrim_maps DROP COLUMN season")
+    conn.execute("PRAGMA user_version = 6")
+    conn.commit()
+
+    migrate(conn)
+
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
+    assert conn.execute("SELECT season FROM matches WHERE match_id = 1").fetchone()[0] == 1
+    assert conn.execute("SELECT season FROM scrim_maps").fetchone()[0] == 1
+    conn.close()
+
+
 def test_migration_v5_to_v6_adds_round_column():
     """Migration from v5 to v6 adds matches.round column without losing data."""
     import sqlite3
     from cdm_stats.db.schema import create_tables, migrate, SCHEMA_VERSION
     from cdm_stats.ingestion.seed import seed_teams
 
-    assert SCHEMA_VERSION == 6  # bumped
+    assert SCHEMA_VERSION == 7  # bumped
 
     conn = sqlite3.connect(":memory:")
     create_tables(conn)

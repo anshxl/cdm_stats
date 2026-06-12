@@ -17,7 +17,7 @@ def _validate_result(our_score: int, opp_score: int, result: str) -> bool:
     return our_score < opp_score
 
 
-def ingest_scrims_team(conn: sqlite3.Connection, file: IO) -> list[dict]:
+def ingest_scrims_team(conn: sqlite3.Connection, file: IO, season: int = 1) -> list[dict]:
     """Ingest scrim team-level CSV. Returns list of result dicts per row."""
     reader = csv.DictReader(file)
     results = []
@@ -76,8 +76,8 @@ def ingest_scrims_team(conn: sqlite3.Connection, file: IO) -> list[dict]:
         existing = conn.execute(
             """SELECT scrim_map_id FROM scrim_maps
                WHERE scrim_date = ? AND opponent_id = ? AND map_name = ?
-                 AND mode = ? AND game_number = ?""",
-            (r["date"], r["opponent_id"], r["map_name"], r["mode"], r["game_number"]),
+                 AND mode = ? AND game_number = ? AND season = ?""",
+            (r["date"], r["opponent_id"], r["map_name"], r["mode"], r["game_number"], season),
         ).fetchone()
 
         if existing:
@@ -87,10 +87,10 @@ def ingest_scrims_team(conn: sqlite3.Connection, file: IO) -> list[dict]:
         conn.execute(
             """INSERT INTO scrim_maps
                (scrim_date, week, opponent_id, map_name, mode, game_number,
-                our_score, opponent_score, result)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                our_score, opponent_score, result, season)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (r["date"], r["week"], r["opponent_id"], r["map_name"], r["mode"],
-             r["game_number"], r["our_score"], r["opponent_score"], r["result"]),
+             r["game_number"], r["our_score"], r["opponent_score"], r["result"], season),
         )
         results.append({"status": "ok", "row": r["desc"]})
 
@@ -98,7 +98,7 @@ def ingest_scrims_team(conn: sqlite3.Connection, file: IO) -> list[dict]:
     return results
 
 
-def ingest_scrims_players(conn: sqlite3.Connection, file: IO) -> list[dict]:
+def ingest_scrims_players(conn: sqlite3.Connection, file: IO, season: int = 1) -> list[dict]:
     """Ingest scrim player-level CSV. Team CSV must be ingested first."""
     reader = csv.DictReader(file)
     results = []
@@ -143,8 +143,8 @@ def ingest_scrims_players(conn: sqlite3.Connection, file: IO) -> list[dict]:
         scrim_map = conn.execute(
             """SELECT scrim_map_id FROM scrim_maps
                WHERE scrim_date = ? AND opponent_id = ? AND map_name = ?
-                 AND mode = ? AND game_number = ?""",
-            (date, opponent_id, map_name, mode, game_number),
+                 AND mode = ? AND game_number = ? AND season = ?""",
+            (date, opponent_id, map_name, mode, game_number, season),
         ).fetchone()
 
         if not scrim_map:

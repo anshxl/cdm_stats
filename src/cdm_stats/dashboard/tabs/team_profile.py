@@ -24,18 +24,18 @@ from cdm_stats.db.queries import get_team_map_wl, get_team_ban_summary
 # Data builders (tested directly)
 # ---------------------------------------------------------------------------
 
-def _build_map_record_data(conn: sqlite3.Connection, team_id: int) -> list[dict]:
+def _build_map_record_data(conn: sqlite3.Connection, team_id: int, season: int = 1) -> list[dict]:
     """Build per-map W/L records enriched with pick/defend splits and Map Strength."""
-    base = get_team_map_wl(conn, team_id)
+    base = get_team_map_wl(conn, team_id, season=season)
     maps = get_all_maps(conn)
     map_lookup = {(m[1], m[2]): m[0] for m in maps}
 
     for entry in base:
         map_id = map_lookup.get((entry["map_name"], entry["mode"]))
         if map_id:
-            pwl = pick_win_loss(conn, team_id, map_id)
-            dwl = defend_win_loss(conn, team_id, map_id)
-            ms = map_strength(conn, team_id, map_id)
+            pwl = pick_win_loss(conn, team_id, map_id, season=season)
+            dwl = defend_win_loss(conn, team_id, map_id, season=season)
+            ms = map_strength(conn, team_id, map_id, season=season)
             entry["map_id"] = map_id
             entry["pick_wins"] = pwl["wins"]
             entry["pick_losses"] = pwl["losses"]
@@ -51,7 +51,7 @@ def _build_map_record_data(conn: sqlite3.Connection, team_id: int) -> list[dict]
 
 
 def _build_map_results_detail(
-    conn: sqlite3.Connection, team_id: int, map_id: int
+    conn: sqlite3.Connection, team_id: int, map_id: int, season: int = 1
 ) -> list[dict]:
     """Build individual match results for a team on a specific map.
 
@@ -69,9 +69,10 @@ def _build_map_results_detail(
            FROM map_results mr
            JOIN matches m ON mr.match_id = m.match_id
            WHERE mr.map_id = ?
+             AND m.season = ?
              AND (m.team1_id = ? OR m.team2_id = ?)
            ORDER BY m.match_date DESC""",
-        (map_id, team_id, team_id),
+        (map_id, season, team_id, team_id),
     ).fetchall()
 
     results = []
@@ -126,7 +127,7 @@ def _strength_color(rating: float | None) -> str:
     return COLORS["neutral"]
 
 
-def _map_strength_card(conn: sqlite3.Connection, team_id: int, records: list[dict]) -> dbc.Card:
+def _map_strength_card(conn: sqlite3.Connection, team_id: int, records: list[dict], season: int = 1) -> dbc.Card:
     """Render the MAP STRENGTH card with expandable rows showing pick/defend splits and match history."""
     header = dbc.CardHeader(
         html.H5("Map Strength", className="mb-0", style={"color": COLORS["text"]}),
@@ -197,7 +198,7 @@ def _map_strength_card(conn: sqlite3.Connection, team_id: int, records: list[dic
 
         # Match history rows
         if rec.get("map_id"):
-            match_history = _build_map_results_detail(conn, team_id, rec["map_id"])
+            match_history = _build_map_results_detail(conn, team_id, rec["map_id"], season=season)
             if match_history:
                 # Header row
                 detail_children.append(
@@ -267,7 +268,7 @@ def _map_strength_card(conn: sqlite3.Connection, team_id: int, records: list[dic
     )
 
 
-def _context_distribution_card(conn: sqlite3.Connection, team_id: int, records: list[dict]) -> dbc.Card:
+def _context_distribution_card(conn: sqlite3.Connection, team_id: int, records: list[dict], season: int = 1) -> dbc.Card:
     """Render PICK CONTEXT DISTRIBUTION card showing how maps are used under pressure."""
     header = dbc.CardHeader(
         html.H5("Pick Context Distribution", className="mb-0", style={"color": COLORS["text"]}),
@@ -290,7 +291,7 @@ def _context_distribution_card(conn: sqlite3.Connection, team_id: int, records: 
         if total_played == 0:
             continue
 
-        dist = pick_context_distribution(conn, team_id, map_id)
+        dist = pick_context_distribution(conn, team_id, map_id, season=season)
         total_picks = sum(dist.values())
         if total_picks == 0:
             continue
@@ -435,10 +436,10 @@ def _ban_card(ban_data: dict, abbr: str) -> dbc.Card:
     )
 
 
-def _elo_card(conn: sqlite3.Connection, team_id: int, abbr: str) -> dbc.Card:
+def _elo_card(conn: sqlite3.Connection, team_id: int, abbr: str, season: int = 1) -> dbc.Card:
     """Render ELO RATING card."""
-    elo = get_current_elo(conn, team_id)
-    low_conf = is_low_confidence(conn, team_id)
+    elo = get_current_elo(conn, team_id, season=season)
+    low_conf = is_low_confidence(conn, team_id, season=season)
 
     elo_display = f"{elo:.0f}"
     badge = []
@@ -484,7 +485,7 @@ def _elo_card(conn: sqlite3.Connection, team_id: int, abbr: str) -> dbc.Card:
 # Layout and callbacks
 # ---------------------------------------------------------------------------
 
-def layout():
+def layout(season: int = 1):
     """Return the team profile tab layout with team selector and content area."""
     return html.Div([
         dbc.Row([
@@ -528,9 +529,10 @@ def register_callbacks(app):
     @app.callback(
         Output("tp-content", "children"),
         Input("tp-team-select", "value"),
+        Input("season-store", "data"),
         prevent_initial_call=True,
     )
-    def update_content(team_id):
+    def update_content(team_id, season):
         if not team_id:
             return html.Div("Select a team to view profile", style={"color": COLORS["muted"], "padding": "20px"})
 
@@ -543,8 +545,8 @@ def register_callbacks(app):
             ).fetchone()
             abbr, full_name = row[0], row[1]
 
-            records = _build_map_record_data(conn, team_id)
-            ban_data = get_team_ban_summary(conn, team_id)
+            records = _build_map_record_data(conn, team_id, season=season)
+            ban_data = get_team_ban_summary(conn, team_id, season=season)
 
             header = html.Div(
                 [
@@ -570,10 +572,10 @@ def register_callbacks(app):
             return html.Div([
                 header,
                 dbc.Row([
-                    dbc.Col(_map_strength_card(conn, team_id, records), md=6),
+                    dbc.Col(_map_strength_card(conn, team_id, records, season=season), md=6),
                     dbc.Col([
-                        _context_distribution_card(conn, team_id, records),
-                        _elo_card(conn, team_id, abbr),
+                        _context_distribution_card(conn, team_id, records, season=season),
+                        _elo_card(conn, team_id, abbr, season=season),
                     ], md=6),
                 ]),
                 dbc.Row([

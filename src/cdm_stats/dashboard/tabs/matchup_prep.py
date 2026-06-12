@@ -24,7 +24,7 @@ from cdm_stats.db.queries import get_ban_summary
 
 
 def _head_to_head(
-    conn: sqlite3.Connection, team_id: int, opp_id: int, map_id: int
+    conn: sqlite3.Connection, team_id: int, opp_id: int, map_id: int, season: int = 1
 ) -> dict:
     """W-L between two specific teams on a specific map."""
     row = conn.execute(
@@ -34,15 +34,16 @@ def _head_to_head(
            FROM map_results mr
            JOIN matches m ON mr.match_id = m.match_id
            WHERE mr.map_id = ?
+             AND m.season = ?
              AND ((m.team1_id = ? AND m.team2_id = ?)
                OR (m.team1_id = ? AND m.team2_id = ?))""",
-        (team_id, opp_id, map_id, team_id, opp_id, opp_id, team_id),
+        (team_id, opp_id, map_id, season, team_id, opp_id, opp_id, team_id),
     ).fetchone()
     return {"wins": row[0] or 0, "losses": row[1] or 0}
 
 
 def _team_map_wl(
-    conn: sqlite3.Connection, team_id: int, map_id: int
+    conn: sqlite3.Connection, team_id: int, map_id: int, season: int = 1
 ) -> dict:
     """Overall W-L for a team on a map (all opponents)."""
     row = conn.execute(
@@ -52,14 +53,15 @@ def _team_map_wl(
            FROM map_results mr
            JOIN matches m ON mr.match_id = m.match_id
            WHERE mr.map_id = ?
+             AND m.season = ?
              AND (m.team1_id = ? OR m.team2_id = ?)""",
-        (team_id, team_id, map_id, team_id, team_id),
+        (team_id, team_id, map_id, season, team_id, team_id),
     ).fetchone()
     return {"wins": row[0] or 0, "losses": row[1] or 0}
 
 
 def _build_matchup_data(
-    conn: sqlite3.Connection, your_id: int, opp_id: int
+    conn: sqlite3.Connection, your_id: int, opp_id: int, season: int = 1
 ) -> dict[str, list[dict]]:
     """Build per-mode map comparison data between two teams.
 
@@ -71,17 +73,17 @@ def _build_matchup_data(
     result: dict[str, list[dict]] = {"SnD": [], "HP": [], "Control": []}
 
     for map_id, map_name, mode in maps:
-        h2h = _head_to_head(conn, your_id, opp_id, map_id)
-        your_wl = _team_map_wl(conn, your_id, map_id)
-        opp_wl = _team_map_wl(conn, opp_id, map_id)
+        h2h = _head_to_head(conn, your_id, opp_id, map_id, season=season)
+        your_wl = _team_map_wl(conn, your_id, map_id, season=season)
+        opp_wl = _team_map_wl(conn, opp_id, map_id, season=season)
 
-        your_ms = map_strength(conn, your_id, map_id)
-        opp_ms = map_strength(conn, opp_id, map_id)
+        your_ms = map_strength(conn, your_id, map_id, season=season)
+        opp_ms = map_strength(conn, opp_id, map_id, season=season)
 
-        your_pwl = pick_win_loss(conn, your_id, map_id)
-        your_dwl = defend_win_loss(conn, your_id, map_id)
-        opp_pwl = pick_win_loss(conn, opp_id, map_id)
-        opp_dwl = defend_win_loss(conn, opp_id, map_id)
+        your_pwl = pick_win_loss(conn, your_id, map_id, season=season)
+        your_dwl = defend_win_loss(conn, your_id, map_id, season=season)
+        opp_pwl = pick_win_loss(conn, opp_id, map_id, season=season)
+        opp_dwl = defend_win_loss(conn, opp_id, map_id, season=season)
 
         # Compute delta (positive = your advantage)
         if your_ms["rating"] is not None and opp_ms["rating"] is not None:
@@ -276,10 +278,11 @@ def _ban_comparison(
     opp_id: int,
     your_abbr: str,
     opp_abbr: str,
+    season: int = 1,
 ) -> html.Div:
     """Ban comparison section for both teams in head-to-head matches."""
-    your_bans = get_ban_summary(conn, your_id, opp_id)
-    opp_bans = get_ban_summary(conn, opp_id, your_id)
+    your_bans = get_ban_summary(conn, your_id, opp_id, season=season)
+    opp_bans = get_ban_summary(conn, opp_id, your_id, season=season)
 
     def _ban_list(bans: list[dict], label: str, tint: str) -> html.Div:
         rows = []
@@ -335,7 +338,7 @@ def _ban_comparison(
 # ---------------------------------------------------------------------------
 
 
-def layout():
+def layout(season: int = 1):
     """Return the Match-Up Prep tab layout with two team selectors."""
     return html.Div([
         dbc.Row(
@@ -435,10 +438,11 @@ def register_callbacks(app):
     # Update content and Elo badge when either team changes
     @app.callback(
         [Output("mp-content", "children"), Output("mp-elo-badge", "children")],
-        [Input("mp-your-team", "value"), Input("mp-opp-team", "value")],
+        [Input("mp-your-team", "value"), Input("mp-opp-team", "value"),
+         Input("season-store", "data")],
         prevent_initial_call=True,
     )
-    def update_matchup(your_team, opp_team):
+    def update_matchup(your_team, opp_team, season):
         if not your_team or not opp_team:
             msg = "Select both teams to view match-up analysis"
             return (
@@ -460,13 +464,13 @@ def register_callbacks(app):
             your_abbr = conn.execute("SELECT abbreviation FROM teams WHERE team_id = ?", (your_id,)).fetchone()[0]
             opp_abbr = conn.execute("SELECT abbreviation FROM teams WHERE team_id = ?", (opp_id,)).fetchone()[0]
 
-            data = _build_matchup_data(conn, your_id, opp_id)
+            data = _build_matchup_data(conn, your_id, opp_id, season=season)
 
             # Elo badge
-            your_elo = get_current_elo(conn, your_id)
-            opp_elo = get_current_elo(conn, opp_id)
-            your_low = is_low_confidence(conn, your_id)
-            opp_low = is_low_confidence(conn, opp_id)
+            your_elo = get_current_elo(conn, your_id, season=season)
+            opp_elo = get_current_elo(conn, opp_id, season=season)
+            your_low = is_low_confidence(conn, your_id, season=season)
+            opp_low = is_low_confidence(conn, opp_id, season=season)
 
             elo_badge = html.Div(
                 [
@@ -521,7 +525,7 @@ def register_callbacks(app):
                 sections.append(section)
 
             # Ban comparison
-            sections.append(_ban_comparison(conn, your_id, opp_id, your_abbr, opp_abbr))
+            sections.append(_ban_comparison(conn, your_id, opp_id, your_abbr, opp_abbr, season=season))
 
             # Low sample note
             sections.append(

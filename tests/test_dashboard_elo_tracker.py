@@ -28,6 +28,12 @@ def db():
     conn.close()
 
 
+def test_build_elo_traces_filters_by_season(db):
+    from cdm_stats.dashboard.tabs.elo_tracker import _build_elo_traces
+    # No season-2 matches → no traces
+    assert _build_elo_traces(db, season=2) == []
+
+
 def test_build_elo_traces(db):
     from cdm_stats.dashboard.tabs.elo_tracker import _build_elo_traces
     traces = _build_elo_traces(db)

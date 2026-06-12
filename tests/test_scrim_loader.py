@@ -48,6 +48,28 @@ def test_ingest_scrims_team_scores(db):
     assert row == (180, 250, "L")
 
 
+def test_ingest_scrims_team_default_season_1(db):
+    from cdm_stats.ingestion.scrim_loader import ingest_scrims_team
+    ingest_scrims_team(db, io.StringIO(TEAM_CSV))
+    seasons = [r[0] for r in db.execute("SELECT DISTINCT season FROM scrim_maps").fetchall()]
+    assert seasons == [1]
+
+
+def test_ingest_scrims_team_tags_season(db):
+    from cdm_stats.ingestion.scrim_loader import ingest_scrims_team
+    ingest_scrims_team(db, io.StringIO(TEAM_CSV), season=2)
+    seasons = [r[0] for r in db.execute("SELECT DISTINCT season FROM scrim_maps").fetchall()]
+    assert seasons == [2]
+
+
+def test_ingest_scrims_team_same_map_different_season_not_duplicate(db):
+    from cdm_stats.ingestion.scrim_loader import ingest_scrims_team
+    ingest_scrims_team(db, io.StringIO(TEAM_CSV), season=1)
+    results = ingest_scrims_team(db, io.StringIO(TEAM_CSV), season=2)
+    assert all(r["status"] == "ok" for r in results)
+    assert db.execute("SELECT COUNT(*) FROM scrim_maps").fetchone()[0] == 8
+
+
 def test_ingest_scrims_team_opponent_fk(db):
     from cdm_stats.ingestion.scrim_loader import ingest_scrims_team
     ingest_scrims_team(db, io.StringIO(TEAM_CSV))

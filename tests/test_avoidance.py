@@ -48,6 +48,32 @@ def test_pick_win_loss_dvs_tunisia(db):
     assert result == {"wins": 1, "losses": 0}
 
 
+def test_pick_win_loss_filters_by_season(db):
+    ingest_csv(db, io.StringIO(MATCH_CSV))
+    dvs, _, tunisia, _, _ = _get_ids(db)
+    assert pick_win_loss(db, dvs, tunisia, season=1) == {"wins": 1, "losses": 0}
+    assert pick_win_loss(db, dvs, tunisia, season=2) == {"wins": 0, "losses": 0}
+
+    db.execute("UPDATE matches SET season = 2")
+    db.commit()
+    assert pick_win_loss(db, dvs, tunisia, season=1) == {"wins": 0, "losses": 0}
+    assert pick_win_loss(db, dvs, tunisia, season=2) == {"wins": 1, "losses": 0}
+
+
+def test_defend_win_loss_filters_by_season(db):
+    ingest_csv(db, io.StringIO(MATCH_CSV))
+    _, oug, tunisia, _, _ = _get_ids(db)
+    assert defend_win_loss(db, oug, tunisia, season=1) == {"wins": 0, "losses": 1}
+    assert defend_win_loss(db, oug, tunisia, season=2) == {"wins": 0, "losses": 0}
+
+
+def test_pick_context_distribution_filters_by_season(db):
+    ingest_csv(db, io.StringIO(MATCH_CSV))
+    dvs, _, tunisia, _, _ = _get_ids(db)
+    assert pick_context_distribution(db, dvs, tunisia, season=1)["Opener"] == 1
+    assert pick_context_distribution(db, dvs, tunisia, season=2)["Opener"] == 0
+
+
 def test_defend_win_loss_oug_tunisia(db):
     """OUG didn't pick Tunisia, DVS did. OUG's defend record on Tunisia."""
     ingest_csv(db, io.StringIO(MATCH_CSV))

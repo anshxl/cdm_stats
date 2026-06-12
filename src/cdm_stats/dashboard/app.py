@@ -44,6 +44,11 @@ app.layout = dbc.Container([
         dark=True,
         className="mb-0",
     ),
+    dcc.Store(id="season-store", data=2),
+    dbc.Tabs(id="season-tabs", active_tab="s2", className="mt-0 season-tabs", children=[
+        dbc.Tab(label="Season 1", tab_id="s1"),
+        dbc.Tab(label="Season 2", tab_id="s2"),
+    ]),
     dbc.Tabs(id="main-tabs", active_tab="matchup-prep", className="mt-0", children=[
         dbc.Tab(label="Match-Up Prep", tab_id="matchup-prep"),
         dbc.Tab(label="Team Profile", tab_id="team-profile"),
@@ -59,20 +64,29 @@ def get_db() -> sqlite3.Connection:
     return sqlite3.connect(DB_PATH)
 
 
-@app.callback(Output("tab-content", "children"), Input("main-tabs", "active_tab"))
-def render_tab(active_tab: str):
+@app.callback(Output("season-store", "data"), Input("season-tabs", "active_tab"))
+def sync_season(active_season_tab: str):
+    return 1 if active_season_tab == "s1" else 2
+
+
+@app.callback(
+    Output("tab-content", "children"),
+    Input("main-tabs", "active_tab"),
+    Input("season-store", "data"),
+)
+def render_tab(active_tab: str, season: int = 2):
     from cdm_stats.dashboard.tabs import team_profile, matchup_prep, elo_tracker
     from cdm_stats.dashboard.tabs import scrim_performance, player_stats
     if active_tab == "matchup-prep":
-        return matchup_prep.layout()
+        return matchup_prep.layout(season)
     elif active_tab == "team-profile":
-        return team_profile.layout()
+        return team_profile.layout(season)
     elif active_tab == "player-stats":
-        return player_stats.layout()
+        return player_stats.layout(season)
     elif active_tab == "scrim-performance":
-        return scrim_performance.layout()
+        return scrim_performance.layout(season)
     elif active_tab == "elo-tracker":
-        return elo_tracker.layout()
+        return elo_tracker.layout(season)
     return html.Div("Select a tab")
 
 

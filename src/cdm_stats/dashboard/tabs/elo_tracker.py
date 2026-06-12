@@ -38,20 +38,20 @@ def _week_number(date_str: str, earliest: str) -> int:
     return (d - e).days // 7 + 1
 
 
-def _build_elo_traces(conn: sqlite3.Connection) -> list[dict]:
+def _build_elo_traces(conn: sqlite3.Connection, season: int = 1) -> list[dict]:
     """Build Elo trajectory data for all teams.
     Returns list of dicts with keys: team_id, abbr, weeks, elos, hover_texts.
     Week 0 = seed. Each subsequent point is the last Elo of that week.
     """
     teams = get_all_teams(conn)
-    row = conn.execute("SELECT MIN(match_date) FROM matches").fetchone()
+    row = conn.execute("SELECT MIN(match_date) FROM matches WHERE season = ?", (season,)).fetchone()
     if not row or not row[0]:
         return []
     earliest_date = row[0]
 
     traces = []
     for team_id, abbr in teams:
-        history = get_elo_history(conn, team_id)
+        history = get_elo_history(conn, team_id, season=season)
         week_elo = {}
         week_hover = {}
         for h in history:
@@ -228,7 +228,7 @@ def _build_current_figure(traces: list[dict]) -> go.Figure:
     return fig
 
 
-def layout():
+def layout(season: int = 1):
     return dbc.Container([
         dbc.Row([
             dbc.Col([
@@ -254,10 +254,11 @@ def register_callbacks(app):
     @app.callback(
         Output("elo-chart", "figure"),
         Input("elo-view-toggle", "value"),
+        Input("season-store", "data"),
     )
-    def update_chart(view):
+    def update_chart(view, season):
         conn = get_db()
-        traces = _build_elo_traces(conn)
+        traces = _build_elo_traces(conn, season=season)
         conn.close()
         if view == "current":
             return _build_current_figure(traces)

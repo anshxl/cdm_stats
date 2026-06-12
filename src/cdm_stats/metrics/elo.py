@@ -20,27 +20,37 @@ def normalize_margin(winner_score: int, loser_score: int, mode: str) -> float:
     return margin / MODE_MAX_MARGINS[mode]
 
 
-def get_current_elo(conn: sqlite3.Connection, team_id: int) -> float:
+def get_current_elo(conn: sqlite3.Connection, team_id: int, season: int = 1) -> float:
     row = conn.execute(
-        "SELECT elo_after FROM team_elo WHERE team_id = ? ORDER BY match_date DESC, elo_id DESC LIMIT 1",
-        (team_id,),
+        """SELECT te.elo_after
+           FROM team_elo te
+           JOIN matches m ON te.match_id = m.match_id
+           WHERE te.team_id = ? AND m.season = ?
+           ORDER BY te.match_date DESC, te.elo_id DESC LIMIT 1""",
+        (team_id, season),
     ).fetchone()
     return row[0] if row else SEED_ELO
 
 
-def get_elo_history(conn: sqlite3.Connection, team_id: int) -> list[dict]:
+def get_elo_history(conn: sqlite3.Connection, team_id: int, season: int = 1) -> list[dict]:
     rows = conn.execute(
-        """SELECT elo_after, match_date, match_id
-           FROM team_elo WHERE team_id = ?
-           ORDER BY match_date, elo_id""",
-        (team_id,),
+        """SELECT te.elo_after, te.match_date, te.match_id
+           FROM team_elo te
+           JOIN matches m ON te.match_id = m.match_id
+           WHERE te.team_id = ? AND m.season = ?
+           ORDER BY te.match_date, te.elo_id""",
+        (team_id, season),
     ).fetchall()
     return [{"elo_after": r[0], "match_date": r[1], "match_id": r[2]} for r in rows]
 
 
-def is_low_confidence(conn: sqlite3.Connection, team_id: int) -> bool:
+def is_low_confidence(conn: sqlite3.Connection, team_id: int, season: int = 1) -> bool:
     count = conn.execute(
-        "SELECT COUNT(*) FROM team_elo WHERE team_id = ?", (team_id,)
+        """SELECT COUNT(*)
+           FROM team_elo te
+           JOIN matches m ON te.match_id = m.match_id
+           WHERE te.team_id = ? AND m.season = ?""",
+        (team_id, season),
     ).fetchone()[0]
     return count < LOW_CONFIDENCE_THRESHOLD
 

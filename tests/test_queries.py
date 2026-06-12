@@ -127,3 +127,28 @@ def test_get_team_map_wl_excludes_dq(db):
     tunisia_row = next((r for r in rows if r["map_name"] == "Tunisia"), None)
     # DVS's only Tunisia result was DQ'd → Tunisia should not appear at all
     assert tunisia_row is None
+
+
+def test_get_team_map_wl_filters_by_season(db):
+    import io
+    from cdm_stats.ingestion.csv_loader import ingest_csv
+    from cdm_stats.db.queries import get_team_map_wl
+
+    match_csv = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score
+2026-01-15,DVS,OUG,DVS,1,Tunisia,DVS,6,3
+2026-01-15,DVS,OUG,DVS,2,Summit,OUG,250,220
+2026-01-15,DVS,OUG,DVS,3,Raid,DVS,3,1
+2026-01-15,DVS,OUG,DVS,4,Slums,DVS,6,2"""
+    ingest_csv(db, io.StringIO(match_csv))
+    dvs = get_team_id_by_abbr(db, "DVS")
+
+    # Default season 1 sees the data
+    assert len(get_team_map_wl(db, dvs)) > 0
+    # Season 2 is empty
+    assert get_team_map_wl(db, dvs, season=2) == []
+
+    # Flip the match to season 2 → now season 2 sees it, season 1 does not
+    db.execute("UPDATE matches SET season = 2")
+    db.commit()
+    assert get_team_map_wl(db, dvs, season=1) == []
+    assert len(get_team_map_wl(db, dvs, season=2)) > 0

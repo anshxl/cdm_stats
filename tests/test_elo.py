@@ -37,6 +37,20 @@ def test_update_elo_inserts_two_rows(db_with_match):
     assert count == 2
 
 
+def test_elo_functions_filter_by_season(db_with_match):
+    from cdm_stats.metrics.elo import get_elo_history, is_low_confidence, SEED_ELO
+    db, _ = db_with_match
+    dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
+
+    # Season 1 has the match data
+    assert len(get_elo_history(db, dvs_id, season=1)) == 1
+    assert get_current_elo(db, dvs_id, season=1) > 1000
+    # Season 2 is empty → seed/baseline behavior
+    assert get_elo_history(db, dvs_id, season=2) == []
+    assert get_current_elo(db, dvs_id, season=2) == SEED_ELO
+    assert is_low_confidence(db, dvs_id, season=2) is True
+
+
 def test_elo_winner_goes_up_loser_goes_down(db_with_match):
     db, match_id = db_with_match
     dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]

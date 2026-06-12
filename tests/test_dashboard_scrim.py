@@ -42,6 +42,22 @@ def test_scrim_performance_build_summary(scrim_db):
     assert "HP" in data["by_mode"]
 
 
+def test_scrim_performance_build_summary_filters_by_season(scrim_db):
+    from cdm_stats.dashboard.tabs.scrim_performance import _build_summary_data
+    # Add a season-2 scrim
+    s2 = """Date,Week,Opponent,Map,Mode,Score,Result
+2026-06-10,1,DVS,Raid,Control,3-1,W"""
+    ingest_scrims_team(scrim_db, io.StringIO(s2), season=2)
+
+    s1 = _build_summary_data(scrim_db, season=1)
+    assert s1["overall"]["wins"] == 2
+    assert s1["overall"]["losses"] == 1
+
+    s2_data = _build_summary_data(scrim_db, season=2)
+    assert s2_data["overall"]["wins"] == 1
+    assert s2_data["overall"]["losses"] == 0
+
+
 def test_scrim_performance_build_map_table(scrim_db):
     from cdm_stats.dashboard.tabs.scrim_performance import _build_map_table_data
     rows = _build_map_table_data(scrim_db)
@@ -63,6 +79,13 @@ def test_scrim_performance_layout():
     from cdm_stats.dashboard.tabs.scrim_performance import layout
     result = layout()
     assert result is not None
+
+
+def test_player_stats_build_summary_filters_by_season(scrim_db):
+    from cdm_stats.dashboard.tabs.player_stats import _build_player_cards_data
+    # Season 1 has 5 players; season 2 has none
+    assert len(_build_player_cards_data(scrim_db, source="scrim", season=1)) == 5
+    assert _build_player_cards_data(scrim_db, source="scrim", season=2) == []
 
 
 def test_player_stats_build_summary(scrim_db):

@@ -32,9 +32,10 @@ def _build_player_cards_data(
     player: str | None = None,
     mode: str | None = None,
     week_range: tuple[int, int] | None = None,
+    season: int = 1,
 ) -> list[dict]:
     return _queries_for(source).player_summary(
-        conn, player=player, mode=mode, week_range=week_range,
+        conn, player=player, mode=mode, week_range=week_range, season=season,
     )
 
 
@@ -43,9 +44,10 @@ def _build_kd_trend_data(
     source: str = "tournament",
     player: str | None = None,
     mode: str | None = None,
+    season: int = 1,
 ) -> list[dict]:
     return _queries_for(source).player_weekly_trend(
-        conn, player=player, mode=mode,
+        conn, player=player, mode=mode, season=season,
     )
 
 
@@ -55,9 +57,10 @@ def _build_player_map_data(
     player: str | None = None,
     mode: str | None = None,
     week_range: tuple[int, int] | None = None,
+    season: int = 1,
 ) -> list[dict]:
     return _queries_for(source).player_map_breakdown(
-        conn, player=player, mode=mode, week_range=week_range,
+        conn, player=player, mode=mode, week_range=week_range, season=season,
     )
 
 
@@ -114,29 +117,51 @@ def _kd_trend_figure(trend_data: list[dict]) -> go.Figure:
     return fig
 
 
-def _get_available_players(conn: sqlite3.Connection, source: str) -> list[str]:
-    table = "tournament_player_stats" if source == "tournament" else "scrim_player_stats"
-    rows = conn.execute(
-        f"SELECT DISTINCT player_name FROM {table} ORDER BY player_name"
-    ).fetchall()
-    return [r[0] for r in rows]
-
-
-def _get_available_weeks(conn: sqlite3.Connection, source: str) -> list[int]:
+def _get_available_players(conn: sqlite3.Connection, source: str, season: int = 1) -> list[str]:
     if source == "tournament":
         rows = conn.execute(
-            "SELECT DISTINCT week FROM tournament_player_stats ORDER BY week"
+            """SELECT DISTINCT tp.player_name
+               FROM tournament_player_stats tp
+               JOIN map_results mr ON tp.result_id = mr.result_id
+               JOIN matches m ON mr.match_id = m.match_id
+               WHERE m.season = ?
+               ORDER BY tp.player_name""",
+            (season,),
         ).fetchall()
     else:
         rows = conn.execute(
-            "SELECT DISTINCT week FROM scrim_maps ORDER BY week"
+            """SELECT DISTINCT sp.player_name
+               FROM scrim_player_stats sp
+               JOIN scrim_maps sm ON sp.scrim_map_id = sm.scrim_map_id
+               WHERE sm.season = ?
+               ORDER BY sp.player_name""",
+            (season,),
         ).fetchall()
     return [r[0] for r in rows]
 
 
-def layout():
+def _get_available_weeks(conn: sqlite3.Connection, source: str, season: int = 1) -> list[int]:
+    if source == "tournament":
+        rows = conn.execute(
+            """SELECT DISTINCT tp.week
+               FROM tournament_player_stats tp
+               JOIN map_results mr ON tp.result_id = mr.result_id
+               JOIN matches m ON mr.match_id = m.match_id
+               WHERE m.season = ?
+               ORDER BY tp.week""",
+            (season,),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT DISTINCT week FROM scrim_maps WHERE season = ? ORDER BY week",
+            (season,),
+        ).fetchall()
+    return [r[0] for r in rows]
+
+
+def layout(season: int = 1):
     conn = get_db()
-    weeks = _get_available_weeks(conn, "tournament")
+    weeks = _get_available_weeks(conn, "tournament", season)
     conn.close()
     return dbc.Container([
         dbc.Row([
@@ -215,20 +240,22 @@ def register_callbacks(app):
     @app.callback(
         Output("player-filter", "options"),
         Input("player-source-filter", "value"),
+        Input("season-store", "data"),
     )
-    def populate_players(source):
+    def populate_players(source, season):
         conn = get_db()
-        players = _get_available_players(conn, source)
+        players = _get_available_players(conn, source, season)
         conn.close()
         return [{"label": "All", "value": "All"}] + [{"label": p, "value": p} for p in players]
 
     @app.callback(
         Output("player-week-pills-container", "children"),
         Input("player-source-filter", "value"),
+        Input("season-store", "data"),
     )
-    def render_player_week_pills(source):
+    def render_player_week_pills(source, season):
         conn = get_db()
-        weeks = _get_available_weeks(conn, source)
+        weeks = _get_available_weeks(conn, source, season)
         conn.close()
         return week_pills("player-week-pills", weeks)
 
@@ -240,15 +267,16 @@ def register_callbacks(app):
         Input("player-filter", "value"),
         Input("player-mode-filter", "value"),
         Input("player-week-pills", "value"),
+        Input("season-store", "data"),
     )
-    def update_player_tab(source, player, mode, week_value):
+    def update_player_tab(source, player, mode, week_value, season):
         conn = get_db()
         player_val = player if player != "All" else None
         mode_val = mode if mode != "All" else None
         wr = pill_value_to_range(week_value)
 
         card_data = _build_player_cards_data(
-            conn, source=source, player=player_val, mode=mode_val, week_range=wr,
+            conn, source=source, player=player_val, mode=mode_val, week_range=wr, season=season,
         )
         if not card_data and source == "tournament":
             card_row = dbc.Alert(
@@ -265,12 +293,12 @@ def register_callbacks(app):
             card_row = dbc.Row(cards)
 
         trend_data = _build_kd_trend_data(
-            conn, source=source, player=player_val, mode=mode_val,
+            conn, source=source, player=player_val, mode=mode_val, season=season,
         )
         fig = _kd_trend_figure(trend_data)
 
         map_data = _build_player_map_data(
-            conn, source=source, player=player_val, mode=mode_val, week_range=wr,
+            conn, source=source, player=player_val, mode=mode_val, week_range=wr, season=season,
         )
         title_suffix = player_val if player_val else "Team Aggregate"
         title = html.H5(

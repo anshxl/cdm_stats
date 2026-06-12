@@ -95,6 +95,32 @@ html, body {
   text-shadow: 0 0 18px var(--tw-glow-mint);
 }
 
+/* ---------- Season selector (top-level) ------------------- */
+/* Distinguish the season toggle from the content tabs below it:
+   pill-shaped, amber accent, sitting on its own hairline strip. */
+.season-tabs.nav-tabs {
+  border-bottom: 1px solid var(--tw-hairline-2);
+  padding: 6px 8px 0;
+  gap: 6px;
+}
+
+.season-tabs .nav-link {
+  border: 1px solid transparent !important;
+  border-radius: 999px !important;
+  padding: 4px 18px !important;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.season-tabs .nav-link.active {
+  color: var(--tw-amber) !important;
+  border: 1px solid var(--tw-amber) !important;
+  border-bottom-color: var(--tw-amber) !important;
+  background: rgba(245, 181, 68, 0.08) !important;
+  text-shadow: 0 0 18px var(--tw-glow-amber);
+}
+
 /* ---------- Cards ----------------------------------------- */
 .card {
   background-color: var(--tw-slate) !important;

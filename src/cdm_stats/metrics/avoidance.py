@@ -1,19 +1,21 @@
 import sqlite3
 
 
-def pick_win_loss(conn: sqlite3.Connection, team_id: int, map_id: int) -> dict:
+def pick_win_loss(conn: sqlite3.Connection, team_id: int, map_id: int, season: int = 1) -> dict:
     row = conn.execute(
         """SELECT
-               SUM(CASE WHEN winner_team_id = ? THEN 1 ELSE 0 END),
-               SUM(CASE WHEN winner_team_id != ? THEN 1 ELSE 0 END)
-           FROM map_results
-           WHERE picked_by_team_id = ? AND map_id = ? AND dq = 0""",
-        (team_id, team_id, team_id, map_id),
+               SUM(CASE WHEN mr.winner_team_id = ? THEN 1 ELSE 0 END),
+               SUM(CASE WHEN mr.winner_team_id != ? THEN 1 ELSE 0 END)
+           FROM map_results mr
+           JOIN matches m ON mr.match_id = m.match_id
+           WHERE mr.picked_by_team_id = ? AND mr.map_id = ? AND mr.dq = 0
+             AND m.season = ?""",
+        (team_id, team_id, team_id, map_id, season),
     ).fetchone()
     return {"wins": row[0] or 0, "losses": row[1] or 0}
 
 
-def defend_win_loss(conn: sqlite3.Connection, team_id: int, map_id: int) -> dict:
+def defend_win_loss(conn: sqlite3.Connection, team_id: int, map_id: int, season: int = 1) -> dict:
     row = conn.execute(
         """SELECT
                SUM(CASE WHEN winner_team_id = ? THEN 1 ELSE 0 END),
@@ -24,21 +26,24 @@ def defend_win_loss(conn: sqlite3.Connection, team_id: int, map_id: int) -> dict
              AND picked_by_team_id != ?
              AND map_id = ?
              AND mr.dq = 0
+             AND m.season = ?
              AND (m.team1_id = ? OR m.team2_id = ?)""",
-        (team_id, team_id, team_id, map_id, team_id, team_id),
+        (team_id, team_id, team_id, map_id, season, team_id, team_id),
     ).fetchone()
     return {"wins": row[0] or 0, "losses": row[1] or 0}
 
 
 
-def pick_context_distribution(conn: sqlite3.Connection, team_id: int, map_id: int) -> dict[str, int]:
+def pick_context_distribution(conn: sqlite3.Connection, team_id: int, map_id: int, season: int = 1) -> dict[str, int]:
     """Breakdown of how often a team picks this map in each context."""
     rows = conn.execute(
-        """SELECT pick_context, COUNT(*)
-           FROM map_results
-           WHERE picked_by_team_id = ? AND map_id = ? AND dq = 0
-           GROUP BY pick_context""",
-        (team_id, map_id),
+        """SELECT mr.pick_context, COUNT(*)
+           FROM map_results mr
+           JOIN matches m ON mr.match_id = m.match_id
+           WHERE mr.picked_by_team_id = ? AND mr.map_id = ? AND mr.dq = 0
+             AND m.season = ?
+           GROUP BY mr.pick_context""",
+        (team_id, map_id, season),
     ).fetchall()
     result = {"Opener": 0, "Neutral": 0, "Must-Win": 0, "Close-Out": 0}
     for ctx, count in rows:

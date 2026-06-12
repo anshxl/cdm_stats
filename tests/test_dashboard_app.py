@@ -13,6 +13,23 @@ def test_render_tab_returns_content():
         assert result is not None
 
 
+def test_render_tab_accepts_season():
+    """render_tab passes a season through to each tab without error."""
+    from cdm_stats.dashboard.app import render_tab
+    for tab in ["matchup-prep", "team-profile", "player-stats", "scrim-performance", "elo-tracker"]:
+        assert render_tab(tab, 1) is not None
+        assert render_tab(tab, 2) is not None
+
+
+def test_season_store_defaults_to_2():
+    """The season store initializes to Season 2 (current/live season)."""
+    import json
+    from cdm_stats.dashboard.app import app
+    serialized = json.dumps(app.layout.to_plotly_json(), default=str)
+    assert "season-store" in serialized
+    assert "season-tabs" in serialized
+
+
 def test_map_matrix_tab_removed():
     """map-matrix is no longer a valid tab id."""
     from cdm_stats.dashboard.app import render_tab

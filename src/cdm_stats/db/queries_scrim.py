@@ -6,10 +6,11 @@ def scrim_win_loss(
     mode: str | None = None,
     map_name: str | None = None,
     week_range: tuple[int, int] | None = None,
+    season: int = 1,
 ) -> dict:
     """Return W, L, Win% for scrims with optional filters."""
-    conditions = []
-    params: list = []
+    conditions = ["season = ?"]
+    params: list = [season]
 
     if mode:
         conditions.append("mode = ?")
@@ -41,10 +42,11 @@ def scrim_map_breakdown(
     conn: sqlite3.Connection,
     mode: str | None = None,
     week_range: tuple[int, int] | None = None,
+    season: int = 1,
 ) -> list[dict]:
     """Return per-map: played, W, L, Win%, avg scores."""
-    conditions = []
-    params: list = []
+    conditions = ["season = ?"]
+    params: list = [season]
 
     if mode:
         conditions.append("mode = ?")
@@ -82,10 +84,11 @@ def scrim_weekly_trend(
     conn: sqlite3.Connection,
     mode: str | None = None,
     map_name: str | None = None,
+    season: int = 1,
 ) -> list[dict]:
     """Return per-week win rate for trend chart."""
-    conditions = []
-    params: list = []
+    conditions = ["season = ?"]
+    params: list = [season]
 
     if mode:
         conditions.append("mode = ?")
@@ -120,6 +123,7 @@ def scrim_map_results_detail(
     map_name: str,
     week_range: tuple[int, int] | None = None,
     limit: int = 5,
+    season: int = 1,
 ) -> list[dict]:
     """Return individual scrim results on a specific map.
 
@@ -127,8 +131,8 @@ def scrim_map_results_detail(
     Otherwise returns up to `limit` most recent matches.
     Sorted by date descending.
     """
-    conditions = ["sm.map_name = ?"]
-    params: list = [map_name]
+    conditions = ["sm.map_name = ?", "sm.season = ?"]
+    params: list = [map_name, season]
     if week_range:
         conditions.append("sm.week BETWEEN ? AND ?")
         params.extend(week_range)
@@ -157,10 +161,11 @@ def player_summary(
     player: str | None = None,
     mode: str | None = None,
     week_range: tuple[int, int] | None = None,
+    season: int = 1,
 ) -> list[dict]:
     """Return per-player totals: kills, deaths, assists, K/D."""
-    conditions = []
-    params: list = []
+    conditions = ["sm.season = ?"]
+    params: list = [season]
 
     if player:
         conditions.append("sp.player_name = ?")
@@ -204,10 +209,11 @@ def player_weekly_trend(
     conn: sqlite3.Connection,
     player: str | None = None,
     mode: str | None = None,
+    season: int = 1,
 ) -> list[dict]:
     """Return per-week K/D per player for trend chart."""
-    conditions = []
-    params: list = []
+    conditions = ["sm.season = ?"]
+    params: list = [season]
 
     if player:
         conditions.append("sp.player_name = ?")
@@ -245,10 +251,11 @@ def player_map_breakdown(
     player: str | None = None,
     mode: str | None = None,
     week_range: tuple[int, int] | None = None,
+    season: int = 1,
 ) -> list[dict]:
     """Return per-map player averages."""
-    conditions = []
-    params: list = []
+    conditions = ["sm.season = ?"]
+    params: list = [season]
 
     if player:
         conditions.append("sp.player_name = ?")

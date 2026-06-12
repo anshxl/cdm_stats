@@ -58,7 +58,7 @@ def _get_opponent_elo_at_match(
 
 
 def map_strength(
-    conn: sqlite3.Connection, team_id: int, map_id: int
+    conn: sqlite3.Connection, team_id: int, map_id: int, season: int = 1
 ) -> dict:
     """Compute the Map Strength Rating for a team on a specific map.
 
@@ -76,9 +76,10 @@ def map_strength(
            JOIN matches m ON mr.match_id = m.match_id
            WHERE mr.map_id = ?
              AND mr.dq = 0
+             AND m.season = ?
              AND (m.team1_id = ? OR m.team2_id = ?)
            ORDER BY m.match_date""",
-        (map_id, team_id, team_id),
+        (map_id, season, team_id, team_id),
     ).fetchall()
 
     if not rows:

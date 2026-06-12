@@ -78,6 +78,18 @@ def test_player_summary_all(db_with_tournament_players):
     assert alpha["kd"] == pytest.approx(50 / 40, abs=0.01)
 
 
+def test_player_summary_filters_by_season(db_with_tournament_players):
+    from cdm_stats.db.queries_tournament_player import player_summary
+    db = db_with_tournament_players
+    assert len(player_summary(db, season=1)) == 2
+    assert player_summary(db, season=2) == []
+
+    db.execute("UPDATE matches SET season = 2")
+    db.commit()
+    assert player_summary(db, season=1) == []
+    assert len(player_summary(db, season=2)) == 2
+
+
 def test_player_summary_filter_by_player(db_with_tournament_players):
     from cdm_stats.db.queries_tournament_player import player_summary
     rows = player_summary(db_with_tournament_players, player="Alpha")

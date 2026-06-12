@@ -43,6 +43,17 @@ def test_build_matchup_data(db):
     assert tunisia["h2h"]["losses"] == 0
 
 
+def test_build_matchup_data_filters_by_season(db):
+    from cdm_stats.dashboard.tabs.matchup_prep import _build_matchup_data
+    dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
+    oug_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'OUG'").fetchone()[0]
+    data = _build_matchup_data(db, dvs_id, oug_id, season=2)
+    tunisia = next(m for m in data["SnD"] if m["map_name"] == "Tunisia")
+    # No season-2 data → empty head-to-head and per-team records
+    assert tunisia["h2h"] == {"wins": 0, "losses": 0}
+    assert tunisia["your_wl"] == {"wins": 0, "losses": 0}
+
+
 def test_build_matchup_data_includes_strength_and_delta(db):
     from cdm_stats.dashboard.tabs.matchup_prep import _build_matchup_data
     dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]

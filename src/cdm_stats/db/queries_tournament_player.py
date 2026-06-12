@@ -6,10 +6,11 @@ def player_summary(
     player: str | None = None,
     mode: str | None = None,
     week_range: tuple[int, int] | None = None,
+    season: int = 1,
 ) -> list[dict]:
     """Return per-player totals: kills, deaths, assists, K/D."""
-    conditions = []
-    params: list = []
+    conditions = ["mt.season = ?"]
+    params: list = [season]
 
     if player:
         conditions.append("tp.player_name = ?")
@@ -21,7 +22,7 @@ def player_summary(
         conditions.append("tp.week BETWEEN ? AND ?")
         params.extend(week_range)
 
-    where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
+    where = " WHERE " + " AND ".join(conditions)
 
     rows = conn.execute(
         f"""SELECT tp.player_name,
@@ -33,6 +34,7 @@ def player_summary(
             FROM tournament_player_stats tp
             JOIN map_results mr ON tp.result_id = mr.result_id
             JOIN maps m ON mr.map_id = m.map_id
+            JOIN matches mt ON mr.match_id = mt.match_id
             {where}
             GROUP BY tp.player_name
             ORDER BY tp.player_name""",
@@ -54,10 +56,11 @@ def player_weekly_trend(
     conn: sqlite3.Connection,
     player: str | None = None,
     mode: str | None = None,
+    season: int = 1,
 ) -> list[dict]:
     """Return per-week K/D per player for trend chart."""
-    conditions = []
-    params: list = []
+    conditions = ["mt.season = ?"]
+    params: list = [season]
 
     if player:
         conditions.append("tp.player_name = ?")
@@ -66,7 +69,7 @@ def player_weekly_trend(
         conditions.append("m.mode = ?")
         params.append(mode)
 
-    where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
+    where = " WHERE " + " AND ".join(conditions)
 
     rows = conn.execute(
         f"""SELECT tp.player_name, tp.week,
@@ -75,6 +78,7 @@ def player_weekly_trend(
             FROM tournament_player_stats tp
             JOIN map_results mr ON tp.result_id = mr.result_id
             JOIN maps m ON mr.map_id = m.map_id
+            JOIN matches mt ON mr.match_id = mt.match_id
             {where}
             GROUP BY tp.player_name, tp.week
             ORDER BY tp.player_name, tp.week""",
@@ -96,10 +100,11 @@ def player_map_breakdown(
     player: str | None = None,
     mode: str | None = None,
     week_range: tuple[int, int] | None = None,
+    season: int = 1,
 ) -> list[dict]:
     """Return per-map player averages."""
-    conditions = []
-    params: list = []
+    conditions = ["mt.season = ?"]
+    params: list = [season]
 
     if player:
         conditions.append("tp.player_name = ?")
@@ -111,7 +116,7 @@ def player_map_breakdown(
         conditions.append("tp.week BETWEEN ? AND ?")
         params.extend(week_range)
 
-    where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
+    where = " WHERE " + " AND ".join(conditions)
 
     rows = conn.execute(
         f"""SELECT m.map_name, m.mode,
@@ -124,6 +129,7 @@ def player_map_breakdown(
             FROM tournament_player_stats tp
             JOIN map_results mr ON tp.result_id = mr.result_id
             JOIN maps m ON mr.map_id = m.map_id
+            JOIN matches mt ON mr.match_id = mt.match_id
             {where}
             GROUP BY m.map_name, m.mode
             ORDER BY m.mode, m.map_name""",

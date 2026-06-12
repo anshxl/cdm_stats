@@ -43,6 +43,33 @@ def test_ban_summary_returns_bans_for_team(db):
     assert all(s["total_series"] >= 1 for s in summary)
 
 
+def test_ban_summary_filters_by_season(db):
+    ingest_tournament(db, io.StringIO(MAPS_CSV), io.StringIO(BANS_CSV))
+    elv_id = get_team_id_by_abbr(db, "ELV")
+    alu_id = get_team_id_by_abbr(db, "ALU")
+
+    assert len(get_ban_summary(db, elv_id, alu_id, season=1)) == 3
+    assert get_ban_summary(db, elv_id, alu_id, season=2) == []
+
+    db.execute("UPDATE matches SET season = 2")
+    db.commit()
+    assert get_ban_summary(db, elv_id, alu_id, season=1) == []
+    assert len(get_ban_summary(db, elv_id, alu_id, season=2)) == 3
+
+
+def test_team_ban_summary_filters_by_season(db):
+    from cdm_stats.db.queries import get_team_ban_summary
+    ingest_tournament(db, io.StringIO(MAPS_CSV), io.StringIO(BANS_CSV))
+    elv_id = get_team_id_by_abbr(db, "ELV")
+
+    s1 = get_team_ban_summary(db, elv_id, season=1)
+    assert len(s1["team_bans"]) > 0
+
+    s2 = get_team_ban_summary(db, elv_id, season=2)
+    assert s2["team_bans"] == []
+    assert s2["opponent_bans"] == []
+
+
 def test_ban_summary_correct_counts(db):
     ingest_tournament(db, io.StringIO(MAPS_CSV), io.StringIO(BANS_CSV))
     alu_id = get_team_id_by_abbr(db, "ALU")

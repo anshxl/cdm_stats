@@ -195,7 +195,7 @@ def cmd_ingest_scrims_team(args: argparse.Namespace) -> None:
 
     conn = get_db()
     with open(args.csv_file) as f:
-        results = ingest_scrims_team(conn, f)
+        results = ingest_scrims_team(conn, f, season=args.season)
 
     for r in results:
         if r["status"] == "ok":
@@ -213,7 +213,7 @@ def cmd_ingest_scrims_players(args: argparse.Namespace) -> None:
 
     conn = get_db()
     with open(args.csv_file) as f:
-        results = ingest_scrims_players(conn, f)
+        results = ingest_scrims_players(conn, f, season=args.season)
 
     for r in results:
         if r["status"] == "ok":
@@ -292,9 +292,11 @@ def main() -> None:
 
     p_scrim_team = sub.add_parser("ingest-scrims-team", help="Ingest scrim team-level CSV")
     p_scrim_team.add_argument("csv_file", help="Path to scrim team CSV file")
+    p_scrim_team.add_argument("--season", type=int, default=1, help="Season number (default 1)")
 
     p_scrim_players = sub.add_parser("ingest-scrims-players", help="Ingest scrim player-level CSV")
     p_scrim_players.add_argument("csv_file", help="Path to scrim player CSV file")
+    p_scrim_players.add_argument("--season", type=int, default=1, help="Season number (default 1)")
 
     p_tp = sub.add_parser("ingest-tournament-players", help="Ingest tournament player-level CSV")
     p_tp.add_argument("csv_file", help="Path to tournament player CSV file")

@@ -76,6 +76,14 @@ def test_map_strength_no_data_returns_none_rating(db):
     assert result["total_played"] == 0
 
 
+def test_map_strength_filters_by_season(db):
+    from cdm_stats.metrics.map_strength import map_strength
+    dvs, _, tunisia, _, _ = _get_ids(db)
+    assert map_strength(db, dvs, tunisia, season=1)["total_played"] == 1
+    assert map_strength(db, dvs, tunisia, season=2)["total_played"] == 0
+    assert map_strength(db, dvs, tunisia, season=2)["rating"] is None
+
+
 def test_map_strength_low_confidence_under_3(db):
     """With only 1 game played, low_confidence should be True."""
     from cdm_stats.metrics.map_strength import map_strength
