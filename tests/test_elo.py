@@ -105,6 +105,13 @@ def test_normalize_margin_control():
     assert result == 1.0
 
 
+def test_normalize_margin_control_first_to_3():
+    # first-to-3 sweep (3-0) is a full sweep -> 1.0, not 3/4
+    assert normalize_margin(3, 0, "Control") == 1.0
+    # 3-2 nail-biter -> margin 1 over a 3-point game
+    assert normalize_margin(3, 2, "Control") == 1 / 3
+
+
 def test_normalize_margin_close_game():
     # 250-248 HP = margin 2, normalized = 2/250 = 0.008
     result = normalize_margin(250, 248, "HP")

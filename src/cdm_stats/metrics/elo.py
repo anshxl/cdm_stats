@@ -17,7 +17,10 @@ MODE_MAX_MARGINS = {"SnD": 9, "HP": 250, "Control": 4}
 
 def normalize_margin(winner_score: int, loser_score: int, mode: str) -> float:
     margin = abs(winner_score - loser_score)
-    return margin / MODE_MAX_MARGINS[mode]
+    # Control allows both first-to-4 and first-to-3; the most you can win by is
+    # your winning total, so normalize by winner_score instead of a fixed cap.
+    denom = winner_score if mode == "Control" else MODE_MAX_MARGINS[mode]
+    return margin / denom
 
 
 def get_current_elo(conn: sqlite3.Connection, team_id: int, season: int = 1) -> float:
