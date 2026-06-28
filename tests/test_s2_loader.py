@@ -196,6 +196,17 @@ def test_s2_bans_partial_reingest_adds_missing(db):
     assert db.execute("SELECT COUNT(*) FROM map_bans").fetchone()[0] == 6
 
 
+def test_s2_bans_missing_competition_gives_clear_error(db):
+    ingest_s2_matches(db, io.StringIO(BASIC))
+    # Row missing the competition value: 5 fields under a 6-column header.
+    csv = BANS_HEADER + "\n2026-06-25,DVS,OUG,DVS,Arsenal"
+    results = ingest_s2_bans(db, io.StringIO(csv))
+    assert results[0]["status"] == "error"
+    errs = " ".join(results[0]["errors"]).lower()
+    assert "no matching series" not in errs        # don't mislead
+    assert "field" in errs or "column" in errs or "competition" in errs
+
+
 def test_s2_bans_match_not_found(db):
     # No matches ingested, so the ban's series has no match row.
     results = ingest_s2_bans(db, io.StringIO(BANS))

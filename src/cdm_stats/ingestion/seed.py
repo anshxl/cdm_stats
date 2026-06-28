@@ -16,6 +16,8 @@ TEAMS = [
     ("Team StarMagic", "TSM"),
     ("Elite Titan Esports", "ETs"),
     ("Team Felines", "Felines"),
+    ("Pandemic ESports", "PAC"),
+    ("Rival Esports", "RVL"),
 ]
 
 # 13 maps: 5 SnD, 5 HP, 3 Control

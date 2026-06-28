@@ -199,6 +199,17 @@ def ingest_s2_bans(conn: sqlite3.Connection, file: IO[str]) -> list[dict]:
 
     for key, bans in _group_rows(reader).items():
         date, competition, team1_abbr, team2_abbr = key
+
+        # A short row (missing a value, e.g. competition) shifts columns left and
+        # leaves the trailing 'map' empty. Catch it here so the error is clear
+        # instead of a misleading "no matching series".
+        if any(not (b.get("map") or "").strip() for b in bans):
+            results.append({"match": key, "status": "error", "errors": [
+                "Malformed row(s): missing fields. Expected columns "
+                "date,competition,team1,team2,banned_by,map (is the competition value present?)"
+            ]})
+            continue
+
         team1_id = get_team_id_by_abbr(conn, team1_abbr)
         team2_id = get_team_id_by_abbr(conn, team2_abbr)
 

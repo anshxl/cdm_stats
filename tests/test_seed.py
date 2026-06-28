@@ -12,10 +12,10 @@ def db():
     conn.close()
 
 
-def test_seed_teams_inserts_14_teams(db):
+def test_seed_teams_inserts_16_teams(db):
     seed_teams(db)
     cursor = db.execute("SELECT COUNT(*) FROM teams")
-    assert cursor.fetchone()[0] == 14
+    assert cursor.fetchone()[0] == 16
 
 
 def test_seed_teams_abbreviations_are_unique(db):
@@ -42,4 +42,4 @@ def test_seed_is_idempotent(db):
     seed_teams(db)
     seed_teams(db)  # should not raise or duplicate
     cursor = db.execute("SELECT COUNT(*) FROM teams")
-    assert cursor.fetchone()[0] == 14
+    assert cursor.fetchone()[0] == 16
