@@ -1,19 +1,14 @@
 import sqlite3
 
-FORMAT_SLOT_MODES = {
-    "CDL_BO5":         {1: "SnD", 2: "HP", 3: "Control", 4: "SnD", 5: "HP"},
-    "CDL_PLAYOFF_BO5": {1: "SnD", 2: "HP", 3: "Control", 4: "SnD", 5: "HP"},
-    "CDL_PLAYOFF_BO7": {1: "SnD", 2: "HP", 3: "Control", 4: "SnD", 5: "HP", 6: "Control", 7: "SnD"},
-    "TOURNAMENT_BO5":  {1: "HP", 2: "SnD", 3: "Control", 4: "HP", 5: "SnD"},
-    "TOURNAMENT_BO7":  {1: "HP", 2: "SnD", 3: "Control", 4: "HP", 5: "SnD", 6: "Control", 7: "SnD"},
-}
+from cdm_stats.ingestion.formats import FORMATS
 
-# Keep SLOT_MODES as alias for CDL_BO5 for backward compatibility
-SLOT_MODES = FORMAT_SLOT_MODES["CDL_BO5"]
+# The three game modes, in canonical display order.
+MODES = ("SnD", "HP", "Control")
+MODE_ORDER = {mode: i for i, mode in enumerate(MODES)}
 
 
 def get_mode_for_slot(slot: int, match_format: str = "CDL_BO5") -> str:
-    return FORMAT_SLOT_MODES[match_format][slot]
+    return FORMATS[match_format].slot_modes[slot]
 
 
 def get_team_id_by_abbr(conn: sqlite3.Connection, abbr: str) -> int | None:
@@ -40,15 +35,26 @@ def insert_match(
     match_format: str = "CDL_BO5",
     series_number: int = 1,
     round_: str | None = None,
+    season: int = 1,
+    competition: str | None = None,
 ) -> int:
     cursor = conn.execute(
         """INSERT INTO matches (match_date, team1_id, team2_id, two_v_two_winner_id,
-                                series_winner_id, match_format, series_number, round)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                                series_winner_id, match_format, series_number, round,
+                                season, competition)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (match_date, team1_id, team2_id, two_v_two_winner_id, series_winner_id,
-         match_format, series_number, round_),
+         match_format, series_number, round_, season, competition),
     )
     return cursor.lastrowid
+
+
+def get_map_by_name(conn: sqlite3.Connection, map_name: str) -> tuple[int, str] | None:
+    """Return (map_id, mode) for a map. S2 derives mode from the map name."""
+    row = conn.execute(
+        "SELECT map_id, mode FROM maps WHERE map_name = ?", (map_name,)
+    ).fetchone()
+    return (row[0], row[1]) if row else None
 
 
 def insert_map_result(

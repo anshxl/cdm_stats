@@ -1,6 +1,6 @@
 import sqlite3
 
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 9
 
 TABLES = [
     """
@@ -26,12 +26,13 @@ TABLES = [
         team2_id            INTEGER NOT NULL REFERENCES teams(team_id),
         two_v_two_winner_id INTEGER REFERENCES teams(team_id),
         series_winner_id    INTEGER NOT NULL REFERENCES teams(team_id),
-        match_format        TEXT NOT NULL DEFAULT 'CDL_BO5'
-            CHECK(match_format IN ('CDL_BO5', 'CDL_PLAYOFF_BO5', 'CDL_PLAYOFF_BO7',
-                                    'TOURNAMENT_BO5', 'TOURNAMENT_BO7')),
+        -- match_format values are governed by the FORMATS registry, not a CHECK,
+        -- so adding a format needs no migration. See ingestion/formats.py.
+        match_format        TEXT NOT NULL DEFAULT 'CDL_BO5',
         series_number       INTEGER NOT NULL DEFAULT 1,
         round               TEXT,
         season              INTEGER NOT NULL DEFAULT 1,
+        competition         TEXT,
         CHECK(team1_id != team2_id)
     )
     """,
@@ -147,9 +148,7 @@ def migrate(conn: sqlite3.Connection) -> None:
             team2_id            INTEGER NOT NULL REFERENCES teams(team_id),
             two_v_two_winner_id INTEGER REFERENCES teams(team_id),
             series_winner_id    INTEGER NOT NULL REFERENCES teams(team_id),
-            match_format        TEXT NOT NULL DEFAULT 'CDL_BO5'
-                CHECK(match_format IN ('CDL_BO5', 'CDL_PLAYOFF_BO5', 'CDL_PLAYOFF_BO7',
-                                        'TOURNAMENT_BO5', 'TOURNAMENT_BO7')),
+            match_format        TEXT NOT NULL DEFAULT 'CDL_BO5',
             series_number       INTEGER NOT NULL DEFAULT 1,
             CHECK(team1_id != team2_id)
         )""")
@@ -253,6 +252,40 @@ def migrate(conn: sqlite3.Connection) -> None:
         scrim_cols = [r[1] for r in conn.execute("PRAGMA table_info(scrim_maps)").fetchall()]
         if "season" not in scrim_cols:
             conn.execute("ALTER TABLE scrim_maps ADD COLUMN season INTEGER NOT NULL DEFAULT 1")
+
+    if version < 8:
+        # Drop the match_format CHECK by rebuilding matches. Formats are governed
+        # by the FORMATS registry now, so adding one needs no further migration.
+        conn.execute("PRAGMA foreign_keys = OFF")
+        conn.execute("""CREATE TABLE matches_new (
+            match_id            INTEGER PRIMARY KEY,
+            match_date          DATE NOT NULL,
+            team1_id            INTEGER NOT NULL REFERENCES teams(team_id),
+            team2_id            INTEGER NOT NULL REFERENCES teams(team_id),
+            two_v_two_winner_id INTEGER REFERENCES teams(team_id),
+            series_winner_id    INTEGER NOT NULL REFERENCES teams(team_id),
+            match_format        TEXT NOT NULL DEFAULT 'CDL_BO5',
+            series_number       INTEGER NOT NULL DEFAULT 1,
+            round               TEXT,
+            season              INTEGER NOT NULL DEFAULT 1,
+            CHECK(team1_id != team2_id)
+        )""")
+        conn.execute("""INSERT INTO matches_new
+            (match_id, match_date, team1_id, team2_id, two_v_two_winner_id,
+             series_winner_id, match_format, series_number, round, season)
+            SELECT match_id, match_date, team1_id, team2_id, two_v_two_winner_id,
+                   series_winner_id, match_format, series_number, round, season
+            FROM matches""")
+        conn.execute("DROP TABLE matches")
+        conn.execute("ALTER TABLE matches_new RENAME TO matches")
+        conn.execute("PRAGMA foreign_keys = ON")
+
+    if version < 9:
+        # Add competition column to separate parallel S2 competitions (CDM vs
+        # regional World Cup). Existing rows stay NULL.
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(matches)").fetchall()]
+        if "competition" not in cols:
+            conn.execute("ALTER TABLE matches ADD COLUMN competition TEXT")
 
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()

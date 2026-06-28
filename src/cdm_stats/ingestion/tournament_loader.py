@@ -6,15 +6,9 @@ from cdm_stats.db.queries import (
     get_map_id,
     insert_match,
     insert_map_result,
-    FORMAT_SLOT_MODES,
 )
 from cdm_stats.ingestion._helpers import insert_bans_for_match
-
-
-FORMAT_WIN_THRESHOLD = {
-    "TOURNAMENT_BO5": 3,
-    "TOURNAMENT_BO7": 4,
-}
+from cdm_stats.ingestion.formats import FORMATS
 
 
 def _group_rows_by_match(reader: csv.DictReader) -> dict[tuple, list[dict]]:
@@ -44,8 +38,8 @@ def _validate_tournament_match(
 ) -> list[str]:
     errors = []
     date, team1_abbr, team2_abbr, *_ = key
-    slot_modes = FORMAT_SLOT_MODES[match_format]
-    win_threshold = FORMAT_WIN_THRESHOLD[match_format]
+    slot_modes = FORMATS[match_format].slot_modes
+    win_threshold = FORMATS[match_format].win_threshold
 
     if get_team_id_by_abbr(conn, team1_abbr) is None:
         errors.append(f"Unknown team abbreviation: {team1_abbr}")
@@ -93,8 +87,8 @@ def _ingest_maps(
             results.append({"match": key, "status": "error", "errors": errors})
             continue
 
-        slot_modes = FORMAT_SLOT_MODES[match_format]
-        win_threshold = FORMAT_WIN_THRESHOLD[match_format]
+        slot_modes = FORMATS[match_format].slot_modes
+        win_threshold = FORMATS[match_format].win_threshold
 
         t1_series = 0
         t2_series = 0

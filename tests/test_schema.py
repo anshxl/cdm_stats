@@ -176,15 +176,15 @@ def test_tournament_player_stats_table_exists():
     conn.close()
 
 
-def test_schema_version_is_7():
+def test_schema_version_is_9():
     import sqlite3
     from cdm_stats.db.schema import create_tables, SCHEMA_VERSION
 
-    assert SCHEMA_VERSION == 7
+    assert SCHEMA_VERSION == 9
     conn = sqlite3.connect(":memory:")
     create_tables(conn)
     version = conn.execute("PRAGMA user_version").fetchone()[0]
-    assert version == 7
+    assert version == 9
     conn.close()
 
 
@@ -342,13 +342,99 @@ def test_migration_v6_to_v7_adds_season_columns_backfilled():
     conn.close()
 
 
+def test_matches_has_competition_column():
+    """Fresh DB after create_tables has matches.competition column."""
+    import sqlite3
+    from cdm_stats.db.schema import create_tables
+
+    conn = sqlite3.connect(":memory:")
+    create_tables(conn)
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(matches)").fetchall()]
+    assert "competition" in cols
+    conn.close()
+
+
+def test_migration_v8_to_v9_adds_competition():
+    """Migration from v8 to v9 adds matches.competition; existing rows stay NULL."""
+    import sqlite3
+    from cdm_stats.db.schema import create_tables, migrate, SCHEMA_VERSION
+    from cdm_stats.ingestion.seed import seed_teams
+
+    conn = sqlite3.connect(":memory:")
+    create_tables(conn)
+    seed_teams(conn)
+    conn.execute(
+        "INSERT INTO matches (match_date, team1_id, team2_id, two_v_two_winner_id, series_winner_id) "
+        "VALUES ('2026-01-01', 1, 2, 1, 1)"
+    )
+    # Simulate a v8 DB: drop the column and roll the version back.
+    conn.execute("ALTER TABLE matches DROP COLUMN competition")
+    conn.execute("PRAGMA user_version = 8")
+    conn.commit()
+
+    migrate(conn)
+
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(matches)").fetchall()]
+    assert "competition" in cols
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
+    assert conn.execute("SELECT competition FROM matches WHERE match_id = 1").fetchone()[0] is None
+    conn.close()
+
+
+def test_migration_v7_to_v8_drops_match_format_check():
+    """v8 rebuilds matches without the match_format CHECK so a new format needs no migration."""
+    import sqlite3
+    from cdm_stats.db.schema import create_tables, migrate, SCHEMA_VERSION
+    from cdm_stats.ingestion.seed import seed_teams
+
+    conn = sqlite3.connect(":memory:")
+    create_tables(conn)
+    seed_teams(conn)
+    # Simulate a v7 DB whose matches table still carries the match_format CHECK.
+    conn.execute("DROP TABLE matches")
+    conn.execute("""CREATE TABLE matches (
+        match_id INTEGER PRIMARY KEY, match_date DATE NOT NULL,
+        team1_id INTEGER NOT NULL REFERENCES teams(team_id),
+        team2_id INTEGER NOT NULL REFERENCES teams(team_id),
+        two_v_two_winner_id INTEGER REFERENCES teams(team_id),
+        series_winner_id INTEGER NOT NULL REFERENCES teams(team_id),
+        match_format TEXT NOT NULL DEFAULT 'CDL_BO5'
+            CHECK(match_format IN ('CDL_BO5','CDL_PLAYOFF_BO5','CDL_PLAYOFF_BO7','TOURNAMENT_BO5','TOURNAMENT_BO7')),
+        series_number INTEGER NOT NULL DEFAULT 1, round TEXT, season INTEGER NOT NULL DEFAULT 1,
+        CHECK(team1_id != team2_id))""")
+    conn.execute(
+        "INSERT INTO matches (match_date, team1_id, team2_id, two_v_two_winner_id, series_winner_id, match_format, round, season) "
+        "VALUES ('2026-01-01', 1, 2, 1, 1, 'CDL_BO5', 'Final', 1)"
+    )
+    conn.execute("PRAGMA user_version = 7")
+    conn.commit()
+
+    migrate(conn)
+
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
+    # Existing row preserved across the rebuild (incl. round/season).
+    row = conn.execute(
+        "SELECT match_format, round, season FROM matches WHERE match_id = 1"
+    ).fetchone()
+    assert row == ("CDL_BO5", "Final", 1)
+    # The CHECK is gone, so a novel format inserts without error.
+    conn.execute(
+        "INSERT INTO matches (match_date, team1_id, team2_id, two_v_two_winner_id, series_winner_id, match_format) "
+        "VALUES ('2026-01-02', 1, 2, 1, 1, 'S2_NEW_FORMAT')"
+    )
+    conn.commit()
+    ddl = conn.execute("SELECT sql FROM sqlite_master WHERE name='matches'").fetchone()[0]
+    assert "CHECK(match_format" not in ddl
+    conn.close()
+
+
 def test_migration_v5_to_v6_adds_round_column():
     """Migration from v5 to v6 adds matches.round column without losing data."""
     import sqlite3
     from cdm_stats.db.schema import create_tables, migrate, SCHEMA_VERSION
     from cdm_stats.ingestion.seed import seed_teams
 
-    assert SCHEMA_VERSION == 7  # bumped
+    assert SCHEMA_VERSION == 9  # bumped
 
     conn = sqlite3.connect(":memory:")
     create_tables(conn)

@@ -1,7 +1,7 @@
 import csv
 import sqlite3
 from typing import IO
-from cdm_stats.db.queries import get_team_id_by_abbr
+from cdm_stats.db.queries import get_team_id_by_abbr, MODES
 
 
 def _parse_score(score_str: str) -> tuple[int, int]:
@@ -55,7 +55,7 @@ def ingest_scrims_team(conn: sqlite3.Connection, file: IO, season: int = 1) -> l
             results.append({"status": "error", "row": desc, "errors": f"Score {score_str} does not match result {result}"})
             continue
 
-        if mode not in ("SnD", "HP", "Control"):
+        if mode not in MODES:
             results.append({"status": "error", "row": desc, "errors": f"Invalid mode: {mode}"})
             continue
 

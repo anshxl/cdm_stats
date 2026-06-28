@@ -43,6 +43,40 @@ def test_build_matchup_data(db):
     assert tunisia["h2h"]["losses"] == 0
 
 
+def test_update_matchup_callback_renders(db, monkeypatch):
+    """Regression: the callback body (mode loop over MODES) must run, not just _build_matchup_data."""
+    import cdm_stats.dashboard.tabs.matchup_prep as mp
+
+    class _NoCloseConn:
+        def __init__(self, real):
+            self._real = real
+
+        def __getattr__(self, name):
+            return getattr(self._real, name)
+
+        def close(self):
+            pass  # keep the fixture connection alive
+
+    monkeypatch.setattr(mp, "get_db", lambda: _NoCloseConn(db))
+
+    captured = {}
+
+    class DummyApp:
+        def callback(self, *a, **k):
+            def deco(fn):
+                captured[fn.__name__] = fn
+                return fn
+            return deco
+
+    mp.register_callbacks(DummyApp())
+
+    dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
+    oug_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'OUG'").fetchone()[0]
+    content, badge = captured["update_matchup"](dvs_id, oug_id, 1)
+    assert content is not None
+    assert badge is not None
+
+
 def test_build_matchup_data_filters_by_season(db):
     from cdm_stats.dashboard.tabs.matchup_prep import _build_matchup_data
     dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]

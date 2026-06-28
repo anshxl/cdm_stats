@@ -15,7 +15,7 @@ from cdm_stats.dashboard.components.team_badge import (
 from cdm_stats.metrics.avoidance import pick_win_loss, defend_win_loss
 from cdm_stats.metrics.map_strength import map_strength
 from cdm_stats.metrics.elo import get_current_elo, is_low_confidence
-from cdm_stats.db.queries import get_ban_summary
+from cdm_stats.db.queries import get_ban_summary, MODES
 
 
 # ---------------------------------------------------------------------------
@@ -496,7 +496,7 @@ def register_callbacks(app):
             # Build mode sections
             row_idx = 0
             sections = []
-            for mode in ("SnD", "HP", "Control"):
+            for mode in MODES:
                 mode_maps = data.get(mode, [])
                 mode_color = MODE_COLORS.get(mode, COLORS["text"])
 

@@ -27,22 +27,42 @@ def cmd_init(_args: argparse.Namespace) -> None:
     print("Database initialized and seeded.")
 
 
+def run_ingest(loader, *paths: str, key: str = "match", **load_kw) -> None:
+    """Open paths, run loader(conn, *files, **load_kw), print per-row status.
+
+    `key` is the result field naming each row ("match" or "row"). OK rows with
+    a "bans" count and SKIPPED rows with a "reason" print those extras.
+    """
+    from cdm_stats.db.schema import migrate
+
+    conn = get_db()
+    migrate(conn)
+    files = [open(p) for p in paths]
+    try:
+        results = loader(conn, *files, **load_kw)
+    finally:
+        for f in files:
+            f.close()
+
+    for r in results:
+        ident = r[key]
+        if r["status"] == "ok":
+            extra = f" ({r['bans']} bans)" if "bans" in r else ""
+            print(f"  OK: {ident}{extra}")
+            if r.get("warning"):
+                print(f"     warning: {r['warning']}")
+        elif r["status"] == "skipped":
+            print(f"  SKIPPED: {ident} ({r.get('reason', 'duplicate')})")
+        else:
+            print(f"  ERROR: {ident}: {r['errors']}")
+
+    conn.close()
+
+
 def cmd_ingest(args: argparse.Namespace) -> None:
     from cdm_stats.ingestion.csv_loader import ingest_csv
 
-    conn = get_db()
-    with open(args.csv_file) as f:
-        results = ingest_csv(conn, f)
-
-    for r in results:
-        if r["status"] == "ok":
-            print(f"  OK: {r['match']}")
-        elif r["status"] == "skipped":
-            print(f"  SKIPPED (duplicate): {r['match']}")
-        else:
-            print(f"  ERROR: {r['match']}: {r['errors']}")
-
-    conn.close()
+    run_ingest(ingest_csv, args.csv_file)
 
 
 def cmd_export_matrix(_args: argparse.Namespace) -> None:
@@ -108,57 +128,19 @@ def cmd_chart_elo(args: argparse.Namespace) -> None:
 def cmd_ingest_playoffs(args: argparse.Namespace) -> None:
     from cdm_stats.ingestion.playoff_loader import ingest_playoffs
 
-    conn = get_db()
-    with open(args.csv_file) as f:
-        results = ingest_playoffs(conn, f)
-
-    for r in results:
-        if r["status"] == "ok":
-            print(f"  OK: {r['match']}")
-        elif r["status"] == "skipped":
-            print(f"  SKIPPED (duplicate): {r['match']}")
-        else:
-            print(f"  ERROR: {r['match']}: {r['errors']}")
-
-    conn.close()
+    run_ingest(ingest_playoffs, args.csv_file)
 
 
 def cmd_ingest_playoff_bans(args: argparse.Namespace) -> None:
     from cdm_stats.ingestion.playoff_bans_loader import ingest_playoff_bans
 
-    conn = get_db()
-    with open(args.csv_file) as f:
-        results = ingest_playoff_bans(conn, f)
-
-    for r in results:
-        if r["status"] == "ok":
-            print(f"  OK: {r['match']} ({r['bans']} bans)")
-        elif r["status"] == "skipped":
-            print(f"  SKIPPED: {r['match']} ({r.get('reason', '')})")
-        else:
-            print(f"  ERROR: {r['match']}: {r['errors']}")
-
-    conn.close()
+    run_ingest(ingest_playoff_bans, args.csv_file)
 
 
 def cmd_ingest_tournament(args: argparse.Namespace) -> None:
     from cdm_stats.ingestion.tournament_loader import ingest_tournament
-    from cdm_stats.db.schema import migrate
 
-    conn = get_db()
-    migrate(conn)
-    with open(args.maps_csv) as mf, open(args.bans_csv) as bf:
-        results = ingest_tournament(conn, mf, bf)
-
-    for r in results:
-        if r["status"] == "ok":
-            print(f"  OK: {r['match']}")
-        elif r["status"] == "skipped":
-            print(f"  SKIPPED: {r['match']} ({r.get('reason', '')})")
-        else:
-            print(f"  ERROR: {r['match']}: {r['errors']}")
-
-    conn.close()
+    run_ingest(ingest_tournament, args.maps_csv, args.bans_csv)
 
 
 def cmd_export_profile(args: argparse.Namespace) -> None:
@@ -193,55 +175,31 @@ def cmd_chart_elo_all(_args: argparse.Namespace) -> None:
 def cmd_ingest_scrims_team(args: argparse.Namespace) -> None:
     from cdm_stats.ingestion.scrim_loader import ingest_scrims_team
 
-    conn = get_db()
-    with open(args.csv_file) as f:
-        results = ingest_scrims_team(conn, f, season=args.season)
-
-    for r in results:
-        if r["status"] == "ok":
-            print(f"  OK: {r['row']}")
-        elif r["status"] == "skipped":
-            print(f"  SKIPPED (duplicate): {r['row']}")
-        else:
-            print(f"  ERROR: {r['row']}: {r['errors']}")
-
-    conn.close()
+    run_ingest(ingest_scrims_team, args.csv_file, key="row", season=args.season)
 
 
 def cmd_ingest_scrims_players(args: argparse.Namespace) -> None:
     from cdm_stats.ingestion.scrim_loader import ingest_scrims_players
 
-    conn = get_db()
-    with open(args.csv_file) as f:
-        results = ingest_scrims_players(conn, f, season=args.season)
-
-    for r in results:
-        if r["status"] == "ok":
-            print(f"  OK: {r['row']}")
-        elif r["status"] == "skipped":
-            print(f"  SKIPPED (duplicate): {r['row']}")
-        else:
-            print(f"  ERROR: {r['row']}: {r['errors']}")
-
-    conn.close()
+    run_ingest(ingest_scrims_players, args.csv_file, key="row", season=args.season)
 
 
 def cmd_ingest_tournament_players(args: argparse.Namespace) -> None:
     from cdm_stats.ingestion.tournament_player_loader import ingest_tournament_players
 
-    conn = get_db()
-    with open(args.csv_file) as f:
-        results = ingest_tournament_players(conn, f)
+    run_ingest(ingest_tournament_players, args.csv_file, key="row")
 
-    for r in results:
-        if r["status"] == "ok":
-            print(f"  OK: {r['row']}")
-        elif r["status"] == "skipped":
-            print(f"  SKIPPED (duplicate): {r['row']}")
-        else:
-            print(f"  ERROR: {r['row']}: {r['errors']}")
 
-    conn.close()
+def cmd_ingest_s2_matches(args: argparse.Namespace) -> None:
+    from cdm_stats.ingestion.s2_loader import ingest_s2_matches
+
+    run_ingest(ingest_s2_matches, args.csv_file)
+
+
+def cmd_ingest_s2_bans(args: argparse.Namespace) -> None:
+    from cdm_stats.ingestion.s2_loader import ingest_s2_bans
+
+    run_ingest(ingest_s2_bans, args.csv_file)
 
 
 def cmd_backfill(_args: argparse.Namespace) -> None:
@@ -301,6 +259,12 @@ def main() -> None:
     p_tp = sub.add_parser("ingest-tournament-players", help="Ingest tournament player-level CSV")
     p_tp.add_argument("csv_file", help="Path to tournament player CSV file")
 
+    p_s2m = sub.add_parser("ingest-s2-matches", help="Ingest Season 2 match data (one row per map)")
+    p_s2m.add_argument("csv_file", help="Path to S2 matches CSV file")
+
+    p_s2b = sub.add_parser("ingest-s2-bans", help="Ingest Season 2 bans (attributed)")
+    p_s2b.add_argument("csv_file", help="Path to S2 bans CSV file")
+
     sub.add_parser("backfill", help="Wipe and recalculate Elo")
 
     args = parser.parse_args()
@@ -314,6 +278,8 @@ def main() -> None:
         "ingest-scrims-team": cmd_ingest_scrims_team,
         "ingest-scrims-players": cmd_ingest_scrims_players,
         "ingest-tournament-players": cmd_ingest_tournament_players,
+        "ingest-s2-matches": cmd_ingest_s2_matches,
+        "ingest-s2-bans": cmd_ingest_s2_bans,
         "backfill": cmd_backfill,
     }
 

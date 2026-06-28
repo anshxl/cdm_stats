@@ -2,21 +2,7 @@ import csv
 import sqlite3
 
 from cdm_stats.db.queries import get_team_id_by_abbr, insert_map_ban
-
-
-FORMAT_BAN_MODES = {
-    "TOURNAMENT_BO5": {"HP", "SnD", "Control"},
-    "TOURNAMENT_BO7": {"HP", "SnD"},
-    "CDL_PLAYOFF_BO5": {"HP", "SnD", "Control"},
-    "CDL_PLAYOFF_BO7": {"HP", "SnD"},
-}
-
-FORMAT_EXPECTED_BANS = {
-    "TOURNAMENT_BO5": 6,
-    "TOURNAMENT_BO7": 4,
-    "CDL_PLAYOFF_BO5": 6,
-    "CDL_PLAYOFF_BO7": 4,
-}
+from cdm_stats.ingestion.formats import FORMATS
 
 
 def derive_pick_context(
@@ -120,8 +106,8 @@ def _validate_bans(
     team2_abbr: str,
 ) -> list[str]:
     errors = []
-    allowed_modes = FORMAT_BAN_MODES[match_format]
-    expected_count = FORMAT_EXPECTED_BANS[match_format]
+    allowed_modes = FORMATS[match_format].ban_modes
+    expected_count = FORMATS[match_format].expected_bans
 
     if len(bans) != expected_count:
         errors.append(f"Expected {expected_count} bans for {match_format}, got {len(bans)}")

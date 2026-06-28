@@ -14,13 +14,14 @@ from cdm_stats.ingestion._helpers import (
     group_rows_by_match,
     is_duplicate_match,
 )
+from cdm_stats.ingestion.formats import FORMATS
 
+# CSV uses short format names; map them to registry keys. Everything else
+# (win threshold, slot count) comes from FORMATS.
 FORMAT_TO_MATCH_FORMAT = {
     "Bo5": "CDL_PLAYOFF_BO5",
     "Bo7": "CDL_PLAYOFF_BO7",
 }
-
-WIN_THRESHOLD = {"Bo5": 3, "Bo7": 4}
 
 
 def _expected_picker(slot: int, fmt: str, a: str, b: str) -> str | None:
@@ -54,6 +55,7 @@ def _validate_series(
     if fmt not in FORMAT_TO_MATCH_FORMAT:
         errors.append(f"Invalid format '{fmt}' (must be Bo5 or Bo7)")
         return errors  # downstream checks depend on format
+    match_format = FORMAT_TO_MATCH_FORMAT[fmt]
 
     die_roll = rows[0]["die_roll_winner"]
     if die_roll not in (team1_abbr, team2_abbr):
@@ -65,12 +67,11 @@ def _validate_series(
     if slots != expected:
         errors.append(f"Slots are not sequential 1..{len(rows)}: {slots}")
 
-    max_slots = 5 if fmt == "Bo5" else 7
+    max_slots = len(FORMATS[match_format].slot_modes)
     if len(rows) > max_slots:
         errors.append(f"{fmt} series has {len(rows)} rows, max is {max_slots}")
 
     # Map / winner sanity
-    match_format = FORMAT_TO_MATCH_FORMAT[fmt]
     for row in rows:
         slot = int(row["slot"])
         if slot < 1 or slot > max_slots:
@@ -103,7 +104,7 @@ def _validate_series(
 
     # Series winner: explicit override or derived from win threshold
     has_override = any((r.get("series_winner") or "").strip() for r in rows)
-    threshold = WIN_THRESHOLD[fmt]
+    threshold = FORMATS[match_format].win_threshold
     if not has_override:
         t1_wins = sum(1 for r in rows if r["winner"] == team1_abbr)
         t2_wins = sum(1 for r in rows if r["winner"] == team2_abbr)
@@ -140,7 +141,7 @@ def ingest_playoffs(conn: sqlite3.Connection, file: IO[str]) -> list[dict]:
 
         fmt = rows[0]["format"]
         match_format = FORMAT_TO_MATCH_FORMAT[fmt]
-        threshold = WIN_THRESHOLD[fmt]
+        threshold = FORMATS[match_format].win_threshold
         round_label = rows[0]["round"]
         die_roll_id = get_team_id_by_abbr(conn, rows[0]["die_roll_winner"])
 

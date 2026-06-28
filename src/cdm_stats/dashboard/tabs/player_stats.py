@@ -9,6 +9,7 @@ from cdm_stats.dashboard.app import get_db
 from cdm_stats.dashboard.components.week_pills import week_pills, pill_value_to_range
 from cdm_stats.dashboard.helpers import COLORS, MODE_COLORS
 from cdm_stats.db import queries_scrim, queries_tournament_player
+from cdm_stats.db.queries import MODES, MODE_ORDER
 
 PLAYER_COLORS = [
     "#7dd3fc",  # sky
@@ -195,7 +196,7 @@ def layout(season: int = 1):
                 dcc.Dropdown(
                     id="player-mode-filter",
                     options=[{"label": "All", "value": "All"}]
-                        + [{"label": m, "value": m} for m in ("SnD", "HP", "Control")],
+                        + [{"label": m, "value": m} for m in MODES],
                     value="All",
                     clearable=False,
                     style={"backgroundColor": COLORS["card_bg"]},
@@ -216,8 +217,6 @@ def layout(season: int = 1):
     ], fluid=True)
 
 
-MODE_ORDER = {"SnD": 0, "HP": 1, "Control": 2}
-
 
 def _mode_legend() -> html.Div:
     return html.Div(
@@ -230,7 +229,7 @@ def _mode_legend() -> html.Div:
                     "marginRight": "14px",
                 },
             )
-            for mode in ("SnD", "HP", "Control")
+            for mode in MODES
         ],
         style={"fontSize": "0.8rem", "marginBottom": "6px", "color": COLORS["muted"]},
     )

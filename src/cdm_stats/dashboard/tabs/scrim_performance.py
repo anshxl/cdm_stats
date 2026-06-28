@@ -12,8 +12,7 @@ from cdm_stats.db.queries_scrim import (
     scrim_win_loss, scrim_map_breakdown, scrim_weekly_trend,
     scrim_map_results_detail,
 )
-
-MODE_ORDER = {"SnD": 0, "HP": 1, "Control": 2}
+from cdm_stats.db.queries import MODES, MODE_ORDER
 
 
 def _build_summary_data(
@@ -25,7 +24,7 @@ def _build_summary_data(
 ) -> dict:
     overall = scrim_win_loss(conn, mode=mode, map_name=map_name, week_range=week_range, season=season)
     by_mode = {}
-    for m in ("SnD", "HP", "Control"):
+    for m in MODES:
         result = scrim_win_loss(conn, mode=m, map_name=map_name, week_range=week_range, season=season)
         if result["total"] > 0:
             by_mode[m] = result
@@ -120,7 +119,7 @@ def layout(season: int = 1):
                 dcc.Dropdown(
                     id="scrim-mode-filter",
                     options=[{"label": "All", "value": "All"}]
-                        + [{"label": m, "value": m} for m in ("SnD", "HP", "Control")],
+                        + [{"label": m, "value": m} for m in MODES],
                     value="All",
                     clearable=False,
                     style={"backgroundColor": COLORS["card_bg"]},
@@ -163,7 +162,7 @@ def _mode_legend() -> html.Div:
                     "marginRight": "14px",
                 },
             )
-            for mode in ("SnD", "HP", "Control")
+            for mode in MODES
         ],
         style={"fontSize": "0.8rem", "marginBottom": "6px", "color": COLORS["muted"]},
     )
