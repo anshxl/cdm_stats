@@ -18,6 +18,8 @@ TEAMS = [
     ("Team Felines", "Felines"),
     ("Pandemic ESports", "PAC"),
     ("Rival Esports", "RVL"),
+    ("Rise Against Gaming", "RAG"),
+    ("Imperion7", "i7"),
 ]
 
 # 13 maps: 5 SnD, 5 HP, 3 Control
