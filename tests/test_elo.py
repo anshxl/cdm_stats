@@ -288,3 +288,114 @@ def test_dq_map_excluded_from_elo_margin():
     # from Summit (OUG 250-80), so DVS should gain meaningfully more Elo.
     assert dvs_elo_dq > dvs_elo_face
     assert dvs_elo_dq - dvs_elo_face > 2.0  # sanity: the delta is non-trivial
+
+
+# --- Inter-season regression & new-team seeding ---
+# See docs/superpowers/specs/2026-06-28-inter-season-elo-regression-design.md
+
+# Real S1-final ratings (from the live recompute) for the continuing S2 field.
+S1_FINALS = {
+    "ALU": 1117.6, "GL": 1086.7, "Q9": 1064.5, "OUG": 1059.4, "Wolves": 1059.4,
+    "ELV": 1058.1, "GAL": 1054.4, "DVS": 974.9, "RVL": 961.2, "SPG": 948.9,
+    "XROCK": 937.0, "PAC": 907.2, "ETs": 896.0, "Felines": 874.6,
+}
+
+
+def _tid(conn, abbr):
+    return conn.execute("SELECT team_id FROM teams WHERE abbreviation=?", (abbr,)).fetchone()[0]
+
+
+def _add_match_elo(conn, abbr, season, elo, date):
+    """Give a team one match + elo_after row in `season` (for building state)."""
+    tid = _tid(conn, abbr)
+    opp = conn.execute("SELECT team_id FROM teams WHERE team_id!=? LIMIT 1", (tid,)).fetchone()[0]
+    mid = conn.execute(
+        "INSERT INTO matches (match_date, team1_id, team2_id, series_winner_id, season) "
+        "VALUES (?,?,?,?,?)", (date, tid, opp, tid, season),
+    ).lastrowid
+    conn.execute(
+        "INSERT INTO team_elo (team_id, match_id, elo_after, match_date) VALUES (?,?,?,?)",
+        (tid, mid, elo, date),
+    )
+    conn.commit()
+    return tid
+
+
+def _seed_s1_field(conn):
+    for abbr, elo in S1_FINALS.items():
+        _add_match_elo(conn, abbr, 1, elo, "2026-04-25")
+
+
+def test_season_entry_regresses_continuing_team(db):
+    from cdm_stats.metrics.elo import season_entry_elo, REGRESSION_RHO, REGRESSION_MEAN
+    _seed_s1_field(db)
+    expected = REGRESSION_MEAN + REGRESSION_RHO * (1117.6 - REGRESSION_MEAN)  # ALU 1058.8
+    assert season_entry_elo(db, _tid(db, "ALU"), 2) == pytest.approx(expected)
+
+
+def test_newcomer_seeds_at_challenger_mean(db):
+    from cdm_stats.metrics.elo import season_entry_elo
+    _seed_s1_field(db)
+    # Continuing Challengers (non-playoff, not dropped) are SPG, PAC, ETs.
+    # Newcomers seed at the mean of their regressed seeds (~958.7).
+    def regress(final):
+        return 1000 + 0.5 * (final - 1000)
+    expected = (regress(948.9) + regress(907.2) + regress(896.0)) / 3
+    assert season_entry_elo(db, _tid(db, "RAG"), 2) == pytest.approx(expected, abs=0.05)
+    assert season_entry_elo(db, _tid(db, "i7"), 2) == pytest.approx(expected, abs=0.05)
+    # Lower than a Master's regressed seed, as intended.
+    assert season_entry_elo(db, _tid(db, "RAG"), 2) < season_entry_elo(db, _tid(db, "GAL"), 2)
+
+
+def test_masters_and_dropped_excluded_from_challenger_mean(db):
+    from cdm_stats.metrics.elo import _newcomer_seed
+    _seed_s1_field(db)
+    base = _newcomer_seed(db, 2)              # Challengers: SPG, PAC, ETs
+    # Dropping a Master (GAL) must NOT move the mean — Masters are never counted.
+    db.execute("DELETE FROM team_elo WHERE team_id=?", (_tid(db, "GAL"),))
+    db.commit()
+    assert _newcomer_seed(db, 2) == pytest.approx(base)
+    # Dropping a Challenger (ETs) DOES move it — it was in the pool.
+    db.execute("DELETE FROM team_elo WHERE team_id=?", (_tid(db, "ETs"),))
+    db.commit()
+    assert _newcomer_seed(db, 2) != pytest.approx(base)
+
+
+def test_s2_chains_off_in_season_not_s1_final(db):
+    from cdm_stats.metrics.elo import _base_elo
+    _add_match_elo(db, "ALU", 1, 1117.6, "2026-04-25")   # S1 final
+    # First S2 match → uses the regressed seed, not the S1 final.
+    assert _base_elo(db, _tid(db, "ALU"), 2) == pytest.approx(1058.8, abs=0.05)
+    # After one S2 result, the next match chains off it (bug fix).
+    _add_match_elo(db, "ALU", 2, 1070.0, "2026-06-20")
+    assert _base_elo(db, _tid(db, "ALU"), 2) == pytest.approx(1070.0)
+
+
+def test_early_season_k_bump(db):
+    from cdm_stats.metrics.elo import _team_k, K_EARLY, K_BY_FORMAT, EARLY_WINDOW
+    base_k = K_BY_FORMAT["CDL_BO5"]
+    tid = _tid(db, "ALU")
+    # Season 1 is never boosted.
+    assert _team_k(db, tid, 1, "CDL_BO5") == base_k
+    # S2: first EARLY_WINDOW matches boosted, then normal.
+    for n in range(EARLY_WINDOW):
+        assert _team_k(db, tid, 2, "CDL_BO5") == K_EARLY  # 0..3 played
+        _add_match_elo(db, "ALU", 2, 1050.0 + n, f"2026-06-2{n}")
+    assert _team_k(db, tid, 2, "CDL_BO5") == base_k        # 4 played → normal
+
+
+def test_split_games_excluded_from_elo(db):
+    from cdm_stats.metrics.elo import update_elo
+    dvs, oug = _tid(db, "DVS"), _tid(db, "OUG")
+
+    def make_match(comp):
+        return db.execute(
+            "INSERT INTO matches (match_date, team1_id, team2_id, series_winner_id, "
+            "season, competition) VALUES ('2026-06-20',?,?,?,2,?)", (dvs, oug, dvs, comp),
+        ).lastrowid
+    cdm, split = make_match("CDM"), make_match("SPLIT II")
+    db.commit()
+    update_elo(db, cdm)
+    update_elo(db, split)
+    assert db.execute("SELECT COUNT(*) FROM team_elo WHERE match_id=?", (cdm,)).fetchone()[0] == 2
+    assert db.execute("SELECT COUNT(*) FROM team_elo WHERE match_id=?", (split,)).fetchone()[0] == 0

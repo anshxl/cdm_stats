@@ -27,11 +27,11 @@ TEAM_COLORS: dict[str, TeamColorPair] = {
     "Felines":       ("#B2223F",     "#3B0101"),            # Team Felines
     "GAL":           ("#4B0082",     "#245EF0"),            # Galorys
     "GL":            ("#F1C61B",     "#000000"),            # GodLike
-    "HF":            ("#C0C0C0",     "#5F0202"),            # HF
+    "PAC":           ("#C0C0C0",     "#5F0202"),            # Pandemic ESports (was HF)
     "OUG":           ("#2626CC",     "#F82E2E"),            # OU Gaming
     "Q9":            ("#FB923C",     "#FF2A00"),            # Qing Jiu Club
     "SPG":           ("#896E05",     "#FFD900"),            # Stand Point Game
-    "TSM":           ("#EEEAEA",     "#1A1A1A"),            # Team StarMagic
+    "RVL":           ("#EEEAEA",     "#1A1A1A"),            # Rival Esports (was TSM)
     "Wolves":        ("#000000",     "#F1C61B"),            # Wolves
     "XROCK":         ("#BC0BBC",     "#FFFFFF"),            # XROCK
 }

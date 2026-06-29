@@ -428,7 +428,7 @@ def register_callbacks(app):
         try:
             options = team_dropdown_options_rich(conn)
             opp_id = next(
-                (opt["value"] for opt in options if opt.get("search") == "SPG"),
+                (opt["value"] for opt in options if opt.get("search") == "GAL"),
                 None,
             )
             return options, opp_id

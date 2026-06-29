@@ -14,6 +14,31 @@ K_BY_FORMAT = {
 
 MODE_MAX_MARGINS = {"SnD": 9, "HP": 250, "Control": 4}
 
+# --- Inter-season regression & new-team seeding ---
+# See docs/superpowers/specs/2026-06-28-inter-season-elo-regression-design.md
+REGRESSION_RHO = 0.5       # carryover of prior-season spread (1.0 = no regression)
+REGRESSION_MEAN = 1000.0   # structural centre of the rating system
+K_EARLY = 48               # boosted K for the first EARLY_WINDOW matches of a regressed season
+EARLY_WINDOW = 4
+
+# Only league ("CDM") play feeds Elo. Split brackets (SPLIT II/III) are excluded
+# — not all teams play them, so they would distort ratings. Season-1 rows predate
+# the competition column (NULL) and are all CDM league play, so NULL counts.
+ELO_COMPETITIONS = {"CDM"}
+
+# Teams that left the league entering a season — excluded from the regression
+# pool and given no seed. Keyed by the season being entered. Note: "not yet
+# played" is NOT "dropped" (ETs is still in S2, so it is absent here).
+DROPPED_ON_ENTRY = {2: {"Felines"}}
+
+# "Masters" = teams that made the prior season's playoffs. Everyone else
+# continuing is a "Challenger". Newcomers seed at the mean of the continuing
+# Challengers' regressed seeds (a lower anchor than the full field). Keyed by
+# the season being entered.
+MASTERS_ON_ENTRY = {
+    2: {"ALU", "DVS", "ELV", "GAL", "GL", "OUG", "Q9", "RVL", "Wolves", "XROCK"},
+}
+
 
 def normalize_margin(winner_score: int, loser_score: int, mode: str) -> float:
     margin = abs(winner_score - loser_score)
@@ -58,6 +83,84 @@ def is_low_confidence(conn: sqlite3.Connection, team_id: int, season: int = 1) -
     return count < LOW_CONFIDENCE_THRESHOLD
 
 
+def _latest_season_elo(conn: sqlite3.Connection, team_id: int, season: int) -> float | None:
+    """Team's most recent elo_after within `season`, or None if it has none."""
+    row = conn.execute(
+        """SELECT te.elo_after FROM team_elo te
+           JOIN matches m ON te.match_id = m.match_id
+           WHERE te.team_id = ? AND m.season = ?
+           ORDER BY te.match_date DESC, te.elo_id DESC LIMIT 1""",
+        (team_id, season),
+    ).fetchone()
+    return row[0] if row else None
+
+
+def _regress(prior_final: float) -> float:
+    return REGRESSION_MEAN + REGRESSION_RHO * (prior_final - REGRESSION_MEAN)
+
+
+def _newcomer_seed(conn: sqlite3.Connection, season: int) -> float:
+    """Newcomer seed = mean of the continuing Challengers' regressed seeds.
+
+    Challengers = continuing teams (prior-season history, not dropped) that did
+    NOT make the prior season's playoffs (i.e. not in MASTERS_ON_ENTRY).
+    """
+    masters = MASTERS_ON_ENTRY.get(season, set())
+    dropped = DROPPED_ON_ENTRY.get(season, set())
+    rows = conn.execute(
+        """SELECT DISTINCT te.team_id, t.abbreviation FROM team_elo te
+           JOIN matches m ON te.match_id = m.match_id
+           JOIN teams t ON te.team_id = t.team_id
+           WHERE m.season = ?""",
+        (season - 1,),
+    ).fetchall()
+    seeds = [
+        _regress(prior)
+        for tid, abbr in rows
+        if abbr not in dropped and abbr not in masters
+        and (prior := _latest_season_elo(conn, tid, season - 1)) is not None
+    ]
+    # No Challenger field to anchor against (e.g. fresh DB) → league average.
+    return sum(seeds) / len(seeds) if seeds else SEED_ELO
+
+
+def season_entry_elo(conn: sqlite3.Connection, team_id: int, season: int) -> float:
+    """Starting rating for `team_id` in its first match of `season`.
+
+    Season 1 → seed (1000). Continuing team → regressed prior-season final.
+    Newcomer (no prior history) → the continuing Challengers' mean seed.
+    """
+    if season <= 1:
+        return SEED_ELO
+    prior_final = _latest_season_elo(conn, team_id, season - 1)
+    abbr = conn.execute(
+        "SELECT abbreviation FROM teams WHERE team_id = ?", (team_id,)
+    ).fetchone()[0]
+    if prior_final is not None and abbr not in DROPPED_ON_ENTRY.get(season, set()):
+        return _regress(prior_final)
+    return _newcomer_seed(conn, season)
+
+
+def _base_elo(conn: sqlite3.Connection, team_id: int, season: int) -> float:
+    """In-season chaining base: latest in-season Elo, else the season-entry seed."""
+    latest = _latest_season_elo(conn, team_id, season)
+    return latest if latest is not None else season_entry_elo(conn, team_id, season)
+
+
+def _team_k(conn: sqlite3.Connection, team_id: int, season: int, match_format: str) -> float:
+    """Per-team K: boosted for the first EARLY_WINDOW matches of a regressed season."""
+    base_k = K_BY_FORMAT.get(match_format, K_FACTOR)
+    if season <= 1:
+        return base_k
+    played = conn.execute(
+        """SELECT COUNT(*) FROM team_elo te
+           JOIN matches m ON te.match_id = m.match_id
+           WHERE te.team_id = ? AND m.season = ?""",
+        (team_id, season),
+    ).fetchone()[0]
+    return K_EARLY if played < EARLY_WINDOW else base_k
+
+
 def update_elo(conn: sqlite3.Connection, match_id: int) -> None:
     # Idempotent: skip if Elo rows already exist for this match
     existing = conn.execute(
@@ -67,14 +170,23 @@ def update_elo(conn: sqlite3.Connection, match_id: int) -> None:
         return
 
     match = conn.execute(
-        "SELECT team1_id, team2_id, series_winner_id, match_date, match_format FROM matches WHERE match_id = ?",
+        "SELECT team1_id, team2_id, series_winner_id, match_date, match_format, season, competition FROM matches WHERE match_id = ?",
         (match_id,),
     ).fetchone()
-    team1_id, team2_id, winner_id, match_date, match_format = match
-    k = K_BY_FORMAT.get(match_format, K_FACTOR)
+    team1_id, team2_id, winner_id, match_date, match_format, season, competition = match
 
-    elo1 = get_current_elo(conn, team1_id)
-    elo2 = get_current_elo(conn, team2_id)
+    # Only CDM league play feeds Elo; split brackets are excluded (NULL == legacy
+    # S1 league play). Skipped matches create no team_elo rows, so they never
+    # affect chaining or the early-window K count.
+    if competition is not None and competition not in ELO_COMPETITIONS:
+        return
+
+    # Season-aware base: chain off this season's latest Elo, or the season-entry
+    # seed for a team's first match of the season. Per-team K (boosted early).
+    elo1 = _base_elo(conn, team1_id, season)
+    elo2 = _base_elo(conn, team2_id, season)
+    k1 = _team_k(conn, team1_id, season, match_format)
+    k2 = _team_k(conn, team2_id, season, match_format)
 
     expected1 = 1 / (1 + 10 ** ((elo2 - elo1) / 400))
     expected2 = 1 - expected1
@@ -116,8 +228,8 @@ def update_elo(conn: sqlite3.Connection, match_id: int) -> None:
     result1 = winner_actual if winner_id == team1_id else loser_actual
     result2 = 1.0 - result1
 
-    new_elo1 = elo1 + k * (result1 - expected1)
-    new_elo2 = elo2 + k * (result2 - expected2)
+    new_elo1 = elo1 + k1 * (result1 - expected1)
+    new_elo2 = elo2 + k2 * (result2 - expected2)
 
     conn.execute(
         "INSERT INTO team_elo (team_id, match_id, elo_after, match_date) VALUES (?, ?, ?, ?)",
