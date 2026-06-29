@@ -31,18 +31,28 @@ def _group_rows(reader: csv.DictReader) -> dict[tuple, list[dict]]:
     return series
 
 
-def _is_duplicate(conn, date, competition, team1_id, team2_id) -> bool:
+def _group_matches(reader: csv.DictReader) -> dict[tuple, list[dict]]:
+    # Include stage so two series between the same teams on the same day
+    # (e.g. a bracket's UB match and Finals) are kept distinct.
+    series: dict[tuple, list[dict]] = {}
+    for row in reader:
+        key = (row["date"], row["competition"], row["stage"], row["team1"], row["team2"])
+        series.setdefault(key, []).append(row)
+    return series
+
+
+def _is_duplicate(conn, date, competition, stage, team1_id, team2_id) -> bool:
     return conn.execute(
         """SELECT 1 FROM matches
-           WHERE match_date = ? AND competition = ? AND (
+           WHERE match_date = ? AND competition = ? AND round = ? AND (
                (team1_id = ? AND team2_id = ?) OR (team1_id = ? AND team2_id = ?)
            )""",
-        (date, competition, team1_id, team2_id, team2_id, team1_id),
+        (date, competition, stage, team1_id, team2_id, team2_id, team1_id),
     ).fetchone() is not None
 
 
 def _validate(conn, key, rows) -> list[str]:
-    date, competition, team1_abbr, team2_abbr = key
+    date, competition, stage, team1_abbr, team2_abbr = key
     errors = []
 
     if get_team_id_by_abbr(conn, team1_abbr) is None:
@@ -104,12 +114,12 @@ def ingest_s2_matches(conn: sqlite3.Connection, file: IO[str]) -> list[dict]:
     reader = csv.DictReader(file)
     results = []
 
-    for key, rows in _group_rows(reader).items():
-        date, competition, team1_abbr, team2_abbr = key
+    for key, rows in _group_matches(reader).items():
+        date, competition, stage, team1_abbr, team2_abbr = key
         team1_id = get_team_id_by_abbr(conn, team1_abbr)
         team2_id = get_team_id_by_abbr(conn, team2_abbr)
 
-        if team1_id and team2_id and _is_duplicate(conn, date, competition, team1_id, team2_id):
+        if team1_id and team2_id and _is_duplicate(conn, date, competition, stage, team1_id, team2_id):
             results.append({"match": key, "status": "skipped", "reason": "duplicate"})
             continue
 

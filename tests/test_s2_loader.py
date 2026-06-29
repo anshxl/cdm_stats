@@ -110,6 +110,34 @@ def test_ro3_sweep_all_maps_played(db):
     assert db.execute("SELECT COUNT(*) FROM map_results").fetchone()[0] == 3
 
 
+def test_two_series_same_day_distinguished_by_stage(db):
+    # GL vs GAL play two series on the same day (different bracket stages).
+    csv = HEADER + "\n" + "\n".join([
+        "2026-06-14,SPLIT II,UB,Bo5,GL,GAL,Arsenal,250,101,,,",
+        "2026-06-14,SPLIT II,UB,Bo5,GL,GAL,Firing Range,4,9,,,",
+        "2026-06-14,SPLIT II,UB,Bo5,GL,GAL,Raid,2,3,,,",
+        "2026-06-14,SPLIT II,UB,Bo5,GL,GAL,Summit,250,233,,,",
+        "2026-06-14,SPLIT II,UB,Bo5,GL,GAL,Coastal,8,10,,,",          # GAL wins 3-2
+        "2026-06-14,SPLIT II,Finals,Bo7,GL,GAL,Arsenal,250,239,,,",
+        "2026-06-14,SPLIT II,Finals,Bo7,GL,GAL,Slums,9,5,,,",
+        "2026-06-14,SPLIT II,Finals,Bo7,GL,GAL,Crossroads Strike,3,1,,,",
+        "2026-06-14,SPLIT II,Finals,Bo7,GL,GAL,Combine,246,250,,,",
+        "2026-06-14,SPLIT II,Finals,Bo7,GL,GAL,Raid,1,3,,,",
+        "2026-06-14,SPLIT II,Finals,Bo7,GL,GAL,Meltdown,3,9,,GAL,",   # override -> GAL
+    ])
+    results = ingest_s2_matches(db, io.StringIO(csv))
+    assert [r["status"] for r in results] == ["ok", "ok"]
+
+    rows = db.execute(
+        "SELECT round, match_format FROM matches WHERE season=2 ORDER BY round"
+    ).fetchall()
+    assert rows == [("Finals", "Bo7"), ("UB", "Bo5")]
+
+    # Re-ingesting the same file skips both (dup check is stage-aware).
+    again = ingest_s2_matches(db, io.StringIO(csv))
+    assert [r["status"] for r in again] == ["skipped", "skipped"]
+
+
 def test_unknown_map_is_error(db):
     csv = HEADER + "\n" + "\n".join([
         "2026-06-28,CDM,Stage 1,Bo5,DVS,OUG,NotAMap,6,3,DVS,,",
