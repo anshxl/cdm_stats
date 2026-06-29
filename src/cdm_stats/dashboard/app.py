@@ -15,6 +15,10 @@ app = dash.Dash(
     suppress_callback_exceptions=True,
 )
 
+from cdm_stats.dashboard.auth import init_auth
+
+init_auth(app.server)
+
 app.layout = dbc.Container([
     dbc.Navbar(
         dbc.Container(
