@@ -18,10 +18,18 @@ def get_team_id_by_abbr(conn: sqlite3.Connection, abbr: str) -> int | None:
     return row[0] if row else None
 
 
-def get_map_id(conn: sqlite3.Connection, map_name: str, mode: str) -> int | None:
-    row = conn.execute(
-        "SELECT map_id FROM maps WHERE map_name = ? AND mode = ?", (map_name, mode)
-    ).fetchone()
+def get_map_id(
+    conn: sqlite3.Connection, map_name: str, mode: str | None = None
+) -> int | None:
+    # mode=None: resolve by name alone (maps are mode-exclusive — see CLAUDE.md).
+    if mode is None:
+        row = conn.execute(
+            "SELECT map_id FROM maps WHERE map_name = ?", (map_name,)
+        ).fetchone()
+    else:
+        row = conn.execute(
+            "SELECT map_id FROM maps WHERE map_name = ? AND mode = ?", (map_name, mode)
+        ).fetchone()
     return row[0] if row else None
 
 

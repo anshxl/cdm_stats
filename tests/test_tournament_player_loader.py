@@ -1,5 +1,6 @@
 import io
 import sqlite3
+from datetime import date as _date
 import pytest
 from cdm_stats.db.schema import create_tables, migrate
 from cdm_stats.ingestion.seed import seed_teams, seed_maps
@@ -75,6 +76,69 @@ def test_ingest_tournament_players_inserts_rows(db_with_match):
     ).fetchall()
     assert row[0] == (1, "Alpha", 20, 15, 5)
     assert row[1] == (1, "Alpha", 30, 25, 10)
+
+
+def test_ingest_tournament_players_s2_format_no_week_no_mode(db_with_match):
+    """s2 dropped Week and Mode: mode derived from map, week from ISO week of date."""
+    from cdm_stats.ingestion.tournament_player_loader import ingest_tournament_players
+    csv_s2 = """Date,Opponent,Map,Player,Kills,Deaths,Assists
+2026-02-15,OUG,Tunisia,Alpha,20,15,5
+2026-02-15,OUG,Summit,Alpha,30,25,10"""
+    results = ingest_tournament_players(db_with_match, io.StringIO(csv_s2))
+    assert [r["status"] for r in results] == ["ok", "ok"]
+
+    rows = db_with_match.execute(
+        "SELECT week, kills FROM tournament_player_stats ORDER BY stat_id"
+    ).fetchall()
+    iso_week = _date.fromisoformat("2026-02-15").isocalendar()[1]
+    assert rows == [(iso_week, 20), (iso_week, 30)]
+
+
+def test_ingest_tournament_players_same_map_two_same_day_series(db_with_match):
+    """A map can recur across same-day series; CSV rows resolve in order."""
+    from cdm_stats.ingestion.tournament_player_loader import ingest_tournament_players
+
+    dvs_id = db_with_match.execute(
+        "SELECT team_id FROM teams WHERE abbreviation = 'DVS'"
+    ).fetchone()[0]
+    oug_id = db_with_match.execute(
+        "SELECT team_id FROM teams WHERE abbreviation = 'OUG'"
+    ).fetchone()[0]
+    tunisia_id = db_with_match.execute(
+        "SELECT map_id FROM maps WHERE map_name = 'Tunisia' AND mode = 'SnD'"
+    ).fetchone()[0]
+    # Second same-day DVS vs OUG series, also opening on Tunisia.
+    db_with_match.execute(
+        """INSERT INTO matches (match_date, team1_id, team2_id, two_v_two_winner_id,
+                                series_winner_id, match_format, series_number, round)
+           VALUES ('2026-02-15', ?, ?, ?, ?, 'CDL_BO5', 1, 'Finals')""",
+        (dvs_id, oug_id, dvs_id, dvs_id),
+    )
+    m2 = db_with_match.execute("SELECT last_insert_rowid()").fetchone()[0]
+    db_with_match.execute(
+        """INSERT INTO map_results (match_id, slot, map_id, picked_by_team_id, winner_team_id,
+                                    picking_team_score, non_picking_team_score,
+                                    team1_score_before, team2_score_before, pick_context)
+           VALUES (?, 1, ?, ?, ?, 6, 4, 0, 0, 'Opener')""",
+        (m2, tunisia_id, dvs_id, dvs_id),
+    )
+    db_with_match.commit()
+
+    csv_two = """Date,Opponent,Map,Player,Kills,Deaths,Assists
+2026-02-15,OUG,Tunisia,Alpha,20,15,5
+2026-02-15,OUG,Tunisia,Alpha,11,9,2"""
+    results = ingest_tournament_players(db_with_match, io.StringIO(csv_two))
+    assert [r["status"] for r in results] == ["ok", "ok"]
+
+    # Two distinct map_results, one stat row each, in CSV order.
+    rows = db_with_match.execute(
+        """SELECT mr.match_id, tp.kills
+           FROM tournament_player_stats tp
+           JOIN map_results mr ON tp.result_id = mr.result_id
+           WHERE tp.player_name = 'Alpha'
+           ORDER BY mr.match_id"""
+    ).fetchall()
+    assert rows == [(rows[0][0], 20), (m2, 11)]
 
 
 def test_ingest_tournament_players_skips_duplicates(db_with_match):
