@@ -127,15 +127,15 @@ Date,Week,Opponent,Map,Mode,Score,Result
 20-Jun,2,DVS,Crossroads Strike,Control,3-2,1
 20-Jun,2,DVS,Standoff,Control,3-2,1
 20-Jun,2,DVS,Firing Range,SnD,9-3,1
-22-Jun,3,TSM,Combine,HP,250-145,1
-22-Jun,3,TSM,Summit,HP,181-250,0
-22-Jun,3,TSM,Takeoff,HP,246-250,0
-22-Jun,3,TSM,Hacienda,HP,250-132,1
-22-Jun,3,TSM,Standoff,Control,0-3,0
-22-Jun,3,TSM,Crossroads Strike,Control,0-3,0
-22-Jun,3,TSM,Raid,Control,3-2,1
-22-Jun,3,TSM,Coastal,SnD,1-9,0
-22-Jun,3,TSM,Tunisia,SnD,9-8,1
+22-Jun,3,RVL,Combine,HP,250-145,1
+22-Jun,3,RVL,Summit,HP,181-250,0
+22-Jun,3,RVL,Takeoff,HP,246-250,0
+22-Jun,3,RVL,Hacienda,HP,250-132,1
+22-Jun,3,RVL,Standoff,Control,0-3,0
+22-Jun,3,RVL,Crossroads Strike,Control,0-3,0
+22-Jun,3,RVL,Raid,Control,3-2,1
+22-Jun,3,RVL,Coastal,SnD,1-9,0
+22-Jun,3,RVL,Tunisia,SnD,9-8,1
 26-Jun,3,XROCK,Arsenal,HP,250-137,1
 26-Jun,3,XROCK,Combine,HP,250-151,1
 26-Jun,3,XROCK,Raid,Control,4-2,1
@@ -155,3 +155,16 @@ Date,Week,Opponent,Map,Mode,Score,Result
 27-Jun,3,DVS,Firing Range,SnD,9-7,1
 28-Jun,3,i7,Hacienda,HP,250-47,1
 27-Jun,3,i7,Summit,HP,250-43,1
+30-Jun,4,DVS,Summit,HP,250-163,1
+30-Jun,4,DVS,Hacienda,HP,250-79,1
+30-Jun,4,DVS,Combine,HP,250-141,1
+30-Jun,4,DVS,Raid,Control,4-3,1
+30-Jun,4,DVS,Crossroads Strike,Control,4-0,1
+30-Jun,4,DVS,Firing Range,SnD,8-9,0
+30-Jun,4,DVS,Coastal,SnD,5-9,0
+30-Jun,4,OUG,Takeoff,HP,250-199,1
+30-Jun,4,OUG,Combine,HP,176-250,0
+30-Jun,4,OUG,Standoff,Control,1-4,0
+30-Jun,4,OUG,Meltdown,SnD,9-5,1
+30-Jun,4,OUG,Slums,SnD,5-9,0
+1-Jul,4,ALU,Takeoff,HP,231-250,0
