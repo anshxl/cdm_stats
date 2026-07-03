@@ -48,9 +48,21 @@ date,round,format,team1,team2,die_roll_winner,slot,map_name,winner,winner_score,
 2026-04-26,UB Finals,Bo7,ALU,GL,ALU,3,Crossroads Strike,ALU,4,3,ALU
 2026-04-26,UB Finals,Bo7,ALU,GL,ALU,4,Slums,GL,9,6,GL
 2026-04-26,UB Finals,Bo7,ALU,GL,ALU,5,Arsenal,ALU,250,73,ALU
-2026-04-26,Quarterfinals,Bo7,Q9,ELV,ELV,1,Meltdown,ELV,9,5,ELV
-2026-04-26,Quarterfinals,Bo7,Q9,ELV,ELV,2,Hacienda,ELV,250,202,Q9
-2026-04-26,Quarterfinals,Bo7,Q9,ELV,ELV,3,Raid,Q9,4,3,ELV
-2026-04-26,Quarterfinals,Bo7,Q9,ELV,ELV,4,Tunisia,Q9,9,3,Q9
-2026-04-26,Quarterfinals,Bo7,Q9,ELV,ELV,5,Takeoff,ELV,250,145,ELV
-2026-04-26,Quarterfinals,Bo7,Q9,ELV,ELV,6,Crossroads Strike,ELV,4,0,Q9
+2026-04-26,LB Semis,Bo7,Q9,ELV,ELV,1,Meltdown,ELV,9,5,ELV
+2026-04-26,LB Semis,Bo7,Q9,ELV,ELV,2,Hacienda,ELV,250,202,Q9
+2026-04-26,LB Semis,Bo7,Q9,ELV,ELV,3,Raid,Q9,4,3,ELV
+2026-04-26,LB Semis,Bo7,Q9,ELV,ELV,4,Tunisia,Q9,9,3,Q9
+2026-04-26,LB Semis,Bo7,Q9,ELV,ELV,5,Takeoff,ELV,250,145,ELV
+2026-04-26,LB Semis,Bo7,Q9,ELV,ELV,6,Crossroads Strike,ELV,4,0,Q9
+2026-05-10,LB Finals,Bo7,Q9,ELV,ELV,1,Slums,Q9,9,5,ELV
+2026-05-10,LB Finals,Bo7,Q9,ELV,ELV,2,Combine,ELV,250,210,Q9
+2026-05-10,LB Finals,Bo7,Q9,ELV,ELV,3,Raid,ELV,4,3,ELV
+2026-05-10,LB Finals,Bo7,Q9,ELV,ELV,4,Coastal,ELV,9,6,Q9
+2026-05-10,LB Finals,Bo7,Q9,ELV,ELV,5,Hacienda,Q9,250,214,ELV
+2026-05-10,LB Finals,Bo7,Q9,ELV,ELV,6,Crossroads Strike,Q9,4,3,Q9
+2026-05-10,LB Finals,Bo7,Q9,ELV,ELV,7,Firing Range,Q9,9,7,ELV
+2026-05-10,Finals,Bo7,ALU,Q9,ALU,1,Coastal,Q9,9,7,ALU
+2026-05-10,Finals,Bo7,ALU,Q9,ALU,2,Hacienda,Q9,250,190,Q9
+2026-05-10,Finals,Bo7,ALU,Q9,ALU,3,Standoff,Q9,4,1,ALU
+2026-05-10,Finals,Bo7,ALU,Q9,ALU,4,Tunisia,ALU,9,7,Q9
+2026-05-10,Finals,Bo7,ALU,Q9,ALU,5,Takeoff,Q9,250,223,ALU
