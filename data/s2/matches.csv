@@ -1,4 +1,4 @@
-date,competition,stage,format,team1,team2,map,team1_score,team2_score,picked_by,series_winner,dq
+date,competition,stage,format,team1,team2,map,team1_score,team2_score,picked_by,series_winner,dq,advantaged_team
 2026-06-14,SPLIT II,UB,Bo5,GL,GAL,Arsenal,250,101,,,
 2026-06-14,SPLIT II,UB,Bo5,GL,GAL,Firing Range,4,9,,,
 2026-06-14,SPLIT II,UB,Bo5,GL,GAL,Raid,2,3,,,
@@ -122,3 +122,42 @@ date,competition,stage,format,team1,team2,map,team1_score,team2_score,picked_by,
 2026-07-09,CDM,Stage 1,Ro3,GAL,DVS,Coastal,9,4,DVS,,
 2026-07-09,CDM,Stage 1,Ro3,GAL,DVS,Summit,180,250,GAL,,
 2026-07-09,CDM,Stage 1,Ro3,GAL,DVS,Crossroads Strike,4,2,,,
+2026-07-09,CDM,Stage 1,Ro3,XROCK,ETs,Slums,10,8,ETs,,
+2026-07-09,CDM,Stage 1,Ro3,XROCK,ETs,Combine,250,186,XROCK,,
+2026-07-09,CDM,Stage 1,Ro3,XROCK,ETs,Raid,4,0,,,
+2026-07-09,CDM,Stage 1,Ro3,i7,PAC,Coastal,9,11,PAC,,
+2026-07-09,CDM,Stage 1,Ro3,i7,PAC,Takeoff,250,220,i7,,
+2026-07-09,CDM,Stage 1,Ro3,i7,PAC,Raid,4,3,,,
+2026-07-10,CDM,Stage 1,Ro3,XROCK,i7,Firing Range,9,3,XROCK,,
+2026-07-10,CDM,Stage 1,Ro3,XROCK,i7,Combine,226,250,i7,,
+2026-07-10,CDM,Stage 1,Ro3,XROCK,i7,Crossroads Strike,4,1,,,
+2026-07-10,CDM,Stage 1,Ro3,ELV,ALU,Coastal,9,5,ALU,,
+2026-07-10,CDM,Stage 1,Ro3,ELV,ALU,Takeoff,250,182,ELV,,
+2026-07-10,CDM,Stage 1,Ro3,ELV,ALU,Crossroads Strike,3,4,,,
+2026-07-10,CDM,Stage 1,Ro3,Wolves,DVS,Tunisia,9,1,DVS,,
+2026-07-10,CDM,Stage 1,Ro3,Wolves,DVS,Combine,250,119,Wolves,,
+2026-07-10,CDM,Stage 1,Ro3,Wolves,DVS,Standoff,4,0,,,
+2026-07-10,CDM,Stage 1,Ro3,SPG,RVL,Tunisia,6,9,RVL,,
+2026-07-10,CDM,Stage 1,Ro3,SPG,RVL,Summit,151,250,SPG,,
+2026-07-10,CDM,Stage 1,Ro3,SPG,RVL,Crossroads Strike,0,4,,,
+2026-07-11,CDM,Stage 1,Ro3,Q9,ELV,Coastal,5,9,Q9,,
+2026-07-11,CDM,Stage 1,Ro3,Q9,ELV,Combine,178,250,ELV,,
+2026-07-11,CDM,Stage 1,Ro3,Q9,ELV,Raid,4,3,,,
+2026-07-11,CDM,Stage 1,Ro3,SPG,ETs,Firing Range,7,9,SPG,,
+2026-07-11,CDM,Stage 1,Ro3,SPG,ETs,Summit,191,250,ETs,,
+2026-07-11,CDM,Stage 1,Ro3,SPG,ETs,Standoff,2,4,,,
+2026-07-11,CDM,Stage 1,Ro3,Wolves,ALU,Tunisia,9,3,Wolves,,
+2026-07-11,CDM,Stage 1,Ro3,Wolves,ALU,Summit,250,142,ALU,,
+2026-07-11,CDM,Stage 1,Ro3,Wolves,ALU,Crossroads Strike,4,3,,,
+2026-07-12,CDM,Seat Decider,Bo5,ALU,XROCK,Tunisia,9,7,XROCK,,,ALU
+2026-07-12,CDM,Seat Decider,Bo5,ALU,XROCK,Combine,250,92,ALU,,,ALU
+2026-07-12,CDM,Seat Decider,Bo5,DVS,RVL,Tunisia,2,9,DVS,,,DVS
+2026-07-12,CDM,Seat Decider,Bo5,DVS,RVL,Summit,228,250,RVL,,,DVS
+2026-07-12,CDM,Seat Decider,Bo5,DVS,RVL,Crossroads Strike,3,4,,,,DVS
+2026-07-12,CDM,Seat Decider,Bo5,ELV,RVL,Coastal,9,7,ELV
+2026-07-12,CDM,Seat Decider,Bo5,ELV,RVL,Summit,250,198,RVL
+2026-07-12,CDM,Seat Decider,Bo5,ELV,RVL,Crossroads Strike,4,1
+2026-07-12,CDM,Seat Decider,Bo5,Q9,ALU,Meltdown,10,8,ALU
+2026-07-12,CDM,Seat Decider,Bo5,Q9,ALU,Combine,197,250,Q9
+2026-07-12,CDM,Seat Decider,Bo5,Q9,ALU,Crossroads Strike,4,2
+2026-07-12,CDM,Seat Decider,Bo5,Q9,ALU,Coastal,9,7,Q9

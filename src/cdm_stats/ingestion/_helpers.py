@@ -7,7 +7,7 @@ from cdm_stats.ingestion.formats import FORMATS
 
 def derive_pick_context(
     slot: int, picker_score: int, opponent_score: int,
-    *, win_threshold: int = 3,
+    *, win_threshold: int = 3, opponent_win_threshold: int | None = None,
 ) -> str:
     """
     Derive the pick context for a map result based on the series state.
@@ -16,23 +16,26 @@ def derive_pick_context(
         slot: Map slot in the series (1-based)
         picker_score: The picking team's series score before this map
         opponent_score: The opponent's series score before this map
-        win_threshold: Number of wins needed to take the series (3 for BO5, 4 for BO7)
+        win_threshold: Wins the picker needs to take the series (3 for BO5, 4 for BO7)
+        opponent_win_threshold: Wins the opponent needs; defaults to win_threshold.
+            Differs only in a seat-decider, where the advantaged team needs one fewer.
 
     Returns:
         One of: "Opener", "Neutral", "Must-Win", "Close-Out"
 
-    Rules:
+    Rules (each side measured against its own threshold):
     - Slot 1 is always the opener (first map)
     - If opponent is one win away and picker is not: Must-Win
     - If picker is one win away and opponent is not: Close-Out
     - If both are one win away (e.g. 2-2 in BO5): Must-Win
     - All other cases: Neutral
     """
+    opp_threshold = win_threshold if opponent_win_threshold is None else opponent_win_threshold
     if slot == 1:
         return "Opener"
-    if opponent_score == win_threshold - 1 and picker_score <= win_threshold - 1:
+    if opponent_score == opp_threshold - 1 and picker_score < win_threshold:
         return "Must-Win"
-    if picker_score == win_threshold - 1 and opponent_score < win_threshold - 1:
+    if picker_score == win_threshold - 1 and opponent_score < opp_threshold - 1:
         return "Close-Out"
     return "Neutral"
 

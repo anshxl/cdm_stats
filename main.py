@@ -31,7 +31,8 @@ def run_ingest(loader, *paths: str, key: str = "match", **load_kw) -> None:
     """Open paths, run loader(conn, *files, **load_kw), print per-row status.
 
     `key` is the result field naming each row ("match" or "row"). OK rows with
-    a "bans" count and SKIPPED rows with a "reason" print those extras.
+    a "bans" count print that extra. Skipped rows are only counted — on a
+    re-ingest they're the bulk of the output and drown out OK/ERROR lines.
     """
     from cdm_stats.db.schema import migrate
 
@@ -44,6 +45,7 @@ def run_ingest(loader, *paths: str, key: str = "match", **load_kw) -> None:
         for f in files:
             f.close()
 
+    skipped = 0
     for r in results:
         ident = r[key]
         if r["status"] == "ok":
@@ -52,9 +54,12 @@ def run_ingest(loader, *paths: str, key: str = "match", **load_kw) -> None:
             if r.get("warning"):
                 print(f"     warning: {r['warning']}")
         elif r["status"] == "skipped":
-            print(f"  SKIPPED: {ident} ({r.get('reason', 'duplicate')})")
+            skipped += 1
         else:
             print(f"  ERROR: {ident}: {r['errors']}")
+
+    if skipped:
+        print(f"  SKIPPED: {skipped}")
 
     conn.close()
 

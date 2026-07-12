@@ -87,17 +87,23 @@ def _validate(conn, key, rows) -> list[str]:
         if picker and picker not in (team1_abbr, team2_abbr):
             errors.append(f"picked_by '{picker}' is not one of the teams")
 
+    advantaged = _advantaged(rows)
+    if advantaged and advantaged not in (team1_abbr, team2_abbr):
+        errors.append(f"advantaged_team '{advantaged}' is not one of the teams")
+
     override = _override(rows)
     if override and override not in (team1_abbr, team2_abbr):
         errors.append(f"series_winner '{override}' is not one of the teams")
     elif not override and not errors:
-        threshold = FORMATS[fmt].win_threshold
+        t1_threshold, t2_threshold = _thresholds(
+            FORMATS[fmt].win_threshold, advantaged, team1_abbr, team2_abbr
+        )
         # Formats like Ro3 play every map, so the winner may exceed the threshold
-        # (e.g. 3-0 in a first-to-2). Incomplete = nobody reached it yet.
-        if max(t1_wins, t2_wins) < threshold:
+        # (e.g. 3-0 in a first-to-2). Incomplete = neither reached its threshold.
+        if t1_wins < t1_threshold and t2_wins < t2_threshold:
             errors.append(
-                f"No team reached {threshold} wins ({fmt}): "
-                f"{team1_abbr}={t1_wins}, {team2_abbr}={t2_wins}"
+                f"No team reached its win threshold ({fmt}): "
+                f"{team1_abbr}={t1_wins}/{t1_threshold}, {team2_abbr}={t2_wins}/{t2_threshold}"
             )
 
     return errors
@@ -108,6 +114,24 @@ def _override(rows) -> str:
         ((r.get("series_winner") or "").strip() for r in rows if (r.get("series_winner") or "").strip()),
         "",
     )
+
+
+def _advantaged(rows) -> str:
+    """Seat-decider: the higher-seeded team gets a 1-map head start, so it needs
+    one fewer win. Named on the series' rows via the advantaged_team column
+    (any non-blank value in the series counts, like series_winner)."""
+    return next(
+        ((r.get("advantaged_team") or "").strip() for r in rows if (r.get("advantaged_team") or "").strip()),
+        "",
+    )
+
+
+def _thresholds(base: int, advantaged: str, team1_abbr: str, team2_abbr: str) -> tuple[int, int]:
+    """Per-team wins needed to take the series. Symmetric (both = base) unless a
+    seat-decider names an advantaged team, which then needs one fewer."""
+    t1 = base - 1 if advantaged == team1_abbr else base
+    t2 = base - 1 if advantaged == team2_abbr else base
+    return t1, t2
 
 
 def ingest_s2_matches(conn: sqlite3.Connection, file: IO[str]) -> list[dict]:
@@ -129,7 +153,10 @@ def ingest_s2_matches(conn: sqlite3.Connection, file: IO[str]) -> list[dict]:
             continue
 
         fmt = rows[0]["format"]
-        threshold = FORMATS[fmt].win_threshold
+        advantaged = _advantaged(rows)
+        t1_threshold, t2_threshold = _thresholds(
+            FORMATS[fmt].win_threshold, advantaged, team1_abbr, team2_abbr
+        )
         stage = rows[0]["stage"]
 
         t1_wins = t2_wins = 0
@@ -153,8 +180,11 @@ def ingest_s2_matches(conn: sqlite3.Connection, file: IO[str]) -> list[dict]:
             else:
                 picker_wins = t1_wins if picker_id == team1_id else t2_wins
                 opp_wins = t2_wins if picker_id == team1_id else t1_wins
+                picker_threshold = t1_threshold if picker_id == team1_id else t2_threshold
+                opp_threshold = t2_threshold if picker_id == team1_id else t1_threshold
                 pick_context = derive_pick_context(
-                    slot, picker_wins, opp_wins, win_threshold=threshold
+                    slot, picker_wins, opp_wins,
+                    win_threshold=picker_threshold, opponent_win_threshold=opp_threshold,
                 )
 
             dq = 1 if (r.get("dq") or "").strip() == "1" else 0
@@ -172,7 +202,9 @@ def ingest_s2_matches(conn: sqlite3.Connection, file: IO[str]) -> list[dict]:
         if override:
             series_winner_id = get_team_id_by_abbr(conn, override)
         else:
-            series_winner_id = team1_id if t1_wins > t2_wins else team2_id
+            # Winner is whoever met their own threshold — not raw win count, which
+            # can tie 2-2 when the advantaged team only needed 2.
+            series_winner_id = team1_id if t1_wins >= t1_threshold else team2_id
 
         try:
             match_id = insert_match(

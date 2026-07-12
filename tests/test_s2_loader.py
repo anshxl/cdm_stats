@@ -138,6 +138,56 @@ def test_two_series_same_day_distinguished_by_stage(db):
     assert [r["status"] for r in again] == ["skipped", "skipped"]
 
 
+def test_seat_decider_advantaged_team_wins_at_2_2(db):
+    # Seat decider: DVS is the higher seed (needs only 2). Raw maps tie 2-2, but
+    # DVS reached its threshold first, so DVS takes the series.
+    header = HEADER + ",advantaged_team"
+    csv = header + "\n" + "\n".join([
+        "2026-07-05,CDM,Stage 1,Bo5,DVS,OUG,Tunisia,6,3,DVS,,,DVS",   # DVS 1-0
+        "2026-07-05,CDM,Stage 1,Bo5,DVS,OUG,Summit,200,250,OUG,,,DVS",  # 1-1
+        "2026-07-05,CDM,Stage 1,Bo5,DVS,OUG,Raid,1,3,OUG,,,DVS",        # 1-2
+        "2026-07-05,CDM,Stage 1,Bo5,DVS,OUG,Slums,6,4,DVS,,,DVS",       # 2-2 -> DVS clinches
+    ])
+    results = ingest_s2_matches(db, io.StringIO(csv))
+    assert [r["status"] for r in results] == ["ok"]
+    assert db.execute("SELECT series_winner_id FROM matches").fetchone()[0] == _id(db, "DVS")
+
+
+def test_seat_decider_disadvantaged_team_still_needs_three(db):
+    # The lower seed (OUG) must win 3; here OUG wins 3-1 and takes the series.
+    header = HEADER + ",advantaged_team"
+    csv = header + "\n" + "\n".join([
+        "2026-07-06,CDM,Stage 1,Bo5,DVS,OUG,Tunisia,6,3,DVS,,,DVS",     # DVS 1-0
+        "2026-07-06,CDM,Stage 1,Bo5,DVS,OUG,Summit,200,250,OUG,,,DVS",  # 1-1
+        "2026-07-06,CDM,Stage 1,Bo5,DVS,OUG,Raid,1,3,OUG,,,DVS",        # 1-2
+        "2026-07-06,CDM,Stage 1,Bo5,DVS,OUG,Slums,4,6,OUG,,,DVS",       # 1-3 -> OUG clinches
+    ])
+    results = ingest_s2_matches(db, io.StringIO(csv))
+    assert [r["status"] for r in results] == ["ok"]
+    assert db.execute("SELECT series_winner_id FROM matches").fetchone()[0] == _id(db, "OUG")
+
+
+def test_seat_decider_incomplete_is_error(db):
+    # Advantaged DVS at 1, OUG at 1 -> neither reached its threshold (2 / 3).
+    header = HEADER + ",advantaged_team"
+    csv = header + "\n" + "\n".join([
+        "2026-07-07,CDM,Stage 1,Bo5,DVS,OUG,Tunisia,6,3,DVS,,,DVS",
+        "2026-07-07,CDM,Stage 1,Bo5,DVS,OUG,Summit,200,250,OUG,,,DVS",
+    ])
+    results = ingest_s2_matches(db, io.StringIO(csv))
+    assert results[0]["status"] == "error"
+
+
+def test_advantaged_team_not_in_series_is_error(db):
+    header = HEADER + ",advantaged_team"
+    csv = header + "\n" + "\n".join([
+        "2026-07-08,CDM,Stage 1,Bo5,DVS,OUG,Tunisia,6,3,DVS,,,GL",
+        "2026-07-08,CDM,Stage 1,Bo5,DVS,OUG,Summit,250,200,DVS,,,GL",
+    ])
+    results = ingest_s2_matches(db, io.StringIO(csv))
+    assert results[0]["status"] == "error"
+
+
 def test_unknown_map_is_error(db):
     csv = HEADER + "\n" + "\n".join([
         "2026-06-28,CDM,Stage 1,Bo5,DVS,OUG,NotAMap,6,3,DVS,,",

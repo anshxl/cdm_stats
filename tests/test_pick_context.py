@@ -79,3 +79,23 @@ def test_bo5_defaults_backward_compatible():
     """Calling without new params still works for BO5."""
     assert derive_pick_context(slot=5, picker_score=2, opponent_score=2) == "Must-Win"
     assert derive_pick_context(slot=3, picker_score=0, opponent_score=2) == "Must-Win"
+
+
+# --- Seat-decider tests (advantaged team needs 2 wins, opponent needs 3) ---
+
+def test_seat_decider_advantaged_picker_one_from_win_is_close_out():
+    # Advantaged team (threshold 2) at 1-0 picking: one win from clinching.
+    assert derive_pick_context(slot=2, picker_score=1, opponent_score=0,
+                               win_threshold=2, opponent_win_threshold=3) == "Close-Out"
+
+
+def test_seat_decider_facing_advantaged_at_match_point_is_must_win():
+    # Disadvantaged picker (threshold 3); advantaged opponent has 1 (one from its win of 2).
+    assert derive_pick_context(slot=3, picker_score=1, opponent_score=1,
+                               win_threshold=3, opponent_win_threshold=2) == "Must-Win"
+
+
+def test_seat_decider_advantaged_down_early_is_neutral():
+    # Advantaged picker (threshold 2) at 0-1: opponent still needs 2 more, no pressure yet.
+    assert derive_pick_context(slot=2, picker_score=0, opponent_score=1,
+                               win_threshold=2, opponent_win_threshold=3) == "Neutral"
