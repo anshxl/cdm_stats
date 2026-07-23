@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import date as _date
 
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
@@ -7,7 +8,7 @@ from dash.dependencies import Input, Output
 
 from cdm_stats.dashboard.app import get_db
 from cdm_stats.dashboard.components.week_pills import week_pills, pill_value_to_range
-from cdm_stats.dashboard.helpers import COLORS, MODE_COLORS
+from cdm_stats.dashboard.helpers import COLORS, MODE_COLORS, YOUR_TEAM
 from cdm_stats.db import queries_ops, queries_scrim, queries_tournament_player
 from cdm_stats.db.queries import MODES, MODE_ORDER
 
@@ -194,6 +195,75 @@ def _ops_section(
     return html.Div(children)
 
 
+def _recent_map_title(m: dict) -> str:
+    """'Standoff: vs. Wolves (July 23)'"""
+    d = _date.fromisoformat(m["match_date"])
+    return f"{m['map_name']}: vs. {m['opponent']} ({d.strftime('%B')} {d.day})"
+
+
+def _recent_map_table(players: list[dict]) -> dbc.Table:
+    header = html.Thead(html.Tr([
+        html.Th("Player"), html.Th("Kills"), html.Th("Deaths"), html.Th("Assists"),
+        html.Th("Op Kills"), html.Th("Op Pulls"),
+    ]))
+    body_rows = []
+    for p in players:
+        # Scoreboard and footage are ingested independently, so either side can
+        # be missing. An em dash means "not ingested yet"; a 0 would misreport
+        # it as "played and did nothing".
+        stats = [p["kills"], p["deaths"], p["assists"], p["op_kills"], p["op_pulls"]]
+        body_rows.append(html.Tr([
+            html.Td(p["player_name"], style={"fontWeight": "600"}),
+            *[
+                html.Td(str(v) if v is not None else "—",
+                        style={} if v is not None else {"color": COLORS["muted"]})
+                for v in stats
+            ],
+        ]))
+    return dbc.Table(
+        [header, html.Tbody(body_rows)],
+        bordered=True, hover=True, size="sm",
+        style={"backgroundColor": COLORS["card_bg"], "marginBottom": "0"},
+    )
+
+
+def _recent_maps_block(
+    conn: sqlite3.Connection,
+    player: str | None,
+    mode: str | None,
+    week_range: tuple[int, int] | None,
+    season: int,
+):
+    """Last 5 maps as expandable panels, newest first and open by default.
+
+    Replaces the per-map aggregate for tournament play, where a map recurs only
+    1-6 times a season and an average over that is mostly noise. Scrims keep the
+    aggregate — they run 8-20 games per map, so the mean there means something.
+    """
+    maps = queries_tournament_player.recent_map_stats(
+        conn, YOUR_TEAM, player=player, mode=mode, week_range=week_range, season=season,
+    )
+    title = html.H5("Last 5 Maps", style={"color": COLORS["text"]}, className="mt-4 mb-2")
+    if not maps:
+        return html.Div([
+            title,
+            html.P("No player data found.", style={"color": COLORS["muted"]}),
+        ])
+
+    items = [
+        dbc.AccordionItem(
+            _recent_map_table(m["players"]),
+            title=_recent_map_title(m),
+            item_id=f"map-{m['result_id']}",
+        )
+        for m in maps
+    ]
+    return html.Div([
+        title,
+        dbc.Accordion(items, active_item=f"map-{maps[0]['result_id']}"),
+    ])
+
+
 def _get_available_players(conn: sqlite3.Connection, source: str, season: int = 1) -> list[str]:
     if source == "tournament":
         rows = conn.execute(
@@ -375,6 +445,11 @@ def register_callbacks(app):
         fig = _kd_trend_figure(trend_data)
 
         ops_section = _ops_section(conn, source, player_val, mode_val, season)
+
+        if source == "tournament":
+            recent = _recent_maps_block(conn, player_val, mode_val, wr, season)
+            conn.close()
+            return card_row, fig, ops_section, recent
 
         map_data = _build_player_map_data(
             conn, source=source, player=player_val, mode=mode_val, week_range=wr, season=season,

@@ -127,3 +127,64 @@ def test_player_map_breakdown(db_with_tournament_players):
     tunisia = next(r for r in rows if r["map_name"] == "Tunisia")
     assert tunisia["games"] == 1
     assert tunisia["avg_kills"] == 20.0
+
+
+def test_recent_map_stats_newest_first_with_opponent(db_with_tournament_players):
+    """Newest map first; opponent is whichever side isn't ours."""
+    from cdm_stats.db.queries_tournament_player import recent_map_stats
+    rows = recent_map_stats(db_with_tournament_players, "DVS")
+    # Same match, so slot order decides: Summit is slot 2, Tunisia slot 1.
+    assert [r["map_name"] for r in rows] == ["Summit", "Tunisia"]
+    assert all(r["opponent"] == "OUG" for r in rows)
+    assert [p["player_name"] for p in rows[0]["players"]] == ["Alpha", "Bravo"]
+    assert rows[0]["players"][0]["kills"] == 30
+
+
+def test_recent_map_stats_names_opponent_when_we_are_team2(db_with_tournament_players):
+    """We sit on either side of a match, so opponent can't be read off team1."""
+    from cdm_stats.db.queries_tournament_player import recent_map_stats
+    rows = recent_map_stats(db_with_tournament_players, "OUG")
+    assert all(r["opponent"] == "DVS" for r in rows)
+
+
+def test_recent_map_stats_ops_are_none_when_no_footage(db_with_tournament_players):
+    from cdm_stats.db.queries_tournament_player import recent_map_stats
+    rows = recent_map_stats(db_with_tournament_players, "DVS")
+    assert rows[0]["players"][0]["op_kills"] is None
+    assert rows[0]["players"][0]["op_pulls"] is None
+
+
+def test_recent_map_stats_includes_ops_only_map(db_with_tournament_players):
+    """Footage can land before the scoreboard — that map must still appear."""
+    from cdm_stats.db.queries_tournament_player import recent_map_stats
+    conn = db_with_tournament_players
+    tunisia_rid = conn.execute(
+        """SELECT result_id FROM map_results mr JOIN maps m ON mr.map_id = m.map_id
+           WHERE m.map_name = 'Tunisia'"""
+    ).fetchone()[0]
+    conn.execute("DELETE FROM tournament_player_stats WHERE result_id = ?", (tunisia_rid,))
+    conn.execute(
+        """INSERT INTO ops_player_stats
+           (result_id, week, player_name, op_kills, op_pulls, footage_min)
+           VALUES (?, 1, 'Alpha', 4, 3, 11.0)""",
+        (tunisia_rid,),
+    )
+    conn.commit()
+
+    rows = recent_map_stats(conn, "DVS")
+    tunisia = next(r for r in rows if r["map_name"] == "Tunisia")
+    alpha = tunisia["players"][0]
+    assert (alpha["op_kills"], alpha["op_pulls"]) == (4, 3)
+    assert alpha["kills"] is None and alpha["deaths"] is None
+
+
+def test_recent_map_stats_respects_limit_and_filters(db_with_tournament_players):
+    from cdm_stats.db.queries_tournament_player import recent_map_stats
+    conn = db_with_tournament_players
+    assert len(recent_map_stats(conn, "DVS", limit=1)) == 1
+    assert [r["map_name"] for r in recent_map_stats(conn, "DVS", mode="HP")] == ["Summit"]
+    assert recent_map_stats(conn, "DVS", week_range=(9, 9)) == []
+    assert recent_map_stats(conn, "DVS", season=2) == []
+
+    alpha_only = recent_map_stats(conn, "DVS", player="Alpha")
+    assert all([p["player_name"] for p in r["players"]] == ["Alpha"] for r in alpha_only)

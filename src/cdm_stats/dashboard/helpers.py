@@ -3,6 +3,12 @@ from pathlib import Path
 
 LOW_SAMPLE_THRESHOLD = 4
 
+# Whose roster the player-stat tables describe. We only ever track our own
+# players, so this is the side to exclude when naming a match's opponent.
+# Matchup Prep lets you pick any team; this is not that — change it only if
+# the repo changes hands.
+YOUR_TEAM = "GL"
+
 # Team logos live in src/cdm_stats/dashboard/assets/logos/<abbr>.png (lowercase).
 # Dash auto-serves the assets/ folder at /assets/, so the public URL is
 # /assets/logos/<abbr>.png. Missing logos fall back to text — safe to roll out
