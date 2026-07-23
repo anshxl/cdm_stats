@@ -327,24 +327,39 @@ def _seed_s1_field(conn):
 
 
 def test_season_entry_regresses_continuing_team(db):
-    from cdm_stats.metrics.elo import season_entry_elo, REGRESSION_RHO, REGRESSION_MEAN
+    from cdm_stats.metrics.elo import season_entry_elo, REGRESSION_RHO, REGRESSION_MEAN, GROUP_OFFSET
     _seed_s1_field(db)
-    expected = REGRESSION_MEAN + REGRESSION_RHO * (1117.6 - REGRESSION_MEAN)  # ALU 1058.8
+    # ALU is in the S2 Masters group → regressed seed plus the group offset.
+    expected = REGRESSION_MEAN + REGRESSION_RHO * (1117.6 - REGRESSION_MEAN) + GROUP_OFFSET
     assert season_entry_elo(db, _tid(db, "ALU"), 2) == pytest.approx(expected)
 
 
 def test_newcomer_seeds_at_challenger_mean(db):
-    from cdm_stats.metrics.elo import season_entry_elo
+    from cdm_stats.metrics.elo import season_entry_elo, GROUP_OFFSET
     _seed_s1_field(db)
     # Continuing Challengers (non-playoff, not dropped) are SPG, PAC, ETs.
-    # Newcomers seed at the mean of their regressed seeds (~958.7).
+    # Newcomers seed at the mean of their regressed seeds (~958.7), minus the
+    # Challengers-group offset.
     def regress(final):
         return 1000 + 0.5 * (final - 1000)
-    expected = (regress(948.9) + regress(907.2) + regress(896.0)) / 3
+    expected = (regress(948.9) + regress(907.2) + regress(896.0)) / 3 - GROUP_OFFSET
     assert season_entry_elo(db, _tid(db, "RAG"), 2) == pytest.approx(expected, abs=0.05)
     assert season_entry_elo(db, _tid(db, "i7"), 2) == pytest.approx(expected, abs=0.05)
     # Lower than a Master's regressed seed, as intended.
     assert season_entry_elo(db, _tid(db, "RAG"), 2) < season_entry_elo(db, _tid(db, "GAL"), 2)
+
+
+def test_group_offset_splits_masters_and_challengers(db):
+    from cdm_stats.metrics.elo import season_entry_elo, _regress, GROUP_OFFSET
+    _seed_s1_field(db)
+    # RVL made S1 playoffs but plays in the S2 Challengers group → offset is
+    # driven by group placement, not prior playoff status.
+    assert season_entry_elo(db, _tid(db, "RVL"), 2) == pytest.approx(
+        _regress(961.2) - GROUP_OFFSET
+    )
+    # Masters +offset vs Challengers -offset → identical priors would sit
+    # 2*GROUP_OFFSET apart. Season 1 has no group placement → no offset.
+    assert season_entry_elo(db, _tid(db, "RVL"), 1) == 1000.0
 
 
 def test_masters_and_dropped_excluded_from_challenger_mean(db):
@@ -364,8 +379,8 @@ def test_masters_and_dropped_excluded_from_challenger_mean(db):
 def test_s2_chains_off_in_season_not_s1_final(db):
     from cdm_stats.metrics.elo import _base_elo
     _add_match_elo(db, "ALU", 1, 1117.6, "2026-04-25")   # S1 final
-    # First S2 match → uses the regressed seed, not the S1 final.
-    assert _base_elo(db, _tid(db, "ALU"), 2) == pytest.approx(1058.8, abs=0.05)
+    # First S2 match → regressed seed + Masters group offset, not the S1 final.
+    assert _base_elo(db, _tid(db, "ALU"), 2) == pytest.approx(1108.8, abs=0.05)
     # After one S2 result, the next match chains off it (bug fix).
     _add_match_elo(db, "ALU", 2, 1070.0, "2026-06-20")
     assert _base_elo(db, _tid(db, "ALU"), 2) == pytest.approx(1070.0)

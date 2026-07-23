@@ -39,6 +39,18 @@ MASTERS_ON_ENTRY = {
     2: {"ALU", "DVS", "ELV", "GAL", "GL", "OUG", "Q9", "RVL", "Wolves", "XROCK"},
 }
 
+# THIS season's group placement — distinct from MASTERS_ON_ENTRY (prior-season
+# playoff status): RVL and XROCK made S1 playoffs but were placed in the S2
+# Challengers group. The two groups barely cross-play (Seat Deciders only), so
+# the skill gap between them can't emerge from results — it is injected at
+# season entry as a symmetric seed offset: Masters-group teams +GROUP_OFFSET,
+# Challengers-group teams -GROUP_OFFSET. Seasons with no entry get no offset.
+# ponytail: sets inferred from the S2 match graph, not an official source.
+CHALLENGER_GROUP = {
+    2: {"ETs", "PAC", "RAG", "RVL", "SPG", "XROCK", "i7"},
+}
+GROUP_OFFSET = 50.0  # half the intended Masters-Challengers entry gap (100 Elo)
+
 
 def normalize_margin(winner_score: int, loser_score: int, mode: str) -> float:
     margin = abs(winner_score - loser_score)
@@ -124,11 +136,19 @@ def _newcomer_seed(conn: sqlite3.Connection, season: int) -> float:
     return sum(seeds) / len(seeds) if seeds else SEED_ELO
 
 
+def _group_offset(abbr: str, season: int) -> float:
+    challengers = CHALLENGER_GROUP.get(season)
+    if challengers is None:
+        return 0.0
+    return -GROUP_OFFSET if abbr in challengers else GROUP_OFFSET
+
+
 def season_entry_elo(conn: sqlite3.Connection, team_id: int, season: int) -> float:
     """Starting rating for `team_id` in its first match of `season`.
 
     Season 1 → seed (1000). Continuing team → regressed prior-season final.
     Newcomer (no prior history) → the continuing Challengers' mean seed.
+    Seasons with group placement defined get the group seed offset on top.
     """
     if season <= 1:
         return SEED_ELO
@@ -137,8 +157,8 @@ def season_entry_elo(conn: sqlite3.Connection, team_id: int, season: int) -> flo
         "SELECT abbreviation FROM teams WHERE team_id = ?", (team_id,)
     ).fetchone()[0]
     if prior_final is not None and abbr not in DROPPED_ON_ENTRY.get(season, set()):
-        return _regress(prior_final)
-    return _newcomer_seed(conn, season)
+        return _regress(prior_final) + _group_offset(abbr, season)
+    return _newcomer_seed(conn, season) + _group_offset(abbr, season)
 
 
 def _base_elo(conn: sqlite3.Connection, team_id: int, season: int) -> float:
