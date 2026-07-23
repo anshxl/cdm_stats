@@ -40,6 +40,54 @@ def derive_pick_context(
     return "Neutral"
 
 
+def resolve_result_id(
+    conn: sqlite3.Connection,
+    date: str,
+    opponent_id: int,
+    map_id: int,
+    table: str,
+    player_name: str,
+) -> tuple[int | None, str | None]:
+    """Resolve a player-stat CSV row to a map_result.
+
+    Match on date where the opponent is on either side, then the specific map.
+    A map can recur across same-day series (e.g. UB then Finals), so resolve
+    sequentially: take the first matching map_result (in match/slot order) that
+    doesn't already have a row for this player in `table`. CSV rows are authored
+    in that same order, so the Nth CSV occurrence lands in the Nth series. This
+    also subsumes duplicate-skip.
+
+    Returns (result_id, None) on success, or (None, reason) when no map_result
+    matches or every match already holds this player.
+
+    `table` is interpolated into the SQL — pass a module-level constant, never
+    user input.
+    """
+    result_rows = conn.execute(
+        """SELECT mr.result_id
+           FROM map_results mr
+           JOIN matches mt ON mr.match_id = mt.match_id
+           WHERE mt.match_date = ?
+             AND (mt.team1_id = ? OR mt.team2_id = ?)
+             AND mr.map_id = ?
+           ORDER BY mt.match_id, mr.slot""",
+        (date, opponent_id, opponent_id, map_id),
+    ).fetchall()
+
+    if not result_rows:
+        return None, "No matching map_result found"
+
+    for (rid,) in result_rows:
+        already = conn.execute(
+            f"SELECT 1 FROM {table} WHERE result_id = ? AND player_name = ?",
+            (rid, player_name),
+        ).fetchone()
+        if not already:
+            return rid, None
+
+    return None, "duplicate"
+
+
 def group_rows_by_match(reader: csv.DictReader) -> dict[tuple, list[dict]]:
     matches: dict[tuple, list[dict]] = {}
     for row in reader:

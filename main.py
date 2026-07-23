@@ -195,6 +195,12 @@ def cmd_ingest_tournament_players(args: argparse.Namespace) -> None:
     run_ingest(ingest_tournament_players, args.csv_file, key="row")
 
 
+def cmd_ingest_ops(args: argparse.Namespace) -> None:
+    from cdm_stats.ingestion.ops_loader import ingest_ops_kills
+
+    run_ingest(ingest_ops_kills, args.csv_file, key="row")
+
+
 def cmd_ingest_s2_matches(args: argparse.Namespace) -> None:
     from cdm_stats.ingestion.s2_loader import ingest_s2_matches
 
@@ -264,6 +270,9 @@ def main() -> None:
     p_tp = sub.add_parser("ingest-tournament-players", help="Ingest tournament player-level CSV")
     p_tp.add_argument("csv_file", help="Path to tournament player CSV file")
 
+    p_ops = sub.add_parser("ingest-ops", help="Ingest operator kills/pulls CSV (footage-derived)")
+    p_ops.add_argument("csv_file", help="Path to ops kills CSV file")
+
     p_s2m = sub.add_parser("ingest-s2-matches", help="Ingest Season 2 match data (one row per map)")
     p_s2m.add_argument("csv_file", help="Path to S2 matches CSV file")
 
@@ -283,6 +292,7 @@ def main() -> None:
         "ingest-scrims-team": cmd_ingest_scrims_team,
         "ingest-scrims-players": cmd_ingest_scrims_players,
         "ingest-tournament-players": cmd_ingest_tournament_players,
+        "ingest-ops": cmd_ingest_ops,
         "ingest-s2-matches": cmd_ingest_s2_matches,
         "ingest-s2-bans": cmd_ingest_s2_bans,
         "backfill": cmd_backfill,

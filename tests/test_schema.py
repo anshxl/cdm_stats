@@ -59,6 +59,7 @@ def test_create_tables_creates_all_tables(db):
     tables = [row[0] for row in cursor.fetchall()]
     assert tables == [
         "map_bans", "map_results", "maps", "matches",
+        "ops_player_stats",
         "scrim_maps", "scrim_player_stats",
         "team_elo", "team_map_notes", "teams",
         "tournament_player_stats",
@@ -74,6 +75,7 @@ def test_create_tables_is_idempotent(db):
     tables = [row[0] for row in cursor.fetchall()]
     assert tables == [
         "map_bans", "map_results", "maps", "matches",
+        "ops_player_stats",
         "scrim_maps", "scrim_player_stats",
         "team_elo", "team_map_notes", "teams",
         "tournament_player_stats",
@@ -176,15 +178,36 @@ def test_tournament_player_stats_table_exists():
     conn.close()
 
 
-def test_schema_version_is_9():
+def test_schema_version_is_10():
     import sqlite3
     from cdm_stats.db.schema import create_tables, SCHEMA_VERSION
 
-    assert SCHEMA_VERSION == 9
+    assert SCHEMA_VERSION == 10
     conn = sqlite3.connect(":memory:")
     create_tables(conn)
     version = conn.execute("PRAGMA user_version").fetchone()[0]
-    assert version == 9
+    assert version == 10
+    conn.close()
+
+
+def test_migration_v9_to_v10_adds_ops_player_stats():
+    import sqlite3
+    from cdm_stats.db.schema import create_tables, migrate, SCHEMA_VERSION
+
+    conn = sqlite3.connect(":memory:")
+    create_tables(conn)
+    conn.execute("DROP TABLE ops_player_stats")
+    conn.execute("PRAGMA user_version = 9")
+    conn.commit()
+
+    migrate(conn)
+
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(ops_player_stats)").fetchall()]
+    assert cols == [
+        "stat_id", "result_id", "week", "player_name",
+        "op_kills", "op_pulls", "footage_min",
+    ]
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
     conn.close()
 
 
@@ -434,7 +457,7 @@ def test_migration_v5_to_v6_adds_round_column():
     from cdm_stats.db.schema import create_tables, migrate, SCHEMA_VERSION
     from cdm_stats.ingestion.seed import seed_teams
 
-    assert SCHEMA_VERSION == 9  # bumped
+    assert SCHEMA_VERSION == 10  # bumped
 
     conn = sqlite3.connect(":memory:")
     create_tables(conn)

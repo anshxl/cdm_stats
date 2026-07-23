@@ -7,19 +7,16 @@ from cdm_stats.db.queries import get_team_id_by_abbr, get_map_id
 from cdm_stats.ingestion._helpers import resolve_result_id
 
 
-def ingest_tournament_players(
+def ingest_ops_kills(
     conn: sqlite3.Connection,
     file: IO,
 ) -> list[dict]:
-    """Ingest tournament player-level CSV.
+    """Ingest operator kills/pulls CSV (footage-derived, our roster only).
 
-    CSV columns: Date, Opponent, Map, Player, Kills, Deaths, Assists.
-    Week and Mode are optional (s1 format includes them; s2 dropped them):
-    Mode is derived from the map (maps are mode-exclusive), and Week defaults
-    to the ISO week of the date when absent.
-    Matches are resolved by (match_date, opponent_id appears on either side,
-    map_id) — unique in practice because a team can't play the same map in two
-    different series on the same day. Matches must already be ingested.
+    CSV columns: Date, Opponent, Map, Player, OpKills, OpPulls, FootageMin.
+    Week is optional and defaults to the ISO week of the date. The derived
+    OpKillsPerMin / OpKillsPerPull columns are ignored — they're recomputed at
+    query time. Matches must already be ingested.
     """
     reader = csv.DictReader(file)
     results: list[dict] = []
@@ -30,11 +27,10 @@ def ingest_tournament_players(
         week = int(week_raw) if week_raw else _date.fromisoformat(date).isocalendar()[1]
         opponent_abbr = row["Opponent"].strip()
         map_name = row["Map"].strip()
-        mode = (row.get("Mode") or "").strip() or None
         player_name = row["Player"].strip()
-        kills = int(row["Kills"].strip())
-        deaths = int(row["Deaths"].strip())
-        assists = int(row["Assists"].strip())
+        op_kills = int(row["OpKills"].strip())
+        op_pulls = int(row["OpPulls"].strip())
+        footage_min = float(row["FootageMin"].strip())
 
         desc = f"{date} {map_name} {player_name}"
 
@@ -44,14 +40,14 @@ def ingest_tournament_players(
                             "errors": f"Unknown opponent: {opponent_abbr}"})
             continue
 
-        map_id = get_map_id(conn, map_name, mode)
+        map_id = get_map_id(conn, map_name, None)
         if map_id is None:
             results.append({"status": "error", "row": desc,
                             "errors": f"Unknown map: {map_name}"})
             continue
 
         result_id, reason = resolve_result_id(
-            conn, date, opponent_id, map_id, "tournament_player_stats", player_name,
+            conn, date, opponent_id, map_id, "ops_player_stats", player_name,
         )
         if result_id is None:
             if reason == "duplicate":
@@ -61,10 +57,10 @@ def ingest_tournament_players(
             continue
 
         conn.execute(
-            """INSERT INTO tournament_player_stats
-               (result_id, week, player_name, kills, deaths, assists)
+            """INSERT INTO ops_player_stats
+               (result_id, week, player_name, op_kills, op_pulls, footage_min)
                VALUES (?, ?, ?, ?, ?, ?)""",
-            (result_id, week, player_name, kills, deaths, assists),
+            (result_id, week, player_name, op_kills, op_pulls, footage_min),
         )
         results.append({"status": "ok", "row": desc})
 

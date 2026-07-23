@@ -1,6 +1,6 @@
 import sqlite3
 
-SCHEMA_VERSION = 9
+SCHEMA_VERSION = 10
 
 TABLES = [
     """
@@ -118,6 +118,18 @@ TABLES = [
         kills        INTEGER NOT NULL,
         deaths       INTEGER NOT NULL,
         assists      INTEGER NOT NULL,
+        UNIQUE(result_id, player_name)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS ops_player_stats (
+        stat_id      INTEGER PRIMARY KEY,
+        result_id    INTEGER NOT NULL REFERENCES map_results(result_id),
+        week         INTEGER NOT NULL,
+        player_name  TEXT NOT NULL,
+        op_kills     INTEGER NOT NULL,
+        op_pulls     INTEGER NOT NULL,
+        footage_min  REAL NOT NULL,
         UNIQUE(result_id, player_name)
     )
     """,
@@ -286,6 +298,21 @@ def migrate(conn: sqlite3.Connection) -> None:
         cols = [r[1] for r in conn.execute("PRAGMA table_info(matches)").fetchall()]
         if "competition" not in cols:
             conn.execute("ALTER TABLE matches ADD COLUMN competition TEXT")
+
+    if version < 10:
+        # Operator kills/pulls per player per map, from footage review. Kept
+        # separate from tournament_player_stats because footage coverage lags
+        # scoreboard coverage — the two fill in independently.
+        conn.execute("""CREATE TABLE IF NOT EXISTS ops_player_stats (
+            stat_id      INTEGER PRIMARY KEY,
+            result_id    INTEGER NOT NULL REFERENCES map_results(result_id),
+            week         INTEGER NOT NULL,
+            player_name  TEXT NOT NULL,
+            op_kills     INTEGER NOT NULL,
+            op_pulls     INTEGER NOT NULL,
+            footage_min  REAL NOT NULL,
+            UNIQUE(result_id, player_name)
+        )""")
 
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()
