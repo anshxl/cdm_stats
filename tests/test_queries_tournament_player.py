@@ -120,14 +120,6 @@ def test_player_weekly_trend(db_with_tournament_players):
     assert rows[0]["kd"] == pytest.approx(50 / 40, abs=0.01)
 
 
-def test_player_map_breakdown(db_with_tournament_players):
-    from cdm_stats.db.queries_tournament_player import player_map_breakdown
-    rows = player_map_breakdown(db_with_tournament_players, player="Alpha")
-    assert len(rows) == 2
-    tunisia = next(r for r in rows if r["map_name"] == "Tunisia")
-    assert tunisia["games"] == 1
-    assert tunisia["avg_kills"] == 20.0
-
 
 def test_recent_map_stats_newest_first_with_opponent(db_with_tournament_players):
     """Newest map first; opponent is whichever side isn't ours."""

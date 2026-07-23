@@ -8,9 +8,9 @@ from dash.dependencies import Input, Output
 
 from cdm_stats.dashboard.app import get_db
 from cdm_stats.dashboard.components.week_pills import week_pills, pill_value_to_range
-from cdm_stats.dashboard.helpers import COLORS, MODE_COLORS, YOUR_TEAM
+from cdm_stats.dashboard.helpers import COLORS, YOUR_TEAM
 from cdm_stats.db import queries_ops, queries_scrim, queries_tournament_player
-from cdm_stats.db.queries import MODES, MODE_ORDER
+from cdm_stats.db.queries import MODES
 
 PLAYER_COLORS = [
     "#7dd3fc",  # sky
@@ -50,19 +50,6 @@ def _build_kd_trend_data(
 ) -> list[dict]:
     return _queries_for(source).player_weekly_trend(
         conn, player=player, mode=mode, season=season,
-    )
-
-
-def _build_player_map_data(
-    conn: sqlite3.Connection,
-    source: str = "tournament",
-    player: str | None = None,
-    mode: str | None = None,
-    week_range: tuple[int, int] | None = None,
-    season: int = 1,
-) -> list[dict]:
-    return _queries_for(source).player_map_breakdown(
-        conn, player=player, mode=mode, week_range=week_range, season=season,
     )
 
 
@@ -360,26 +347,9 @@ def layout(season: int = 1):
         html.H5("K/D Trend", style={"color": COLORS["text"]}, className="mt-4 mb-2"),
         dcc.Graph(id="player-kd-chart"),
         html.Div(id="player-ops-section"),
-        html.Div(id="player-map-table"),
+        html.Div(id="player-recent-maps"),
     ], fluid=True)
 
-
-
-def _mode_legend() -> html.Div:
-    return html.Div(
-        [
-            html.Span(
-                mode,
-                style={
-                    "color": MODE_COLORS[mode],
-                    "fontWeight": "600",
-                    "marginRight": "14px",
-                },
-            )
-            for mode in MODES
-        ],
-        style={"fontSize": "0.8rem", "marginBottom": "6px", "color": COLORS["muted"]},
-    )
 
 
 def register_callbacks(app):
@@ -409,7 +379,7 @@ def register_callbacks(app):
         Output("player-summary-cards", "children"),
         Output("player-kd-chart", "figure"),
         Output("player-ops-section", "children"),
-        Output("player-map-table", "children"),
+        Output("player-recent-maps", "children"),
         Input("player-source-filter", "value"),
         Input("player-filter", "value"),
         Input("player-mode-filter", "value"),
@@ -446,54 +416,12 @@ def register_callbacks(app):
 
         ops_section = _ops_section(conn, source, player_val, mode_val, season)
 
-        if source == "tournament":
-            recent = _recent_maps_block(conn, player_val, mode_val, wr, season)
-            conn.close()
-            return card_row, fig, ops_section, recent
-
-        map_data = _build_player_map_data(
-            conn, source=source, player=player_val, mode=mode_val, week_range=wr, season=season,
+        # Scrims get no per-map block at all — the aggregate it replaced was
+        # dropped outright, and there's no footage review behind scrim maps.
+        recent = (
+            _recent_maps_block(conn, player_val, mode_val, wr, season)
+            if source == "tournament" else None
         )
-        title_suffix = player_val if player_val else "Team Aggregate"
-        title = html.H5(
-            f"Per-Map Breakdown — {title_suffix}",
-            style={"color": COLORS["text"]},
-            className="mt-4 mb-2",
-        )
-        if map_data:
-            sorted_map_data = sorted(
-                map_data,
-                key=lambda d: (MODE_ORDER.get(d["mode"], 99), d["map_name"]),
-            )
-            header = html.Thead(html.Tr([
-                html.Th("Map"), html.Th("Games"),
-                html.Th("Avg K/D"), html.Th("Avg Kills"), html.Th("Avg Deaths"),
-                html.Th("Avg Assists"), html.Th("Pos Eng %"),
-            ]))
-            body_rows = []
-            for d in sorted_map_data:
-                kd_color = COLORS["win"] if d["avg_kd"] >= 1.0 else COLORS["loss"]
-                map_color = MODE_COLORS.get(d["mode"], COLORS["text"])
-                body_rows.append(html.Tr([
-                    html.Td(d["map_name"], style={"color": map_color, "fontWeight": "600"}),
-                    html.Td(str(d["games"])),
-                    html.Td(f"{d['avg_kd']:.2f}", style={"color": kd_color, "fontWeight": "600"}),
-                    html.Td(f"{d['avg_kills']:.1f}"),
-                    html.Td(f"{d['avg_deaths']:.1f}"),
-                    html.Td(f"{d['avg_assists']:.1f}"),
-                    html.Td(f"{d['avg_pos_eng_pct']:.1f}%"),
-                ]))
-            table_body = dbc.Table(
-                [header, html.Tbody(body_rows)],
-                bordered=True, hover=True, size="sm",
-                style={"backgroundColor": COLORS["card_bg"]},
-            )
-            table = html.Div([title, _mode_legend(), table_body])
-        else:
-            table = html.Div([
-                title,
-                html.P("No player data found.", style={"color": COLORS["muted"]}),
-            ])
 
         conn.close()
-        return card_row, fig, ops_section, table
+        return card_row, fig, ops_section, recent

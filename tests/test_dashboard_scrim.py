@@ -105,13 +105,6 @@ def test_player_stats_build_trend(scrim_db):
     assert alpha_w1["kd"] == pytest.approx(20 / 15, abs=0.01)
 
 
-def test_player_stats_build_map_table(scrim_db):
-    from cdm_stats.dashboard.tabs.player_stats import _build_player_map_data
-    rows = _build_player_map_data(scrim_db, player="Alpha", source="scrim")
-    assert len(rows) == 1
-    assert rows[0]["map_name"] == "Tunisia"
-
-
 def test_player_stats_layout():
     from cdm_stats.dashboard.tabs.player_stats import layout
     result = layout()

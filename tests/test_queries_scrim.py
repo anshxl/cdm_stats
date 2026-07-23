@@ -155,10 +155,3 @@ def test_player_weekly_trend(scrim_db):
     assert week1["kd"] == pytest.approx(20 / 15, abs=0.01)
 
 
-def test_player_map_breakdown(scrim_db):
-    from cdm_stats.db.queries_scrim import player_map_breakdown
-    rows = player_map_breakdown(scrim_db, player="Alpha")
-    assert len(rows) == 1  # Alpha only played Tunisia
-    assert rows[0]["map_name"] == "Tunisia"
-    assert rows[0]["games"] == 2
-    assert rows[0]["avg_kills"] == 15.0  # (20+10)/2
