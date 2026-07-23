@@ -10,3 +10,5 @@ dist/
 .claude/
 .superpowers/
 docs/
+data/s2/_xx.csv
+# data/s2/ops_kills.csv
