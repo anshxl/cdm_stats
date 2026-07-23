@@ -118,42 +118,45 @@ def _kd_trend_figure(trend_data: list[dict]) -> go.Figure:
     return fig
 
 
-def _ops_figure(data: list[dict]) -> go.Figure:
-    """Horizontal bars ranked by operator kills per pull, best at top."""
-    # Colour by alphabetical position so a player keeps the same colour here as
-    # in the summary cards above, which render in name order.
-    alpha_index = {n: i for i, n in enumerate(sorted(d["player_name"] for d in data))}
-    ordered = list(reversed(data))  # plotly draws the first y value at the bottom
+def _ops_trend_figure(trend_data: list[dict]) -> go.Figure:
+    """Per-week operator kills per pull, one line per player.
 
-    fig = go.Figure(go.Bar(
-        x=[d["kills_per_pull"] or 0 for d in ordered],
-        y=[d["player_name"] for d in ordered],
-        orientation="h",
-        marker={"color": [
-            PLAYER_COLORS[alpha_index[d["player_name"]] % len(PLAYER_COLORS)] for d in ordered
-        ]},
-        text=[
-            f"{d['kills_per_pull']:.2f}" if d["kills_per_pull"] is not None else "—"
-            for d in ordered
-        ],
-        textposition="outside",
-        customdata=[(d["op_kills"], d["op_pulls"], d["maps"]) for d in ordered],
-        hovertemplate=(
-            "%{y}<br>%{customdata[0]} kills / %{customdata[1]} pulls"
-            " across %{customdata[2]} maps<extra></extra>"
-        ),
-    ))
-    fig.add_vline(x=1.0, line_dash="dash", line_color="gray", opacity=0.4,
-                  annotation_text="1.00", annotation_position="top")
+    A week in which a player never pulled has no rate, so it's left out of that
+    player's series entirely and the line breaks — better than plotting a zero
+    that reads as "pulled and whiffed".
+    """
+    fig = go.Figure()
+    players = sorted(set(d["player_name"] for d in trend_data))
+    for i, p in enumerate(players):
+        pdata = [d for d in trend_data if d["player_name"] == p]
+        color = PLAYER_COLORS[i % len(PLAYER_COLORS)]
+        fig.add_trace(go.Scatter(
+            x=[f"W{d['week']}" for d in pdata],
+            y=[d["kills_per_pull"] for d in pdata],
+            mode="lines+markers",
+            name=p,
+            connectgaps=False,
+            marker={"size": 6, "color": color},
+            line={"width": 2, "color": color},
+            customdata=[(d["op_kills"], d["op_pulls"], d["maps"]) for d in pdata],
+            hovertemplate=(
+                f"{p}: %{{y:.2f}} K/pull<br>"
+                "%{customdata[0]} kills / %{customdata[1]} pulls"
+                " over %{customdata[2]} maps<extra></extra>"
+            ),
+        ))
+    fig.add_hline(y=1.0, line_dash="dash", line_color="gray", opacity=0.4,
+                  annotation_text="1.00 K/pull", annotation_position="bottom right")
     fig.update_layout(
         plot_bgcolor=COLORS["page_bg"],
         paper_bgcolor=COLORS["page_bg"],
         font={"color": COLORS["text"]},
-        margin={"l": 80, "r": 40, "t": 30, "b": 40},
-        height=60 * len(data) + 80,
-        xaxis={"title": "Op Kills per Pull", "gridcolor": COLORS["border"]},
-        yaxis={"gridcolor": COLORS["border"]},
-        showlegend=False,
+        margin={"l": 50, "r": 20, "t": 30, "b": 50},
+        height=400,
+        yaxis={"title": "Op Kills per Pull", "gridcolor": COLORS["border"]},
+        xaxis={"title": "Week", "gridcolor": COLORS["border"]},
+        legend={"font": {"size": 10}},
+        hovermode="closest",
     )
     return fig
 
@@ -163,24 +166,26 @@ def _ops_section(
     source: str,
     player: str | None,
     mode: str | None,
-    week_range: tuple[int, int] | None,
     season: int,
 ):
     """Operator efficiency block. Absent entirely when there's nothing to show."""
     if source != "tournament":
         return None
-    data = queries_ops.ops_player_summary(
-        conn, player=player, mode=mode, week_range=week_range, season=season,
+    trend_data = queries_ops.ops_player_weekly_trend(
+        conn, player=player, mode=mode, season=season,
     )
-    if not data:
+    if not trend_data:
         return None
 
     children = [
         html.H5("Operator Efficiency", style={"color": COLORS["text"]},
                 className="mt-4 mb-2"),
-        dcc.Graph(figure=_ops_figure(data)),
+        dcc.Graph(figure=_ops_trend_figure(trend_data)),
     ]
-    thin = [d["player_name"] for d in data if d["maps"] < 4]
+    maps_by_player: dict[str, int] = {}
+    for d in trend_data:
+        maps_by_player[d["player_name"]] = maps_by_player.get(d["player_name"], 0) + d["maps"]
+    thin = [p for p, n in maps_by_player.items() if n < 4]
     if thin:
         children.append(html.Small(
             f"Under 4 maps of footage — directional only: {', '.join(sorted(thin))}",
@@ -369,9 +374,7 @@ def register_callbacks(app):
         )
         fig = _kd_trend_figure(trend_data)
 
-        ops_section = _ops_section(
-            conn, source, player_val, mode_val, wr, season,
-        )
+        ops_section = _ops_section(conn, source, player_val, mode_val, season)
 
         map_data = _build_player_map_data(
             conn, source=source, player=player_val, mode=mode_val, week_range=wr, season=season,
