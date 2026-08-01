@@ -292,3 +292,17 @@ date,competition,stage,format,team1,team2,map,team1_score,team2_score,picked_by,
 2026-07-31,CDM,Stage 2,Bo5,RAG,ALU,Slums,2,9,RAG,,,
 2026-07-31,CDM,Stage 2,Bo5,RAG,ALU,Summit,59,250,ALU,,,
 2026-07-31,CDM,Stage 2,Bo5,RAG,ALU,Standoff,0,4,,,
+2026-08-01,CDM,Bracket Decider,Bo5,ALU,DVS,Firing Range,7,9,ALU,,,ALU
+2026-08-01,CDM,Bracket Decider,Bo5,ALU,DVS,Combine,250,198,DVS,,,ALU
+2026-08-01,CDM,Bracket Decider,Bo5,ALU,DVS,Standoff,4,2,,,,ALU
+2026-08-01,CDM,Bracket Decider,Bo5,RVL,XROCK,Firing Range,9,7,XROCK,,,RVL
+2026-08-01,CDM,Bracket Decider,Bo5,RVL,XROCK,Summit,228,250,RVL,,,RVL
+2026-08-01,CDM,Bracket Decider,Bo5,RVL,XROCK,Crossroads Strike,4,2,,,,RVL
+2026-08-01,CDM,Bracket Decider,Bo5,GAL,ALU,Slums,10,8,GAL,,,
+2026-08-01,CDM,Bracket Decider,Bo5,GAL,ALU,Summit,68,250,ALU
+2026-08-01,CDM,Bracket Decider,Bo5,GAL,ALU,Crossroads Strike,4,2
+2026-08-01,CDM,Bracket Decider,Bo5,GAL,ALU,Meltdown,11,9,ALU
+2026-08-01,CDM,Bracket Decider,Bo5,GL,RVL,Slums,9,7,GL
+2026-08-01,CDM,Bracket Decider,Bo5,GL,RVL,Hacienda,250,109
+2026-08-01,CDM,Bracket Decider,Bo5,GL,RVL,Standoff,3,4
+2026-08-01,CDM,Bracket Decider,Bo5,GL,RVL,Meltdown,9,6
