@@ -49,8 +49,8 @@ FORMATS: dict[str, Format] = {
         expected_bans=4,
     ),
     # S2: map-centric (mode derived from the map), so no slot_modes. expected_bans
-    # is 3 per team = 6 total, used only for a soft warning in the bans loader.
+    # is per-format total (2 per team for Bo7), used only for a soft warning in the bans loader.
     "Ro3": Format(win_threshold=2, expected_bans=6),
     "Bo5": Format(win_threshold=3, expected_bans=6),
-    "Bo7": Format(win_threshold=4, expected_bans=6),
+    "Bo7": Format(win_threshold=4, expected_bans=4),
 }
