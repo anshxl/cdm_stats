@@ -15,7 +15,7 @@ from cdm_stats.dashboard.components.team_badge import (
 from cdm_stats.metrics.avoidance import pick_win_loss, defend_win_loss
 from cdm_stats.metrics.map_strength import map_strength
 from cdm_stats.metrics.elo import get_current_elo, is_low_confidence
-from cdm_stats.db.queries import get_ban_summary, MODES
+from cdm_stats.db.queries import team_ban_rates, MODES
 
 
 # ---------------------------------------------------------------------------
@@ -72,6 +72,9 @@ def _build_matchup_data(
     maps = get_all_maps(conn)
     result: dict[str, list[dict]] = {"SnD": [], "HP": [], "Control": []}
 
+    opp_bans = team_ban_rates(conn, opp_id, season=season)
+    opp_bans_h2h = team_ban_rates(conn, opp_id, season=season, opponent_id=your_id)
+
     for map_id, map_name, mode in maps:
         h2h = _head_to_head(conn, your_id, opp_id, map_id, season=season)
         your_wl = _team_map_wl(conn, your_id, map_id, season=season)
@@ -105,6 +108,8 @@ def _build_matchup_data(
             "your_defend_wl": your_dwl,
             "opp_pick_wl": opp_pwl,
             "opp_defend_wl": opp_dwl,
+            "opp_bans": (opp_bans["by_map"].get(map_id, 0), opp_bans["total_series"]),
+            "opp_bans_h2h": (opp_bans_h2h["by_map"].get(map_id, 0), opp_bans_h2h["total_series"]),
         }
         if mode in result:
             result[mode].append(entry)
@@ -209,6 +214,40 @@ def _delta_badge(delta: float | None) -> html.Span:
     )
 
 
+def _ban_count_span(count: int, total: int) -> html.Span:
+    """'Bans 6/10' — opponent-tinted when they ban it half the time or more."""
+    if total == 0:
+        return html.Span("Bans —", style={"color": COLORS["muted"], "fontSize": "0.85rem"})
+    color = COLORS["opponent"] if count / total >= 0.5 else COLORS["muted"]
+    return html.Span(
+        f"Bans {count}/{total}",
+        style={"color": color, "fontSize": "0.85rem",
+               "fontWeight": "600" if count / total >= 0.5 else "400"},
+    )
+
+
+def _ban_vs_you_block(count: int, total: int) -> html.Div:
+    """'Bans vs you' block styled like _stat_block, but a count not a W-L."""
+    return html.Div(
+        [
+            html.Div("Bans vs you", style={"fontSize": "0.7rem", "color": COLORS["muted"]}),
+            html.Span(
+                f"{count}/{total}" if total else "—",
+                style={"fontWeight": "600", "color": COLORS["opponent"] if total else COLORS["muted"],
+                       "fontSize": "0.85rem"},
+            ),
+        ],
+        style={
+            "padding": "4px 8px",
+            "borderRadius": "4px",
+            "backgroundColor": f"rgba({_hex_to_rgb(COLORS['opponent'])}, 0.1)",
+            "display": "inline-block",
+            "marginRight": "8px",
+            "marginBottom": "4px",
+        },
+    )
+
+
 def _map_row(m: dict, row_idx: int) -> html.Div:
     """Single map row with Map Strength comparison and expandable pick/defend detail."""
     mode_color = MODE_COLORS.get(m["mode"], COLORS["text"])
@@ -231,6 +270,8 @@ def _map_row(m: dict, row_idx: int) -> html.Div:
                 f"H2H {m['h2h']['wins']}-{m['h2h']['losses']}",
                 style={"color": h2h_color, "fontSize": "0.85rem"},
             ),
+            html.Span(style={"width": "16px", "display": "inline-block"}),
+            _ban_count_span(*m["opp_bans"]),
         ],
         id={"type": "mp-row", "index": row_idx},
         style={
@@ -261,6 +302,7 @@ def _map_row(m: dict, row_idx: int) -> html.Div:
                     _stat_block("Overall", m["opp_wl"]["wins"], m["opp_wl"]["losses"], COLORS["opponent"]),
                     _stat_block("Pick", m["opp_pick_wl"]["wins"], m["opp_pick_wl"]["losses"], COLORS["opponent"]),
                     _stat_block("Defend", m["opp_defend_wl"]["wins"], m["opp_defend_wl"]["losses"], COLORS["opponent"]),
+                    _ban_vs_you_block(*m["opp_bans_h2h"]),
                 ],
                 style={"display": "flex", "alignItems": "center"},
             ),
@@ -270,67 +312,6 @@ def _map_row(m: dict, row_idx: int) -> html.Div:
     )
 
     return html.Div([main_row, detail])
-
-
-def _ban_comparison(
-    conn: sqlite3.Connection,
-    your_id: int,
-    opp_id: int,
-    your_abbr: str,
-    opp_abbr: str,
-    season: int = 1,
-) -> html.Div:
-    """Ban comparison section for both teams in head-to-head matches."""
-    your_bans = get_ban_summary(conn, your_id, opp_id, season=season)
-    opp_bans = get_ban_summary(conn, opp_id, your_id, season=season)
-
-    def _ban_list(bans: list[dict], label: str, tint: str) -> html.Div:
-        rows = []
-        for b in bans:
-            mode_color = MODE_COLORS.get(b["mode"], COLORS["text"])
-            rows.append(
-                html.Div(
-                    [
-                        html.Span(b["map_name"], style={"width": "120px", "display": "inline-block"}),
-                        html.Span(b["mode"], style={"color": mode_color, "width": "70px", "display": "inline-block", "fontSize": "0.85rem"}),
-                        html.Span(
-                            f"{b['ban_count']}/{b['total_series']}",
-                            style={"color": COLORS["text"]},
-                        ),
-                    ],
-                    style={"padding": "4px 12px 4px 24px", "display": "flex", "alignItems": "center"},
-                )
-            )
-        if not rows:
-            rows = [html.Div("No ban data", style={"color": COLORS["muted"], "padding": "4px 24px", "fontSize": "0.85rem"})]
-
-        return html.Div(
-            [
-                html.Div(
-                    html.Span(label, style={"fontWeight": "600", "color": tint}),
-                    style={"padding": "8px 12px", "borderBottom": f"1px solid {COLORS['border']}"},
-                ),
-            ] + rows
-        )
-
-    return dbc.Card(
-        [
-            dbc.CardHeader(
-                html.H5("Ban Comparison", className="mb-0", style={"color": COLORS["text"]}),
-                style={"backgroundColor": COLORS["card_bg"], "borderBottom": f"1px solid {COLORS['border']}"},
-            ),
-            dbc.CardBody(
-                [
-                    _ban_list(your_bans, f"{your_abbr} Bans vs {opp_abbr}", COLORS["your_team"]),
-                    html.Hr(style={"borderColor": COLORS["border"], "margin": "4px 0"}),
-                    _ban_list(opp_bans, f"{opp_abbr} Bans vs {your_abbr}", COLORS["opponent"]),
-                ],
-                style={"padding": "0"},
-            ),
-        ],
-        style={"backgroundColor": COLORS["card_bg"], "border": f"1px solid {COLORS['border']}"},
-        className="mb-3",
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -523,9 +504,6 @@ def register_callbacks(app):
                     className="mb-3",
                 )
                 sections.append(section)
-
-            # Ban comparison
-            sections.append(_ban_comparison(conn, your_id, opp_id, your_abbr, opp_abbr, season=season))
 
             # Low sample note
             sections.append(

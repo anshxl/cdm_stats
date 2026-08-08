@@ -136,6 +136,45 @@ def get_ban_summary(
     ]
 
 
+def team_ban_rates(
+    conn: sqlite3.Connection,
+    team_id: int,
+    season: int = 1,
+    opponent_id: int | None = None,
+) -> dict:
+    """Per-map ban counts for a team, optionally only in series vs opponent_id.
+
+    Returns {"total_series": N, "by_map": {map_id: ban_count}}. `total_series`
+    counts only series where this team's bans were recorded — ban ingestion is
+    partial, so dividing by all series played would understate every rate.
+    """
+    conditions = ["mb.team_id = ?", "m.season = ?"]
+    params: list = [team_id, season]
+    if opponent_id is not None:
+        conditions.append("? IN (m.team1_id, m.team2_id)")
+        params.append(opponent_id)
+    where = " AND ".join(conditions)
+
+    by_map = dict(conn.execute(
+        f"""SELECT mb.map_id, COUNT(*)
+            FROM map_bans mb
+            JOIN matches m ON mb.match_id = m.match_id
+            WHERE {where}
+            GROUP BY mb.map_id""",
+        params,
+    ).fetchall())
+
+    total_series = conn.execute(
+        f"""SELECT COUNT(DISTINCT mb.match_id)
+            FROM map_bans mb
+            JOIN matches m ON mb.match_id = m.match_id
+            WHERE {where}""",
+        params,
+    ).fetchone()[0]
+
+    return {"total_series": total_series, "by_map": by_map}
+
+
 def get_team_map_wl(
     conn: sqlite3.Connection, team_id: int, format_filter: str | None = None, season: int = 1
 ) -> list[dict]:

@@ -43,6 +43,27 @@ def test_ban_summary_returns_bans_for_team(db):
     assert all(s["total_series"] >= 1 for s in summary)
 
 
+def test_team_ban_rates_counts_only_series_with_ban_data(db):
+    from cdm_stats.db.queries import team_ban_rates, get_map_id
+    ingest_tournament(db, io.StringIO(MAPS_CSV), io.StringIO(BANS_CSV))
+    elv_id = get_team_id_by_abbr(db, "ELV")
+    alu_id = get_team_id_by_abbr(db, "ALU")
+
+    rates = team_ban_rates(db, elv_id)
+    assert rates["total_series"] == 1
+    hacienda_id = get_map_id(db, "Hacienda", "HP")
+    assert rates["by_map"][hacienda_id] == 1
+    assert len(rates["by_map"]) == 3  # ELV banned 3 maps
+
+    # Opponent filter: vs ALU is the only series; vs another team, nothing.
+    assert team_ban_rates(db, elv_id, opponent_id=alu_id)["total_series"] == 1
+    gl_id = get_team_id_by_abbr(db, "GL")
+    empty = team_ban_rates(db, elv_id, opponent_id=gl_id)
+    assert empty == {"total_series": 0, "by_map": {}}
+
+    assert team_ban_rates(db, elv_id, season=2)["total_series"] == 0
+
+
 def test_ban_summary_filters_by_season(db):
     ingest_tournament(db, io.StringIO(MAPS_CSV), io.StringIO(BANS_CSV))
     elv_id = get_team_id_by_abbr(db, "ELV")
