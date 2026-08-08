@@ -8,7 +8,7 @@ def player_summary(
     week_range: tuple[int, int] | None = None,
     season: int = 1,
 ) -> list[dict]:
-    """Return per-player totals: kills, deaths, assists, K/D."""
+    """Return per-player totals: kills, deaths, assists, K/D, op kills/pulls."""
     conditions = ["mt.season = ?"]
     params: list = [season]
 
@@ -23,6 +23,23 @@ def player_summary(
         params.extend(week_range)
 
     where = " WHERE " + " AND ".join(conditions)
+
+    # Same filters over the footage table; kept as its own aggregate because
+    # footage and scoreboard land independently, so a join from either side
+    # would drop the other's solo rows.
+    op_rows = conn.execute(
+        f"""SELECT tp.player_name,
+                   SUM(tp.op_kills) as op_kills,
+                   SUM(tp.op_pulls) as op_pulls
+            FROM ops_player_stats tp
+            JOIN map_results mr ON tp.result_id = mr.result_id
+            JOIN maps m ON mr.map_id = m.map_id
+            JOIN matches mt ON mr.match_id = mt.match_id
+            {where}
+            GROUP BY tp.player_name""",
+        params,
+    ).fetchall()
+    ops_by_player = {r[0]: (r[1], r[2]) for r in op_rows}
 
     rows = conn.execute(
         f"""SELECT tp.player_name,
@@ -47,6 +64,8 @@ def player_summary(
             "games": r[4],
             "kd": round(r[1] / r[2], 2) if r[2] > 0 else 0.0,
             "avg_pos_eng_pct": r[5] or 0.0,
+            "op_kills": ops_by_player.get(r[0], (None, None))[0],
+            "op_pulls": ops_by_player.get(r[0], (None, None))[1],
         }
         for r in rows
     ]

@@ -54,7 +54,8 @@ def _player_card(data: dict, color: str) -> dbc.Card:
             ),
             html.Small("K/D", style={"color": COLORS["muted"]}),
             html.Div(
-                f"{data['avg_pos_eng_pct']:.1f}% Pos Eng",
+                f"{data['op_kills'] / data['op_pulls']:.2f} Op K/Pull"
+                if data.get("op_pulls") else "— Op K/Pull",
                 style={"color": COLORS["text"], "fontSize": "0.95rem", "marginTop": "4px"},
             ),
             html.Small(

@@ -90,6 +90,25 @@ def test_player_summary_filters_by_season(db_with_tournament_players):
     assert len(player_summary(db, season=2)) == 2
 
 
+def test_player_summary_op_totals(db_with_tournament_players):
+    from cdm_stats.db.queries_tournament_player import player_summary
+    conn = db_with_tournament_players
+    rid = conn.execute("SELECT result_id FROM map_results LIMIT 1").fetchone()[0]
+    conn.execute(
+        """INSERT INTO ops_player_stats
+           (result_id, week, player_name, op_kills, op_pulls, footage_min)
+           VALUES (?, 1, 'Alpha', 4, 3, 11.0)""",
+        (rid,),
+    )
+    conn.commit()
+
+    rows = player_summary(conn)
+    alpha = next(r for r in rows if r["player_name"] == "Alpha")
+    assert (alpha["op_kills"], alpha["op_pulls"]) == (4, 3)
+    bravo = next(r for r in rows if r["player_name"] == "Bravo")
+    assert (bravo["op_kills"], bravo["op_pulls"]) == (None, None)
+
+
 def test_player_summary_filter_by_player(db_with_tournament_players):
     from cdm_stats.db.queries_tournament_player import player_summary
     rows = player_summary(db_with_tournament_players, player="Alpha")
