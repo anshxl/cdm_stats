@@ -138,9 +138,15 @@ TABLES = [
 
 def create_tables(conn: sqlite3.Connection) -> None:
     conn.execute("PRAGMA foreign_keys = ON")
+    # Only a truly fresh DB gets stamped with the latest version — on an
+    # existing DB the stamp would make migrate() skip pending data migrations.
+    fresh = conn.execute(
+        "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table'"
+    ).fetchone()[0] == 0
     for ddl in TABLES:
         conn.execute(ddl)
-    conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+    if fresh:
+        conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()
 
 

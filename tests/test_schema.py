@@ -508,3 +508,33 @@ def test_migration_v11_normalizes_scrim_dates_and_weeks():
     assert row == ("2026-06-16", 2)
     assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
     conn.close()
+
+
+def test_create_tables_does_not_stamp_version_on_existing_db():
+    """init runs create_tables before migrate; on an existing DB the stamp
+    must not jump ahead, or pending data migrations get skipped forever."""
+    import sqlite3
+    from cdm_stats.db.schema import create_tables, migrate, SCHEMA_VERSION
+    from cdm_stats.ingestion.seed import seed_teams
+
+    conn = sqlite3.connect(":memory:")
+    create_tables(conn)
+    seed_teams(conn)
+    conn.execute(
+        """INSERT INTO scrim_maps
+           (scrim_date, week, opponent_id, map_name, mode, game_number,
+            our_score, opponent_score, result, season)
+           VALUES ('16-Jun', 1, 1, 'Tunisia', 'SnD', 1, 6, 3, 'W', 2)"""
+    )
+    conn.execute("PRAGMA user_version = 10")
+    conn.commit()
+
+    # The init sequence: create_tables, then migrate.
+    create_tables(conn)
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == 10
+    migrate(conn)
+
+    row = conn.execute("SELECT scrim_date, week FROM scrim_maps").fetchone()
+    assert row == ("2026-06-16", 2)
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
+    conn.close()
