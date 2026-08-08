@@ -17,7 +17,7 @@ from cdm_stats.metrics.avoidance import (
 )
 from cdm_stats.metrics.map_strength import map_strength
 from cdm_stats.metrics.elo import get_current_elo, is_low_confidence
-from cdm_stats.db.queries import get_team_map_wl, get_team_ban_summary
+from cdm_stats.db.queries import get_team_map_wl, team_ban_rates, opponent_ban_rates
 
 
 # ---------------------------------------------------------------------------
@@ -127,12 +127,31 @@ def _strength_color(rating: float | None) -> str:
     return COLORS["neutral"]
 
 
+def _ban_rate_span(label: str, count: int, total: int, hi_color: str) -> html.Span:
+    """'Bans 6/10' — hi_color at a >=50% ban rate, muted otherwise."""
+    if total == 0:
+        return html.Span(
+            f"{label} —",
+            style={"color": COLORS["muted"], "fontSize": "0.8rem", "width": "110px", "display": "inline-block"},
+        )
+    hot = count / total >= 0.5
+    return html.Span(
+        f"{label} {count}/{total}",
+        style={"color": hi_color if hot else COLORS["muted"],
+               "fontWeight": "600" if hot else "400",
+               "fontSize": "0.8rem", "width": "110px", "display": "inline-block"},
+    )
+
+
 def _map_strength_card(conn: sqlite3.Connection, team_id: int, records: list[dict], season: int = 1) -> dbc.Card:
     """Render the MAP STRENGTH card with expandable rows showing pick/defend splits and match history."""
     header = dbc.CardHeader(
         html.H5("Map Strength", className="mb-0", style={"color": COLORS["text"]}),
         style={"backgroundColor": COLORS["card_bg"], "borderBottom": f"1px solid {COLORS['border']}"},
     )
+
+    own_bans = team_ban_rates(conn, team_id, season=season)
+    opp_bans = opponent_ban_rates(conn, team_id, season=season)
 
     rows = []
     for rec in records:
@@ -162,6 +181,10 @@ def _map_strength_card(conn: sqlite3.Connection, team_id: int, records: list[dic
                     f"{rec['wins']}-{rec['losses']}",
                     style={"color": wl_col, "fontWeight": "600", "width": "60px", "display": "inline-block"},
                 ),
+                _ban_rate_span("Bans", own_bans["by_map"].get(rec["map_id"], 0),
+                               own_bans["total_series"], COLORS["ban"]),
+                _ban_rate_span("Opp bans", opp_bans["by_map"].get(rec["map_id"], 0),
+                               opp_bans["total_series"], COLORS["win"]),
             ],
             id={"type": "tp-map-row", "index": f"{rec['map_name']}-{rec['mode']}"},
             style={
@@ -251,6 +274,32 @@ def _map_strength_card(conn: sqlite3.Connection, team_id: int, records: list[dic
         )
 
         rows.append(html.Div([main_row, detail]))
+
+    # Maps with ban activity but no games played never show up in the W/L
+    # records — yet "always banned" is the loudest signal here. Give them a
+    # slim, non-expandable row at the bottom.
+    seen_ids = {rec.get("map_id") for rec in records}
+    for map_id, map_name, mode in get_all_maps(conn):
+        ob = own_bans["by_map"].get(map_id, 0)
+        pb = opp_bans["by_map"].get(map_id, 0)
+        if map_id in seen_ids or (ob == 0 and pb == 0):
+            continue
+        rows.append(html.Div(
+            [
+                html.Span(map_name, style={"fontWeight": "600", "width": "140px", "display": "inline-block"}),
+                html.Span(mode, style={"color": MODE_COLORS.get(mode, COLORS["text"]), "width": "80px", "display": "inline-block", "fontSize": "0.85rem"}),
+                html.Span("N/A", style={"color": COLORS["muted"], "fontWeight": "700", "width": "80px", "display": "inline-block", "fontSize": "1.1rem"}),
+                html.Span("0-0", style={"color": COLORS["muted"], "fontWeight": "600", "width": "60px", "display": "inline-block"}),
+                _ban_rate_span("Bans", ob, own_bans["total_series"], COLORS["ban"]),
+                _ban_rate_span("Opp bans", pb, opp_bans["total_series"], COLORS["win"]),
+            ],
+            style={
+                "padding": "8px 12px",
+                "borderBottom": f"1px solid {COLORS['border']}",
+                "display": "flex",
+                "alignItems": "center",
+            },
+        ))
 
     if not rows:
         rows = [html.Div("No map data available", style={"color": COLORS["muted"], "padding": "12px"})]
@@ -359,76 +408,6 @@ def _context_distribution_card(conn: sqlite3.Connection, team_id: int, records: 
     )
 
     body = dbc.CardBody(rows + [legend], style={"padding": "0"})
-    return dbc.Card(
-        [header, body],
-        style={"backgroundColor": COLORS["card_bg"], "border": f"1px solid {COLORS['border']}"},
-        className="mb-3",
-    )
-
-
-def _ban_card(ban_data: dict, abbr: str) -> dbc.Card:
-    """Render BAN TENDENCIES card."""
-    header = dbc.CardHeader(
-        html.H5("Ban Tendencies", className="mb-0", style={"color": COLORS["text"]}),
-        style={"backgroundColor": COLORS["card_bg"], "borderBottom": f"1px solid {COLORS['border']}"},
-    )
-
-    sections = []
-
-    # Team bans
-    team_bans = ban_data.get("team_bans", [])
-    total = ban_data.get("total_series", 0)
-    sections.append(
-        html.Div(
-            html.Span(f"{abbr} Bans", style={"fontWeight": "600", "color": COLORS["ban"]}),
-            style={"padding": "8px 12px", "borderBottom": f"1px solid {COLORS['border']}"},
-        )
-    )
-    if team_bans:
-        for b in team_bans:
-            mode_color = MODE_COLORS.get(b["mode"], COLORS["text"])
-            sections.append(
-                html.Div(
-                    [
-                        html.Span(b["map_name"], style={"width": "120px", "display": "inline-block"}),
-                        html.Span(b["mode"], style={"color": mode_color, "width": "70px", "display": "inline-block", "fontSize": "0.85rem"}),
-                        html.Span(f"{b['ban_count']}/{total}", style={"color": COLORS["text"]}),
-                    ],
-                    style={"padding": "4px 12px 4px 24px", "display": "flex", "alignItems": "center"},
-                )
-            )
-    else:
-        sections.append(
-            html.Div("No ban data", style={"color": COLORS["muted"], "padding": "4px 12px 4px 24px", "fontSize": "0.85rem"})
-        )
-
-    # Opponent bans
-    opp_bans = ban_data.get("opponent_bans", [])
-    sections.append(
-        html.Div(
-            html.Span(f"Opponent Bans vs {abbr}", style={"fontWeight": "600", "color": COLORS["loss"]}),
-            style={"padding": "8px 12px", "borderBottom": f"1px solid {COLORS['border']}", "borderTop": f"1px solid {COLORS['border']}"},
-        )
-    )
-    if opp_bans:
-        for b in opp_bans:
-            mode_color = MODE_COLORS.get(b["mode"], COLORS["text"])
-            sections.append(
-                html.Div(
-                    [
-                        html.Span(b["map_name"], style={"width": "120px", "display": "inline-block"}),
-                        html.Span(b["mode"], style={"color": mode_color, "width": "70px", "display": "inline-block", "fontSize": "0.85rem"}),
-                        html.Span(f"{b['ban_count']}/{total}", style={"color": COLORS["text"]}),
-                    ],
-                    style={"padding": "4px 12px 4px 24px", "display": "flex", "alignItems": "center"},
-                )
-            )
-    else:
-        sections.append(
-            html.Div("No ban data", style={"color": COLORS["muted"], "padding": "4px 12px 4px 24px", "fontSize": "0.85rem"})
-        )
-
-    body = dbc.CardBody(sections, style={"padding": "0"})
     return dbc.Card(
         [header, body],
         style={"backgroundColor": COLORS["card_bg"], "border": f"1px solid {COLORS['border']}"},
@@ -546,7 +525,6 @@ def register_callbacks(app):
             abbr, full_name = row[0], row[1]
 
             records = _build_map_record_data(conn, team_id, season=season)
-            ban_data = get_team_ban_summary(conn, team_id, season=season)
 
             header = html.Div(
                 [
@@ -577,9 +555,6 @@ def register_callbacks(app):
                         _context_distribution_card(conn, team_id, records, season=season),
                         _elo_card(conn, team_id, abbr, season=season),
                     ], md=6),
-                ]),
-                dbc.Row([
-                    dbc.Col(_ban_card(ban_data, abbr), md=6),
                 ]),
             ])
         finally:

@@ -175,6 +175,39 @@ def team_ban_rates(
     return {"total_series": total_series, "by_map": by_map}
 
 
+def opponent_ban_rates(
+    conn: sqlite3.Connection, team_id: int, season: int = 1
+) -> dict:
+    """Per-map counts of what opponents ban against a team, across all series.
+
+    Same shape and denominator rule as team_ban_rates: `total_series` counts
+    only series where an opponent's bans were recorded.
+    """
+    where = """mb.team_id != ?
+               AND ? IN (m.team1_id, m.team2_id)
+               AND m.season = ?"""
+    params = [team_id, team_id, season]
+
+    by_map = dict(conn.execute(
+        f"""SELECT mb.map_id, COUNT(*)
+            FROM map_bans mb
+            JOIN matches m ON mb.match_id = m.match_id
+            WHERE {where}
+            GROUP BY mb.map_id""",
+        params,
+    ).fetchall())
+
+    total_series = conn.execute(
+        f"""SELECT COUNT(DISTINCT mb.match_id)
+            FROM map_bans mb
+            JOIN matches m ON mb.match_id = m.match_id
+            WHERE {where}""",
+        params,
+    ).fetchone()[0]
+
+    return {"total_series": total_series, "by_map": by_map}
+
+
 def get_team_map_wl(
     conn: sqlite3.Connection, team_id: int, format_filter: str | None = None, season: int = 1
 ) -> list[dict]:

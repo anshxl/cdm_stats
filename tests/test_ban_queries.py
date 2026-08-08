@@ -64,6 +64,23 @@ def test_team_ban_rates_counts_only_series_with_ban_data(db):
     assert team_ban_rates(db, elv_id, season=2)["total_series"] == 0
 
 
+def test_opponent_ban_rates_counts_bans_against_team(db):
+    from cdm_stats.db.queries import opponent_ban_rates, get_map_id
+    ingest_tournament(db, io.StringIO(MAPS_CSV), io.StringIO(BANS_CSV))
+    elv_id = get_team_id_by_abbr(db, "ELV")
+
+    # Opponents of ELV (i.e. ALU) banned Summit, Firing Range, Standoff.
+    rates = opponent_ban_rates(db, elv_id)
+    assert rates["total_series"] == 1
+    assert len(rates["by_map"]) == 3
+    summit_id = get_map_id(db, "Summit", "HP")
+    assert rates["by_map"][summit_id] == 1
+
+    gl_id = get_team_id_by_abbr(db, "GL")
+    assert opponent_ban_rates(db, gl_id) == {"total_series": 0, "by_map": {}}
+    assert opponent_ban_rates(db, elv_id, season=2)["total_series"] == 0
+
+
 def test_ban_summary_filters_by_season(db):
     ingest_tournament(db, io.StringIO(MAPS_CSV), io.StringIO(BANS_CSV))
     elv_id = get_team_id_by_abbr(db, "ELV")
