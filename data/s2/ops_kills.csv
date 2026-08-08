@@ -91,7 +91,7 @@ Date,Week,Opponent,Map,Player,OpKills,OpPulls,FootageMin,OpKillsPerMin,OpKillsPe
 2026-08-02,6,ELV,Standoff,Skullguy,6,4,18.00,0.333,1.500
 2026-08-01,6,RVL,Hacienda,Prevail,3,3,8.57,0.350,1.000
 2026-08-01,6,RVL,Hacienda,Viper,7,3,8.57,0.817,2.333
-2026-08-01,6,RVL,Hacienda,Abhiz,9,4,8.57,1.051,2.250
+2026-08-01,6,RVL,Hacienda,Abhiz,9,4,8.57,1.050,2.250
 2026-08-01,6,RVL,Hacienda,Warden,7,4,8.57,0.817,1.750
 2026-08-01,6,RVL,Hacienda,Skullguy,4,2,8.57,0.467,2.000
 2026-08-01,6,RVL,Standoff,Prevail,3,5,21.00,0.143,0.600
@@ -99,3 +99,23 @@ Date,Week,Opponent,Map,Player,OpKills,OpPulls,FootageMin,OpKillsPerMin,OpKillsPe
 2026-08-01,6,RVL,Standoff,Abhiz,6,4,21.00,0.286,1.500
 2026-08-01,6,RVL,Standoff,Warden,9,6,21.00,0.429,1.500
 2026-08-01,6,RVL,Standoff,Skullguy,5,5,21.00,0.238,1.000
+2026-08-08,7,Q9,Combine,Prevail,8,4,12.00,0.667,2.000
+2026-08-08,7,Q9,Combine,Viper,4,4,12.00,0.333,1.000
+2026-08-08,7,Q9,Combine,Abhiz,5,4,12.00,0.417,1.250
+2026-08-08,7,Q9,Combine,Warden,8,4,12.00,0.667,2.000
+2026-08-08,7,Q9,Combine,Skullguy,6,4,12.00,0.500,1.500
+2026-08-08,7,Q9,Crossroads Strike,Prevail,6,3,13.00,0.462,2.000
+2026-08-08,7,Q9,Crossroads Strike,Viper,1,3,13.00,0.077,0.333
+2026-08-08,7,Q9,Crossroads Strike,Abhiz,4,3,13.00,0.308,1.333
+2026-08-08,7,Q9,Crossroads Strike,Warden,6,3,13.00,0.462,2.000
+2026-08-08,7,Q9,Crossroads Strike,Skullguy,2,3,13.00,0.154,0.667
+2026-08-08,7,Q9,Takeoff,Prevail,3,3,11.00,0.273,1.000
+2026-08-08,7,Q9,Takeoff,Viper,8,3,11.00,0.727,2.667
+2026-08-08,7,Q9,Takeoff,Abhiz,4,4,11.00,0.364,1.000
+2026-08-08,7,Q9,Takeoff,Warden,8,5,11.00,0.727,1.600
+2026-08-08,7,Q9,Takeoff,Skullguy,4,4,11.00,0.364,1.000
+2026-08-08,7,Q9,Standoff,Prevail,3,3,16.00,0.188,1.000
+2026-08-08,7,Q9,Standoff,Viper,6,4,16.00,0.375,1.500
+2026-08-08,7,Q9,Standoff,Abhiz,11,3,16.00,0.688,3.667
+2026-08-08,7,Q9,Standoff,Warden,6,5,16.00,0.375,1.200
+2026-08-08,7,Q9,Standoff,Skullguy,2,4,16.00,0.125,0.500
