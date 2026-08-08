@@ -1,12 +1,22 @@
 import sqlite3
 
 
+def _opponent_condition(conditions: list, params: list, opponent: str | None) -> None:
+    """Append an opponent-abbreviation filter against scrim_maps.opponent_id."""
+    if opponent:
+        conditions.append(
+            "opponent_id = (SELECT team_id FROM teams WHERE abbreviation = ?)"
+        )
+        params.append(opponent)
+
+
 def scrim_win_loss(
     conn: sqlite3.Connection,
     mode: str | None = None,
     map_name: str | None = None,
     week_range: tuple[int, int] | None = None,
     season: int = 1,
+    opponent: str | None = None,
 ) -> dict:
     """Return W, L, Win% for scrims with optional filters."""
     conditions = ["season = ?"]
@@ -21,6 +31,7 @@ def scrim_win_loss(
     if week_range:
         conditions.append("week BETWEEN ? AND ?")
         params.extend(week_range)
+    _opponent_condition(conditions, params, opponent)
 
     where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
 
@@ -43,6 +54,7 @@ def scrim_map_breakdown(
     mode: str | None = None,
     week_range: tuple[int, int] | None = None,
     season: int = 1,
+    opponent: str | None = None,
 ) -> list[dict]:
     """Return per-map: played, W, L, Win%, avg scores."""
     conditions = ["season = ?"]
@@ -54,6 +66,7 @@ def scrim_map_breakdown(
     if week_range:
         conditions.append("week BETWEEN ? AND ?")
         params.extend(week_range)
+    _opponent_condition(conditions, params, opponent)
 
     where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
 
@@ -85,6 +98,7 @@ def scrim_weekly_trend(
     mode: str | None = None,
     map_name: str | None = None,
     season: int = 1,
+    opponent: str | None = None,
 ) -> list[dict]:
     """Return per-week win rate for trend chart."""
     conditions = ["season = ?"]
@@ -96,6 +110,7 @@ def scrim_weekly_trend(
     if map_name:
         conditions.append("map_name = ?")
         params.append(map_name)
+    _opponent_condition(conditions, params, opponent)
 
     where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
 
@@ -124,25 +139,30 @@ def scrim_map_results_detail(
     week_range: tuple[int, int] | None = None,
     limit: int = 5,
     season: int = 1,
+    opponent: str | None = None,
 ) -> list[dict]:
-    """Return individual scrim results on a specific map.
+    """Return individual scrim results on a specific map, newest first.
 
     If week_range is given, returns all matches within that range (no limit).
     Otherwise returns up to `limit` most recent matches.
-    Sorted by date descending.
     """
     conditions = ["sm.map_name = ?", "sm.season = ?"]
     params: list = [map_name, season]
     if week_range:
         conditions.append("sm.week BETWEEN ? AND ?")
         params.extend(week_range)
+    if opponent:
+        conditions.append("t.abbreviation = ?")
+        params.append(opponent)
 
+    # scrim_date is stored as text like '7-Jul', which sorts alphabetically —
+    # week plus insertion id is the reliable chronological key.
     sql = f"""SELECT sm.scrim_date, sm.week, t.abbreviation,
                      sm.our_score, sm.opponent_score, sm.result
               FROM scrim_maps sm
               JOIN teams t ON sm.opponent_id = t.team_id
               WHERE {' AND '.join(conditions)}
-              ORDER BY sm.scrim_date DESC, sm.scrim_map_id DESC"""
+              ORDER BY sm.week DESC, sm.scrim_map_id DESC"""
     if week_range is None:
         sql += f" LIMIT {int(limit)}"
 

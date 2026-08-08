@@ -58,9 +58,29 @@ def test_scrim_performance_build_summary_filters_by_season(scrim_db):
     assert s2_data["overall"]["losses"] == 0
 
 
+def test_scrim_queries_filter_by_opponent(scrim_db):
+    from cdm_stats.db.queries_scrim import (
+        scrim_win_loss, scrim_map_breakdown, scrim_weekly_trend, scrim_map_results_detail,
+    )
+    # DVS: 2-0 in week 1; OUG: 0-1 in week 2.
+    dvs = scrim_win_loss(scrim_db, opponent="DVS")
+    assert (dvs["wins"], dvs["losses"]) == (2, 0)
+    assert all(r["losses"] == 0 for r in scrim_map_breakdown(scrim_db, opponent="DVS"))
+    assert [r["week"] for r in scrim_weekly_trend(scrim_db, opponent="OUG")] == [2]
+    tunisia = scrim_map_results_detail(scrim_db, "Tunisia", opponent="DVS")
+    assert [d["opponent"] for d in tunisia] == ["DVS"]
+
+
+def test_scrim_detail_sorts_by_week_not_date_text(scrim_db):
+    """scrim_date is text like '7-Jul'; ordering must come from week + id."""
+    from cdm_stats.db.queries_scrim import scrim_map_results_detail
+    rows = scrim_map_results_detail(scrim_db, "Tunisia")
+    assert [d["week"] for d in rows] == [2, 1]  # newest first
+
+
 def test_scrim_performance_build_map_table(scrim_db):
-    from cdm_stats.dashboard.tabs.scrim_performance import _build_map_table_data
-    rows = _build_map_table_data(scrim_db)
+    from cdm_stats.db.queries_scrim import scrim_map_breakdown
+    rows = scrim_map_breakdown(scrim_db)
     assert len(rows) == 2  # Tunisia and Summit
     tunisia = next(r for r in rows if r["map_name"] == "Tunisia")
     assert tunisia["wins"] == 1
@@ -68,8 +88,8 @@ def test_scrim_performance_build_map_table(scrim_db):
 
 
 def test_scrim_performance_build_trend(scrim_db):
-    from cdm_stats.dashboard.tabs.scrim_performance import _build_trend_data
-    rows = _build_trend_data(scrim_db)
+    from cdm_stats.db.queries_scrim import scrim_weekly_trend
+    rows = scrim_weekly_trend(scrim_db)
     assert len(rows) == 2
     assert rows[0]["week"] == 1
     assert rows[0]["win_pct"] == 100.0
@@ -111,14 +131,15 @@ def test_player_stats_layout():
     assert result is not None
 
 
-def test_scrim_performance_layout_uses_week_pills():
-    """Scrim layout renders the week_pills component, not a RangeSlider."""
+def test_scrim_performance_layout_filters():
+    """Scrim layout has Week and Opponent dropdowns, no week pills."""
     from cdm_stats.dashboard.tabs.scrim_performance import layout
     import json
     result = layout()
     serialized = json.dumps(result.to_plotly_json(), default=str)
-    assert "scrim-week-pills" in serialized
-    assert "scrim-week-slider" not in serialized
+    assert "scrim-week-filter" in serialized
+    assert "scrim-opponent-filter" in serialized
+    assert "scrim-week-pills" not in serialized
 
 
 def test_player_stats_layout_has_pills_no_source_toggle():
