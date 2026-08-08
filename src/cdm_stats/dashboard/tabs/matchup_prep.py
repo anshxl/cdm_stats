@@ -214,13 +214,16 @@ def _delta_badge(delta: float | None) -> html.Span:
     )
 
 
-def _ban_count_span(count: int, total: int) -> html.Span:
-    """'Bans 6/10' — opponent-tinted when they ban it half the time or more."""
+def _ban_count_span(count: int, total: int, opp_abbr: str) -> html.Span:
+    """'GAL banned this 6/10 times' — opponent-tinted at a >=50% ban rate."""
     if total == 0:
-        return html.Span("Bans —", style={"color": COLORS["muted"], "fontSize": "0.85rem"})
+        return html.Span(
+            f"No {opp_abbr} ban data",
+            style={"color": COLORS["muted"], "fontSize": "0.85rem"},
+        )
     color = COLORS["opponent"] if count / total >= 0.5 else COLORS["muted"]
     return html.Span(
-        f"Bans {count}/{total}",
+        f"{opp_abbr} banned this {count}/{total} times",
         style={"color": color, "fontSize": "0.85rem",
                "fontWeight": "600" if count / total >= 0.5 else "400"},
     )
@@ -248,7 +251,7 @@ def _ban_vs_you_block(count: int, total: int) -> html.Div:
     )
 
 
-def _map_row(m: dict, row_idx: int) -> html.Div:
+def _map_row(m: dict, row_idx: int, opp_abbr: str) -> html.Div:
     """Single map row with Map Strength comparison and expandable pick/defend detail."""
     mode_color = MODE_COLORS.get(m["mode"], COLORS["text"])
     h2h_color = wl_color(m["h2h"]["wins"], m["h2h"]["losses"])
@@ -271,7 +274,7 @@ def _map_row(m: dict, row_idx: int) -> html.Div:
                 style={"color": h2h_color, "fontSize": "0.85rem"},
             ),
             html.Span(style={"width": "16px", "display": "inline-block"}),
-            _ban_count_span(*m["opp_bans"]),
+            _ban_count_span(*m["opp_bans"], opp_abbr),
         ],
         id={"type": "mp-row", "index": row_idx},
         style={
@@ -483,7 +486,7 @@ def register_callbacks(app):
 
                 map_rows = []
                 for m in mode_maps:
-                    map_rows.append(_map_row(m, row_idx))
+                    map_rows.append(_map_row(m, row_idx, opp_abbr))
                     row_idx += 1
 
                 section = dbc.Card(

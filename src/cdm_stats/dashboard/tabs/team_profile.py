@@ -13,11 +13,13 @@ from cdm_stats.dashboard.helpers import (
     wl_color, get_all_maps,
 )
 from cdm_stats.metrics.avoidance import (
-    pick_win_loss, defend_win_loss, pick_context_distribution,
+    pick_win_loss, defend_win_loss,
 )
 from cdm_stats.metrics.map_strength import map_strength
 from cdm_stats.metrics.elo import get_current_elo, is_low_confidence
-from cdm_stats.db.queries import get_team_map_wl, team_ban_rates, opponent_ban_rates
+from cdm_stats.db.queries import (
+    get_team_map_wl, team_ban_rates, opponent_ban_rates, team_pick_rates,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -128,18 +130,18 @@ def _strength_color(rating: float | None) -> str:
 
 
 def _ban_rate_span(label: str, count: int, total: int, hi_color: str) -> html.Span:
-    """'Bans 6/10' — hi_color at a >=50% ban rate, muted otherwise."""
+    """'Banned 6/10' — hi_color at a >=50% rate, muted otherwise."""
     if total == 0:
         return html.Span(
             f"{label} —",
-            style={"color": COLORS["muted"], "fontSize": "0.8rem", "width": "110px", "display": "inline-block"},
+            style={"color": COLORS["muted"], "fontSize": "0.8rem", "width": "120px", "display": "inline-block"},
         )
     hot = count / total >= 0.5
     return html.Span(
         f"{label} {count}/{total}",
         style={"color": hi_color if hot else COLORS["muted"],
                "fontWeight": "600" if hot else "400",
-               "fontSize": "0.8rem", "width": "110px", "display": "inline-block"},
+               "fontSize": "0.8rem", "width": "120px", "display": "inline-block"},
     )
 
 
@@ -151,6 +153,7 @@ def _map_strength_card(conn: sqlite3.Connection, team_id: int, records: list[dic
     )
 
     own_bans = team_ban_rates(conn, team_id, season=season)
+    picks = team_pick_rates(conn, team_id, season=season)
     opp_bans = opponent_ban_rates(conn, team_id, season=season)
 
     rows = []
@@ -181,9 +184,11 @@ def _map_strength_card(conn: sqlite3.Connection, team_id: int, records: list[dic
                     f"{rec['wins']}-{rec['losses']}",
                     style={"color": wl_col, "fontWeight": "600", "width": "60px", "display": "inline-block"},
                 ),
-                _ban_rate_span("Bans", own_bans["by_map"].get(rec["map_id"], 0),
+                _ban_rate_span("Banned", own_bans["by_map"].get(rec["map_id"], 0),
                                own_bans["total_series"], COLORS["ban"]),
-                _ban_rate_span("Opp bans", opp_bans["by_map"].get(rec["map_id"], 0),
+                _ban_rate_span("Picked", picks["by_map"].get(rec["map_id"], 0),
+                               picks["total_series"], COLORS["your_team"]),
+                _ban_rate_span("Opp banned", opp_bans["by_map"].get(rec["map_id"], 0),
                                opp_bans["total_series"], COLORS["win"]),
             ],
             id={"type": "tp-map-row", "index": f"{rec['map_name']}-{rec['mode']}"},
@@ -290,8 +295,10 @@ def _map_strength_card(conn: sqlite3.Connection, team_id: int, records: list[dic
                 html.Span(mode, style={"color": MODE_COLORS.get(mode, COLORS["text"]), "width": "80px", "display": "inline-block", "fontSize": "0.85rem"}),
                 html.Span("N/A", style={"color": COLORS["muted"], "fontWeight": "700", "width": "80px", "display": "inline-block", "fontSize": "1.1rem"}),
                 html.Span("0-0", style={"color": COLORS["muted"], "fontWeight": "600", "width": "60px", "display": "inline-block"}),
-                _ban_rate_span("Bans", ob, own_bans["total_series"], COLORS["ban"]),
-                _ban_rate_span("Opp bans", pb, opp_bans["total_series"], COLORS["win"]),
+                _ban_rate_span("Banned", ob, own_bans["total_series"], COLORS["ban"]),
+                _ban_rate_span("Picked", picks["by_map"].get(map_id, 0),
+                               picks["total_series"], COLORS["your_team"]),
+                _ban_rate_span("Opp banned", pb, opp_bans["total_series"], COLORS["win"]),
             ],
             style={
                 "padding": "8px 12px",
@@ -310,104 +317,6 @@ def _map_strength_card(conn: sqlite3.Connection, team_id: int, records: list[dic
     )
 
     body = dbc.CardBody(rows + [footer_note], style={"padding": "0"})
-    return dbc.Card(
-        [header, body],
-        style={"backgroundColor": COLORS["card_bg"], "border": f"1px solid {COLORS['border']}"},
-        className="mb-3",
-    )
-
-
-def _context_distribution_card(conn: sqlite3.Connection, team_id: int, records: list[dict], season: int = 1) -> dbc.Card:
-    """Render PICK CONTEXT DISTRIBUTION card showing how maps are used under pressure."""
-    header = dbc.CardHeader(
-        html.H5("Pick Context Distribution", className="mb-0", style={"color": COLORS["text"]}),
-        style={"backgroundColor": COLORS["card_bg"], "borderBottom": f"1px solid {COLORS['border']}"},
-    )
-
-    context_colors = {
-        "Opener":    "#60a5fa",  # azure
-        "Neutral":   "#a78bfa",  # lavender
-        "Must-Win":  "#ef6f6c",  # softened coral
-        "Close-Out": "#5eead4",  # mint teal
-    }
-
-    rows = []
-    for rec in records:
-        map_id = rec.get("map_id")
-        if not map_id:
-            continue
-        total_played = rec["wins"] + rec["losses"]
-        if total_played == 0:
-            continue
-
-        dist = pick_context_distribution(conn, team_id, map_id, season=season)
-        total_picks = sum(dist.values())
-        if total_picks == 0:
-            continue
-
-        mode_color = MODE_COLORS.get(rec["mode"], COLORS["text"])
-        bar_segments = []
-        for ctx in ("Opener", "Neutral", "Must-Win", "Close-Out"):
-            count = dist.get(ctx, 0)
-            if count == 0:
-                continue
-            pct = count / total_picks * 100
-            bar_segments.append(
-                html.Div(
-                    title=f"{ctx}: {count}",
-                    style={
-                        "width": f"{pct}%",
-                        "height": "12px",
-                        "backgroundColor": context_colors[ctx],
-                        "display": "inline-block",
-                    },
-                )
-            )
-
-        row = html.Div(
-            [
-                html.Div(
-                    [
-                        html.Span(rec["map_name"], style={"fontWeight": "600", "width": "120px", "display": "inline-block"}),
-                        html.Span(rec["mode"], style={"color": mode_color, "fontSize": "0.8rem", "width": "70px", "display": "inline-block"}),
-                    ],
-                    style={"display": "flex", "alignItems": "center", "minWidth": "200px"},
-                ),
-                html.Div(
-                    bar_segments,
-                    style={"flex": "1", "display": "flex", "borderRadius": "4px", "overflow": "hidden", "backgroundColor": "#1c2640"},
-                ),
-                html.Span(
-                    f"n={total_picks}",
-                    style={"fontSize": "0.75rem", "color": COLORS["muted"], "marginLeft": "8px", "minWidth": "40px"},
-                ),
-            ],
-            style={
-                "display": "flex",
-                "alignItems": "center",
-                "padding": "6px 12px",
-                "borderBottom": f"1px solid {COLORS['border']}",
-                "gap": "12px",
-            },
-        )
-        rows.append(row)
-
-    if not rows:
-        rows = [html.Div("No pick data available", style={"color": COLORS["muted"], "padding": "12px"})]
-
-    # Legend
-    legend = html.Div(
-        [
-            html.Span(
-                [html.Span("\u25a0 ", style={"color": c}), ctx],
-                style={"fontSize": "0.7rem", "color": COLORS["muted"], "marginRight": "12px"},
-            )
-            for ctx, c in context_colors.items()
-        ],
-        style={"padding": "6px 12px", "display": "flex"},
-    )
-
-    body = dbc.CardBody(rows + [legend], style={"padding": "0"})
     return dbc.Card(
         [header, body],
         style={"backgroundColor": COLORS["card_bg"], "border": f"1px solid {COLORS['border']}"},
@@ -551,10 +460,7 @@ def register_callbacks(app):
                 header,
                 dbc.Row([
                     dbc.Col(_map_strength_card(conn, team_id, records, season=season), md=6),
-                    dbc.Col([
-                        _context_distribution_card(conn, team_id, records, season=season),
-                        _elo_card(conn, team_id, abbr, season=season),
-                    ], md=6),
+                    dbc.Col(_elo_card(conn, team_id, abbr, season=season), md=6),
                 ]),
             ])
         finally:

@@ -90,6 +90,18 @@ def test_player_summary_filters_by_season(db_with_tournament_players):
     assert len(player_summary(db, season=2)) == 2
 
 
+def test_team_pick_rates(db_with_tournament_players):
+    from cdm_stats.db.queries import team_pick_rates, get_team_id_by_abbr, get_map_id
+    conn = db_with_tournament_players
+    dvs = get_team_id_by_abbr(conn, "DVS")
+
+    rates = team_pick_rates(conn, dvs)
+    assert rates["total_series"] == 1
+    # DVS picked Tunisia; OUG picked Summit.
+    assert rates["by_map"] == {get_map_id(conn, "Tunisia", "SnD"): 1}
+    assert team_pick_rates(conn, dvs, season=2) == {"total_series": 0, "by_map": {}}
+
+
 def test_player_summary_op_totals(db_with_tournament_players):
     from cdm_stats.db.queries_tournament_player import player_summary
     conn = db_with_tournament_players

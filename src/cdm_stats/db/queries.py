@@ -175,6 +175,35 @@ def team_ban_rates(
     return {"total_series": total_series, "by_map": by_map}
 
 
+def team_pick_rates(
+    conn: sqlite3.Connection, team_id: int, season: int = 1
+) -> dict:
+    """Per-map counts of maps this team picked, across all series.
+
+    Same shape as team_ban_rates: `total_series` counts only series where
+    pick data was recorded (picked_by is missing for some events).
+    """
+    by_map = dict(conn.execute(
+        """SELECT mr.map_id, COUNT(*)
+           FROM map_results mr
+           JOIN matches m ON mr.match_id = m.match_id
+           WHERE mr.picked_by_team_id = ? AND m.season = ? AND mr.dq = 0
+           GROUP BY mr.map_id""",
+        (team_id, season),
+    ).fetchall())
+
+    total_series = conn.execute(
+        """SELECT COUNT(DISTINCT mr.match_id)
+           FROM map_results mr
+           JOIN matches m ON mr.match_id = m.match_id
+           WHERE m.season = ? AND ? IN (m.team1_id, m.team2_id)
+             AND mr.picked_by_team_id IS NOT NULL""",
+        (season, team_id),
+    ).fetchone()[0]
+
+    return {"total_series": total_series, "by_map": by_map}
+
+
 def opponent_ban_rates(
     conn: sqlite3.Connection, team_id: int, season: int = 1
 ) -> dict:
