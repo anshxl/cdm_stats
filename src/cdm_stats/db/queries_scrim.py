@@ -185,7 +185,7 @@ def player_summary(
                    SUM(sp.deaths) as deaths,
                    SUM(sp.assists) as assists,
                    COUNT(*) as games,
-                   ROUND(AVG(CAST(sp.kills AS REAL) / NULLIF(sp.kills + sp.deaths + sp.assists, 0) * 100), 1) as avg_pos_eng_pct
+                   ROUND(AVG(CAST(sp.kills + sp.assists AS REAL) / NULLIF(sp.kills + sp.deaths + sp.assists, 0) * 100), 1) as avg_pos_eng_pct
             FROM scrim_player_stats sp
             JOIN scrim_maps sm ON sp.scrim_map_id = sm.scrim_map_id
             {where}

@@ -81,25 +81,25 @@ def test_scrim_performance_layout():
     assert result is not None
 
 
-def test_player_stats_build_summary_filters_by_season(scrim_db):
-    from cdm_stats.dashboard.tabs.player_stats import _build_player_cards_data
+def test_scrim_player_summary_filters_by_season(scrim_db):
+    from cdm_stats.db.queries_scrim import player_summary
     # Season 1 has 5 players; season 2 has none
-    assert len(_build_player_cards_data(scrim_db, source="scrim", season=1)) == 5
-    assert _build_player_cards_data(scrim_db, source="scrim", season=2) == []
+    assert len(player_summary(scrim_db, season=1)) == 5
+    assert player_summary(scrim_db, season=2) == []
 
 
-def test_player_stats_build_summary(scrim_db):
-    from cdm_stats.dashboard.tabs.player_stats import _build_player_cards_data
-    data = _build_player_cards_data(scrim_db, source="scrim")
+def test_scrim_player_summary(scrim_db):
+    from cdm_stats.db.queries_scrim import player_summary
+    data = player_summary(scrim_db)
     assert len(data) == 5
     alpha = next(d for d in data if d["player_name"] == "Alpha")
     assert alpha["kills"] == 20
     assert alpha["deaths"] == 15
 
 
-def test_player_stats_build_trend(scrim_db):
-    from cdm_stats.dashboard.tabs.player_stats import _build_kd_trend_data
-    rows = _build_kd_trend_data(scrim_db, source="scrim")
+def test_scrim_player_weekly_trend(scrim_db):
+    from cdm_stats.db.queries_scrim import player_weekly_trend
+    rows = player_weekly_trend(scrim_db)
     assert len(rows) >= 1
     alpha_w1 = next(r for r in rows if r["player_name"] == "Alpha" and r["week"] == 1)
     assert alpha_w1["kd"] == pytest.approx(20 / 15, abs=0.01)
@@ -121,24 +121,12 @@ def test_scrim_performance_layout_uses_week_pills():
     assert "scrim-week-slider" not in serialized
 
 
-def test_player_stats_layout_has_pills_and_source_toggle():
+def test_player_stats_layout_has_pills_no_source_toggle():
     from cdm_stats.dashboard.tabs.player_stats import layout
     import json
     result = layout()
     serialized = json.dumps(result.to_plotly_json(), default=str)
     assert "player-week-pills" in serialized
     assert "player-week-slider" not in serialized
-    assert "player-source-filter" in serialized
-
-
-def test_player_stats_dispatch_scrim(scrim_db):
-    from cdm_stats.dashboard.tabs.player_stats import _build_player_cards_data
-    data = _build_player_cards_data(scrim_db, source="scrim")
-    assert len(data) == 5
-
-
-def test_player_stats_dispatch_tournament_empty(scrim_db):
-    """Tournament source with no tournament data returns empty."""
-    from cdm_stats.dashboard.tabs.player_stats import _build_player_cards_data
-    data = _build_player_cards_data(scrim_db, source="tournament")
-    assert data == []
+    assert "player-source-filter" not in serialized
+    assert "player-opponent-filter" in serialized

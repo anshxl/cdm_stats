@@ -30,7 +30,7 @@ def player_summary(
                    SUM(tp.deaths) as deaths,
                    SUM(tp.assists) as assists,
                    COUNT(*) as games,
-                   ROUND(AVG(CAST(tp.kills AS REAL) / NULLIF(tp.kills + tp.deaths + tp.assists, 0) * 100), 1) as avg_pos_eng_pct
+                   ROUND(AVG(CAST(tp.kills + tp.assists AS REAL) / NULLIF(tp.kills + tp.deaths + tp.assists, 0) * 100), 1) as avg_pos_eng_pct
             FROM tournament_player_stats tp
             JOIN map_results mr ON tp.result_id = mr.result_id
             JOIN maps m ON mr.map_id = m.map_id
@@ -95,25 +95,36 @@ def player_weekly_trend(
     ]
 
 
-def recent_map_stats(
+def recent_series_stats(
     conn: sqlite3.Connection,
     your_team: str,
     player: str | None = None,
     mode: str | None = None,
     week_range: tuple[int, int] | None = None,
     season: int = 1,
-    limit: int = 5,
+    limit: int | None = 10,
+    opponent: str | None = None,
 ) -> list[dict]:
-    """Return the most recent maps, newest first, with raw per-player stats.
+    """Return the most recent series, newest first, each with its maps and
+    raw per-player stats.
 
-    A map qualifies if it has scoreboard stats OR operator stats — the two are
-    ingested independently and footage lags the scoreboard, so restricting to
-    either one alone would hide maps that have real data. Any individual stat
-    is None when its source hasn't been ingested for that player and map.
+    `limit=None` returns every qualifying series. `opponent` (an abbreviation)
+    restricts to series against that team.
+
+    A series qualifies if any of its maps has scoreboard stats OR operator
+    stats — the two are ingested independently and footage lags the
+    scoreboard, so restricting to either one alone would hide real data. Any
+    individual stat is None when its source hasn't been ingested. The player
+    and mode filters restrict which maps appear in a series, but the series
+    score (`our_maps`/`their_maps`) always counts every map played.
 
     `your_team` is the abbreviation to exclude when naming the opponent; we sit
     on either side of a match, so it can't be inferred from team1/team2.
     """
+    our_id = conn.execute(
+        "SELECT team_id FROM teams WHERE abbreviation = ?", (your_team,)
+    ).fetchone()[0]
+
     # Player/map identity from both stat sources, so neither can hide a map.
     stat_results = """
         SELECT result_id, week, player_name FROM tournament_player_stats
@@ -133,11 +144,16 @@ def recent_map_stats(
     if week_range:
         conditions.append("sr.week BETWEEN ? AND ?")
         params.extend(week_range)
+    if opponent:
+        conditions.append("? IN (t1.abbreviation, t2.abbreviation)")
+        params.append(opponent)
 
     where = " WHERE " + " AND ".join(conditions)
+    limit_clause = "LIMIT ?" if limit is not None else ""
+    limit_params = [limit] if limit is not None else []
 
-    maps = conn.execute(
-        f"""SELECT mr.result_id, mt.match_date, m.map_name, m.mode,
+    series = conn.execute(
+        f"""SELECT mt.match_id, mt.match_date,
                    CASE WHEN t1.abbreviation = ? THEN t2.abbreviation
                         ELSE t1.abbreviation END as opponent
             FROM ({stat_results}) sr
@@ -147,17 +163,49 @@ def recent_map_stats(
             JOIN teams t1 ON mt.team1_id = t1.team_id
             JOIN teams t2 ON mt.team2_id = t2.team_id
             {where}
-            GROUP BY mr.result_id
-            ORDER BY mt.match_date DESC, mt.match_id DESC, mr.slot DESC
-            LIMIT ?""",
-        [your_team] + params + [limit],
+            GROUP BY mt.match_id
+            ORDER BY mt.match_date DESC, mt.match_id DESC
+            {limit_clause}""",
+        [your_team] + params + limit_params,
     ).fetchall()
 
-    if not maps:
+    if not series:
         return []
 
-    result_ids = [r[0] for r in maps]
-    placeholders = ",".join("?" * len(result_ids))
+    match_ids = [r[0] for r in series]
+    m_placeholders = ",".join("?" * len(match_ids))
+
+    # Every map of the selected series — the series score must count maps the
+    # mode/player filters hide from display.
+    map_rows = conn.execute(
+        f"""SELECT mr.match_id, mr.result_id, mr.slot, m.map_name, m.mode,
+                   mr.winner_team_id, mr.picked_by_team_id,
+                   mr.picking_team_score, mr.non_picking_team_score
+            FROM map_results mr
+            JOIN maps m ON mr.map_id = m.map_id
+            WHERE mr.match_id IN ({m_placeholders})
+            ORDER BY mr.match_id, mr.slot""",
+        match_ids,
+    ).fetchall()
+
+    maps_by_match: dict[int, list[dict]] = {}
+    for match_id, result_id, slot, map_name, map_mode, winner_id, picker_id, pick_score, non_pick_score in map_rows:
+        won = winner_id == our_id
+        if picker_id is not None:
+            our_score = pick_score if picker_id == our_id else non_pick_score
+        else:
+            # Slot-5 coin toss has no picker; the winner always holds the
+            # higher score in every mode, so orient by the result.
+            our_score = max(pick_score, non_pick_score) if won else min(pick_score, non_pick_score)
+        their_score = pick_score + non_pick_score - our_score
+        maps_by_match.setdefault(match_id, []).append({
+            "result_id": result_id, "slot": slot, "map_name": map_name,
+            "mode": map_mode, "won": won,
+            "our_score": our_score, "their_score": their_score,
+        })
+
+    all_result_ids = [m["result_id"] for maps in maps_by_match.values() for m in maps]
+    r_placeholders = ",".join("?" * len(all_result_ids))
     player_clause = " AND sr.player_name = ?" if player else ""
 
     rows = conn.execute(
@@ -170,10 +218,10 @@ def recent_map_stats(
             LEFT JOIN ops_player_stats op
                    ON op.result_id = sr.result_id
                   AND op.player_name = sr.player_name
-            WHERE sr.result_id IN ({placeholders}){player_clause}
+            WHERE sr.result_id IN ({r_placeholders}){player_clause}
             GROUP BY sr.result_id, sr.player_name
             ORDER BY sr.player_name""",
-        result_ids + ([player] if player else []),
+        all_result_ids + ([player] if player else []),
     ).fetchall()
 
     by_result: dict[int, list[dict]] = {}
@@ -183,12 +231,20 @@ def recent_map_stats(
             "op_kills": r[5], "op_pulls": r[6],
         })
 
-    return [
-        {
-            "result_id": m[0], "match_date": m[1], "map_name": m[2],
-            "mode": m[3], "opponent": m[4], "players": by_result.get(m[0], []),
-        }
-        for m in maps
-    ]
+    out = []
+    for match_id, match_date, opp in series:
+        all_maps = maps_by_match.get(match_id, [])
+        shown = [
+            {**m, "players": by_result[m["result_id"]]}
+            for m in all_maps
+            if m["result_id"] in by_result and (not mode or m["mode"] == mode)
+        ]
+        out.append({
+            "match_id": match_id, "match_date": match_date, "opponent": opp,
+            "our_maps": sum(1 for m in all_maps if m["won"]),
+            "their_maps": sum(1 for m in all_maps if not m["won"]),
+            "maps": shown,
+        })
+    return out
 
 
