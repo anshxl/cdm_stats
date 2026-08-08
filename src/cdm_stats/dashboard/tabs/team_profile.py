@@ -324,51 +324,6 @@ def _map_strength_card(conn: sqlite3.Connection, team_id: int, records: list[dic
     )
 
 
-def _elo_card(conn: sqlite3.Connection, team_id: int, abbr: str, season: int = 1) -> dbc.Card:
-    """Render ELO RATING card."""
-    elo = get_current_elo(conn, team_id, season=season)
-    low_conf = is_low_confidence(conn, team_id, season=season)
-
-    elo_display = f"{elo:.0f}"
-    badge = []
-    if low_conf:
-        badge = [
-            html.Span(
-                " LOW CONFIDENCE",
-                style={"color": COLORS["neutral"], "fontSize": "0.75rem", "marginLeft": "8px"},
-            )
-        ]
-
-    header = dbc.CardHeader(
-        html.H5("Elo Rating", className="mb-0", style={"color": COLORS["text"]}),
-        style={"backgroundColor": COLORS["card_bg"], "borderBottom": f"1px solid {COLORS['border']}"},
-    )
-
-    body = dbc.CardBody(
-        html.Div(
-            [
-                team_badge(abbr, COLORS["your_team"], size=24, font_size="0.95rem"),
-                html.Span(
-                    elo_display,
-                    style={
-                        "fontSize": "1.5rem",
-                        "fontWeight": "700",
-                        "color": COLORS["your_team"],
-                        "marginLeft": "12px",
-                    },
-                ),
-            ] + badge,
-            style={"display": "flex", "alignItems": "center"},
-        )
-    )
-
-    return dbc.Card(
-        [header, body],
-        style={"backgroundColor": COLORS["card_bg"], "border": f"1px solid {COLORS['border']}"},
-        className="mb-3",
-    )
-
-
 # ---------------------------------------------------------------------------
 # Layout and callbacks
 # ---------------------------------------------------------------------------
@@ -435,6 +390,8 @@ def register_callbacks(app):
 
             records = _build_map_record_data(conn, team_id, season=season)
 
+            elo = get_current_elo(conn, team_id, season=season)
+            low_conf = is_low_confidence(conn, team_id, season=season)
             header = html.Div(
                 [
                     team_badge(abbr, COLORS["your_team"], size=56, font_size="1.6rem"),
@@ -448,7 +405,19 @@ def register_callbacks(app):
                             "textTransform": "uppercase",
                         },
                     ),
-                ],
+                    html.Span(
+                        f"Elo - {elo:.0f}",
+                        style={
+                            "color": COLORS["your_team"],
+                            "fontWeight": "700",
+                            "fontSize": "1.1rem",
+                            "marginLeft": "14px",
+                        },
+                    ),
+                ] + ([html.Span(
+                    "LOW CONFIDENCE",
+                    style={"color": COLORS["neutral"], "fontSize": "0.7rem", "marginLeft": "8px"},
+                )] if low_conf else []),
                 style={
                     "display": "flex",
                     "alignItems": "center",
@@ -459,8 +428,7 @@ def register_callbacks(app):
             return html.Div([
                 header,
                 dbc.Row([
-                    dbc.Col(_map_strength_card(conn, team_id, records, season=season), md=6),
-                    dbc.Col(_elo_card(conn, team_id, abbr, season=season), md=6),
+                    dbc.Col(_map_strength_card(conn, team_id, records, season=season), md=8),
                 ]),
             ])
         finally:

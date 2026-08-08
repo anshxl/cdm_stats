@@ -15,7 +15,7 @@ from cdm_stats.dashboard.components.team_badge import (
 from cdm_stats.metrics.avoidance import pick_win_loss, defend_win_loss
 from cdm_stats.metrics.map_strength import map_strength
 from cdm_stats.metrics.elo import get_current_elo, is_low_confidence
-from cdm_stats.db.queries import team_ban_rates, MODES
+from cdm_stats.db.queries import team_ban_rates, team_pick_rates, MODES
 
 
 # ---------------------------------------------------------------------------
@@ -74,6 +74,7 @@ def _build_matchup_data(
 
     opp_bans = team_ban_rates(conn, opp_id, season=season)
     opp_bans_h2h = team_ban_rates(conn, opp_id, season=season, opponent_id=your_id)
+    opp_picks = team_pick_rates(conn, opp_id, season=season)
 
     for map_id, map_name, mode in maps:
         h2h = _head_to_head(conn, your_id, opp_id, map_id, season=season)
@@ -110,6 +111,7 @@ def _build_matchup_data(
             "opp_defend_wl": opp_dwl,
             "opp_bans": (opp_bans["by_map"].get(map_id, 0), opp_bans["total_series"]),
             "opp_bans_h2h": (opp_bans_h2h["by_map"].get(map_id, 0), opp_bans_h2h["total_series"]),
+            "opp_picks": (opp_picks["by_map"].get(map_id, 0), opp_picks["total_series"]),
         }
         if mode in result:
             result[mode].append(entry)
@@ -214,16 +216,17 @@ def _delta_badge(delta: float | None) -> html.Span:
     )
 
 
-def _ban_count_span(count: int, total: int, opp_abbr: str) -> html.Span:
-    """'GAL banned this 6/10 times' — opponent-tinted at a >=50% ban rate."""
+def _opp_rate_span(count: int, total: int, opp_abbr: str, verb: str) -> html.Span:
+    """'GAL banned this 6/10 times' — opponent-tinted at a >=50% rate."""
     if total == 0:
+        noun = {"banned": "ban", "picked": "pick"}[verb]
         return html.Span(
-            f"No {opp_abbr} ban data",
+            f"No {opp_abbr} {noun} data",
             style={"color": COLORS["muted"], "fontSize": "0.85rem"},
         )
     color = COLORS["opponent"] if count / total >= 0.5 else COLORS["muted"]
     return html.Span(
-        f"{opp_abbr} banned this {count}/{total} times",
+        f"{opp_abbr} {verb} this {count}/{total} times",
         style={"color": color, "fontSize": "0.85rem",
                "fontWeight": "600" if count / total >= 0.5 else "400"},
     )
@@ -274,7 +277,9 @@ def _map_row(m: dict, row_idx: int, opp_abbr: str) -> html.Div:
                 style={"color": h2h_color, "fontSize": "0.85rem"},
             ),
             html.Span(style={"width": "16px", "display": "inline-block"}),
-            _ban_count_span(*m["opp_bans"], opp_abbr),
+            _opp_rate_span(*m["opp_bans"], opp_abbr, "banned"),
+            html.Span(style={"width": "16px", "display": "inline-block"}),
+            _opp_rate_span(*m["opp_picks"], opp_abbr, "picked"),
         ],
         id={"type": "mp-row", "index": row_idx},
         style={
