@@ -178,15 +178,15 @@ def test_tournament_player_stats_table_exists():
     conn.close()
 
 
-def test_schema_version_is_10():
+def test_schema_version_is_11():
     import sqlite3
     from cdm_stats.db.schema import create_tables, SCHEMA_VERSION
 
-    assert SCHEMA_VERSION == 10
+    assert SCHEMA_VERSION == 11
     conn = sqlite3.connect(":memory:")
     create_tables(conn)
     version = conn.execute("PRAGMA user_version").fetchone()[0]
-    assert version == 10
+    assert version == 11
     conn.close()
 
 
@@ -457,7 +457,7 @@ def test_migration_v5_to_v6_adds_round_column():
     from cdm_stats.db.schema import create_tables, migrate, SCHEMA_VERSION
     from cdm_stats.ingestion.seed import seed_teams
 
-    assert SCHEMA_VERSION == 10  # bumped
+    assert SCHEMA_VERSION >= 6  # bumped
 
     conn = sqlite3.connect(":memory:")
     create_tables(conn)
@@ -479,4 +479,32 @@ def test_migration_v5_to_v6_adds_round_column():
     # Existing row preserved with NULL round
     row = conn.execute("SELECT round FROM matches WHERE match_id = 1").fetchone()
     assert row[0] is None
+    conn.close()
+
+
+def test_migration_v11_normalizes_scrim_dates_and_weeks():
+    """v11 converts legacy '16-Jun' scrim dates to ISO and re-derives week."""
+    import sqlite3
+    from cdm_stats.db.schema import create_tables, migrate, SCHEMA_VERSION
+    from cdm_stats.ingestion.seed import seed_teams
+
+    conn = sqlite3.connect(":memory:")
+    create_tables(conn)
+    seed_teams(conn)
+    # A season-2 row with a legacy date and a hand-assigned week that the
+    # calendar rule disagrees with (16-Jun is calendar week 2, stored as 1).
+    conn.execute(
+        """INSERT INTO scrim_maps
+           (scrim_date, week, opponent_id, map_name, mode, game_number,
+            our_score, opponent_score, result, season)
+           VALUES ('16-Jun', 1, 1, 'Tunisia', 'SnD', 1, 6, 3, 'W', 2)"""
+    )
+    conn.execute("PRAGMA user_version = 10")
+    conn.commit()
+
+    migrate(conn)
+
+    row = conn.execute("SELECT scrim_date, week FROM scrim_maps").fetchone()
+    assert row == ("2026-06-16", 2)
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
     conn.close()

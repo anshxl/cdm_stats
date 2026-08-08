@@ -1,6 +1,6 @@
 import sqlite3
 
-SCHEMA_VERSION = 10
+SCHEMA_VERSION = 11
 
 TABLES = [
     """
@@ -313,6 +313,21 @@ def migrate(conn: sqlite3.Connection) -> None:
             footage_min  REAL NOT NULL,
             UNIQUE(result_id, player_name)
         )""")
+
+    if version < 11:
+        # Normalize scrim dates from legacy '11-Jun' text to ISO, and re-derive
+        # week from the date so every row follows the calendar-week rule the
+        # loader now uses (a handful of hand-assigned weeks shift by one).
+        from cdm_stats.ingestion.scrim_loader import infer_week, parse_scrim_date
+        rows = conn.execute(
+            "SELECT scrim_map_id, scrim_date, season FROM scrim_maps"
+        ).fetchall()
+        for scrim_map_id, raw_date, season in rows:
+            d = parse_scrim_date(raw_date, season)
+            conn.execute(
+                "UPDATE scrim_maps SET scrim_date = ?, week = ? WHERE scrim_map_id = ?",
+                (d.isoformat(), infer_week(d, season), scrim_map_id),
+            )
 
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()

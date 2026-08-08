@@ -16,11 +16,11 @@ def db():
     conn.close()
 
 
-TEAM_CSV = """Date,Week,Opponent,Map,Mode,Score,Result
-2026-03-10,1,DVS,Tunisia,SnD,6-3,W
-2026-03-10,1,DVS,Summit,HP,250-200,W
-2026-03-10,1,DVS,Raid,Control,3-1,W
-2026-03-10,1,OUG,Hacienda,HP,180-250,L"""
+TEAM_CSV = """Date,Opponent,Map,Score
+2026-03-10,DVS,Tunisia,6-3
+2026-03-10,DVS,Summit,250-200
+2026-03-10,DVS,Raid,3-1
+2026-03-10,OUG,Hacienda,180-250"""
 
 
 def test_ingest_scrims_team_basic(db):
@@ -95,9 +95,9 @@ def test_ingest_scrims_team_idempotent(db):
 def test_ingest_scrims_team_game_number(db):
     """Same map+mode+opponent+date played twice gets sequential game_numbers."""
     from cdm_stats.ingestion.scrim_loader import ingest_scrims_team
-    csv = """Date,Week,Opponent,Map,Mode,Score,Result
-2026-03-10,1,DVS,Tunisia,SnD,6-3,W
-2026-03-10,1,DVS,Tunisia,SnD,4-6,L"""
+    csv = """Date,Opponent,Map,Score
+2026-03-10,DVS,Tunisia,6-3
+2026-03-10,DVS,Tunisia,4-6"""
     ingest_scrims_team(db, io.StringIO(csv))
 
     rows = db.execute(
@@ -108,28 +108,58 @@ def test_ingest_scrims_team_game_number(db):
 
 def test_ingest_scrims_team_bad_opponent(db):
     from cdm_stats.ingestion.scrim_loader import ingest_scrims_team
-    csv = """Date,Week,Opponent,Map,Mode,Score,Result
-2026-03-10,1,BADTEAM,Tunisia,SnD,6-3,W"""
+    csv = """Date,Opponent,Map,Score
+2026-03-10,BADTEAM,Tunisia,6-3"""
     results = ingest_scrims_team(db, io.StringIO(csv))
     assert results[0]["status"] == "error"
     assert "opponent" in results[0]["errors"].lower()
 
 
-def test_ingest_scrims_team_score_result_mismatch(db):
+def test_ingest_scrims_team_result_inferred_from_score(db):
     from cdm_stats.ingestion.scrim_loader import ingest_scrims_team
-    csv = """Date,Week,Opponent,Map,Mode,Score,Result
-2026-03-10,1,DVS,Tunisia,SnD,3-6,W"""
+    ingest_scrims_team(db, io.StringIO(TEAM_CSV))
+    rows = dict(db.execute("SELECT map_name, result FROM scrim_maps").fetchall())
+    assert rows["Tunisia"] == "W"
+    assert rows["Hacienda"] == "L"
+
+
+def test_ingest_scrims_team_tied_score_errors(db):
+    from cdm_stats.ingestion.scrim_loader import ingest_scrims_team
+    csv = """Date,Opponent,Map,Score
+2026-03-10,DVS,Tunisia,6-6"""
     results = ingest_scrims_team(db, io.StringIO(csv))
     assert results[0]["status"] == "error"
-    assert "result" in results[0]["errors"].lower() or "score" in results[0]["errors"].lower()
+    assert "tied" in results[0]["errors"].lower()
 
 
-PLAYER_CSV = """Date,Week,Opponent,Map,Mode,Player,Kills,Deaths,Assists
-2026-03-10,1,DVS,Tunisia,SnD,Player1,20,15,5
-2026-03-10,1,DVS,Tunisia,SnD,Player2,18,12,8
-2026-03-10,1,DVS,Tunisia,SnD,Player3,15,18,3
-2026-03-10,1,DVS,Tunisia,SnD,Player4,22,10,6
-2026-03-10,1,DVS,Tunisia,SnD,Player5,12,20,4"""
+def test_ingest_scrims_team_infers_week_and_mode(db):
+    from cdm_stats.ingestion.scrim_loader import ingest_scrims_team
+    ingest_scrims_team(db, io.StringIO(TEAM_CSV))
+    # 2026-03-10 is in the third Mon-Sun week after the S1 anchor (2026-02-23).
+    row = db.execute(
+        "SELECT week, mode FROM scrim_maps WHERE map_name = 'Tunisia'"
+    ).fetchone()
+    assert row == (3, "SnD")
+
+
+def test_ingest_scrims_team_accepts_legacy_format(db):
+    """Legacy CSVs ('11-Jun' dates, Week/Mode/Result columns) still ingest;
+    the extra columns are ignored and the date is normalized to ISO."""
+    from cdm_stats.ingestion.scrim_loader import ingest_scrims_team
+    csv = """Date,Week,Opponent,Map,Mode,Score,Result
+10-Mar,1,DVS,Tunisia,SnD,6-3,W"""
+    results = ingest_scrims_team(db, io.StringIO(csv))
+    assert results[0]["status"] == "ok"
+    row = db.execute("SELECT scrim_date, week, mode, result FROM scrim_maps").fetchone()
+    assert row == ("2026-03-10", 3, "SnD", "W")
+
+
+PLAYER_CSV = """Date,Opponent,Map,Player,Kills,Deaths,Assists
+2026-03-10,DVS,Tunisia,Player1,20,15,5
+2026-03-10,DVS,Tunisia,Player2,18,12,8
+2026-03-10,DVS,Tunisia,Player3,15,18,3
+2026-03-10,DVS,Tunisia,Player4,22,10,6
+2026-03-10,DVS,Tunisia,Player5,12,20,4"""
 
 
 def test_ingest_scrims_players_basic(db):
@@ -168,8 +198,8 @@ def test_ingest_scrims_players_idempotent(db):
 def test_ingest_scrims_players_no_matching_map(db):
     """Player CSV row with no matching scrim_maps row should error."""
     from cdm_stats.ingestion.scrim_loader import ingest_scrims_players
-    csv = """Date,Week,Opponent,Map,Mode,Player,Kills,Deaths,Assists
-2026-03-10,1,DVS,Tunisia,SnD,Player1,20,15,5"""
+    csv = """Date,Opponent,Map,Player,Kills,Deaths,Assists
+2026-03-10,DVS,Tunisia,Player1,20,15,5"""
     results = ingest_scrims_players(db, io.StringIO(csv))
     assert results[0]["status"] == "error"
     assert "no matching" in results[0]["errors"].lower()
@@ -178,22 +208,22 @@ def test_ingest_scrims_players_no_matching_map(db):
 def test_ingest_scrims_players_game_number(db):
     """Player stats link to correct game when same map played twice."""
     from cdm_stats.ingestion.scrim_loader import ingest_scrims_team, ingest_scrims_players
-    team_csv = """Date,Week,Opponent,Map,Mode,Score,Result
-2026-03-10,1,DVS,Tunisia,SnD,6-3,W
-2026-03-10,1,DVS,Tunisia,SnD,4-6,L"""
+    team_csv = """Date,Opponent,Map,Score
+2026-03-10,DVS,Tunisia,6-3
+2026-03-10,DVS,Tunisia,4-6"""
     ingest_scrims_team(db, io.StringIO(team_csv))
 
-    player_csv = """Date,Week,Opponent,Map,Mode,Player,Kills,Deaths,Assists
-2026-03-10,1,DVS,Tunisia,SnD,Player1,20,15,5
-2026-03-10,1,DVS,Tunisia,SnD,Player2,18,12,8
-2026-03-10,1,DVS,Tunisia,SnD,Player3,15,18,3
-2026-03-10,1,DVS,Tunisia,SnD,Player4,22,10,6
-2026-03-10,1,DVS,Tunisia,SnD,Player5,12,20,4
-2026-03-10,1,DVS,Tunisia,SnD,Player1,10,20,3
-2026-03-10,1,DVS,Tunisia,SnD,Player2,14,16,5
-2026-03-10,1,DVS,Tunisia,SnD,Player3,8,22,2
-2026-03-10,1,DVS,Tunisia,SnD,Player4,16,14,7
-2026-03-10,1,DVS,Tunisia,SnD,Player5,9,18,1"""
+    player_csv = """Date,Opponent,Map,Player,Kills,Deaths,Assists
+2026-03-10,DVS,Tunisia,Player1,20,15,5
+2026-03-10,DVS,Tunisia,Player2,18,12,8
+2026-03-10,DVS,Tunisia,Player3,15,18,3
+2026-03-10,DVS,Tunisia,Player4,22,10,6
+2026-03-10,DVS,Tunisia,Player5,12,20,4
+2026-03-10,DVS,Tunisia,Player1,10,20,3
+2026-03-10,DVS,Tunisia,Player2,14,16,5
+2026-03-10,DVS,Tunisia,Player3,8,22,2
+2026-03-10,DVS,Tunisia,Player4,16,14,7
+2026-03-10,DVS,Tunisia,Player5,9,18,1"""
     ingest_scrims_players(db, io.StringIO(player_csv))
 
     # Game 1 player1 should have 20 kills

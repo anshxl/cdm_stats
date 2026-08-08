@@ -6,26 +6,26 @@ from cdm_stats.ingestion.seed import seed_teams, seed_maps
 from cdm_stats.ingestion.scrim_loader import ingest_scrims_team, ingest_scrims_players
 
 
-TEAM_CSV = """Date,Week,Opponent,Map,Mode,Score,Result
-2026-03-10,1,DVS,Tunisia,SnD,6-3,W
-2026-03-10,1,DVS,Summit,HP,250-200,W
-2026-03-10,1,DVS,Raid,Control,3-1,W
-2026-03-17,2,OUG,Tunisia,SnD,4-6,L
-2026-03-17,2,OUG,Summit,HP,230-250,L
-2026-03-17,2,OUG,Hacienda,HP,250-180,W"""
+TEAM_CSV = """Date,Opponent,Map,Score
+2026-02-25,DVS,Tunisia,6-3
+2026-02-25,DVS,Summit,250-200
+2026-02-25,DVS,Raid,3-1
+2026-03-03,OUG,Tunisia,4-6
+2026-03-03,OUG,Summit,230-250
+2026-03-03,OUG,Hacienda,250-180"""
 
 
-PLAYER_CSV = """Date,Week,Opponent,Map,Mode,Player,Kills,Deaths,Assists
-2026-03-10,1,DVS,Tunisia,SnD,Alpha,20,15,5
-2026-03-10,1,DVS,Tunisia,SnD,Bravo,18,12,8
-2026-03-10,1,DVS,Tunisia,SnD,Charlie,15,18,3
-2026-03-10,1,DVS,Tunisia,SnD,Delta,22,10,6
-2026-03-10,1,DVS,Tunisia,SnD,Echo,12,20,4
-2026-03-17,2,OUG,Tunisia,SnD,Alpha,10,20,3
-2026-03-17,2,OUG,Tunisia,SnD,Bravo,14,16,5
-2026-03-17,2,OUG,Tunisia,SnD,Charlie,8,22,2
-2026-03-17,2,OUG,Tunisia,SnD,Delta,16,14,7
-2026-03-17,2,OUG,Tunisia,SnD,Echo,9,18,1"""
+PLAYER_CSV = """Date,Opponent,Map,Player,Kills,Deaths,Assists
+2026-02-25,DVS,Tunisia,Alpha,20,15,5
+2026-02-25,DVS,Tunisia,Bravo,18,12,8
+2026-02-25,DVS,Tunisia,Charlie,15,18,3
+2026-02-25,DVS,Tunisia,Delta,22,10,6
+2026-02-25,DVS,Tunisia,Echo,12,20,4
+2026-03-03,OUG,Tunisia,Alpha,10,20,3
+2026-03-03,OUG,Tunisia,Bravo,14,16,5
+2026-03-03,OUG,Tunisia,Charlie,8,22,2
+2026-03-03,OUG,Tunisia,Delta,16,14,7
+2026-03-03,OUG,Tunisia,Echo,9,18,1"""
 
 
 @pytest.fixture
@@ -51,8 +51,8 @@ def two_season_scrim_db():
     seed_maps(conn)
     ingest_scrims_team(conn, io.StringIO(TEAM_CSV), season=1)
     ingest_scrims_players(conn, io.StringIO(PLAYER_CSV), season=1)
-    s2_team = """Date,Week,Opponent,Map,Mode,Score,Result
-2026-06-10,1,DVS,Raid,Control,3-2,W"""
+    s2_team = """Date,Opponent,Map,Score
+2026-06-10,DVS,Raid,3-2"""
     ingest_scrims_team(conn, io.StringIO(s2_team), season=2)
     yield conn
     conn.close()

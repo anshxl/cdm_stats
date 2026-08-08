@@ -1,7 +1,40 @@
 import csv
 import sqlite3
+from datetime import date, datetime, timedelta
 from typing import IO
-from cdm_stats.db.queries import get_team_id_by_abbr, MODES
+
+from cdm_stats.db.queries import get_team_id_by_abbr
+
+# Monday of each season's week 1 — the anchor for inferring Week from Date.
+# New season → add its first scrim week's Monday here.
+SEASON_WEEK1_MONDAY = {
+    1: date(2026, 2, 23),
+    2: date(2026, 6, 8),
+}
+
+
+def parse_scrim_date(raw: str, season: int) -> date:
+    """Parse an ISO date ('2026-06-11') or legacy '11-Jun' (year from the
+    season anchor)."""
+    raw = raw.strip()
+    try:
+        return date.fromisoformat(raw)
+    except ValueError:
+        d = datetime.strptime(raw, "%d-%b").date()
+        return d.replace(year=SEASON_WEEK1_MONDAY[season].year)
+
+
+def infer_week(d: date, season: int) -> int:
+    """Week = Mon-Sun calendar week counted from the season's anchor Monday."""
+    monday = d - timedelta(days=d.weekday())
+    return (monday - SEASON_WEEK1_MONDAY[season]).days // 7 + 1
+
+
+def _mode_for_map(conn: sqlite3.Connection, map_name: str) -> str | None:
+    row = conn.execute(
+        "SELECT mode FROM maps WHERE map_name = ?", (map_name,)
+    ).fetchone()
+    return row[0] if row else None
 
 
 def _parse_score(score_str: str) -> tuple[int, int]:
@@ -10,15 +43,47 @@ def _parse_score(score_str: str) -> tuple[int, int]:
     return int(parts[0]), int(parts[1])
 
 
-def _validate_result(our_score: int, opp_score: int, result: str) -> bool:
-    """Check that result matches scores."""
-    if result == "W":
-        return our_score > opp_score
-    return our_score < opp_score
+def _parse_common(conn: sqlite3.Connection, row: dict, season: int) -> tuple[dict | None, str, str]:
+    """Parse the Date/Opponent/Map fields shared by both scrim CSVs.
+
+    Returns (parsed, desc, error). Week comes from Date, mode from the map
+    pool — the legacy Week/Mode/Result columns are ignored if present.
+    """
+    date_raw = row["Date"].strip()
+    opponent_abbr = row["Opponent"].strip()
+    map_name = row["Map"].strip()
+    desc = f"{date_raw} vs {opponent_abbr} {map_name}"
+
+    if season not in SEASON_WEEK1_MONDAY:
+        return None, desc, f"No week anchor for season {season} — add it to SEASON_WEEK1_MONDAY"
+    try:
+        d = parse_scrim_date(date_raw, season)
+    except ValueError:
+        return None, desc, f"Invalid date: {date_raw}"
+
+    opponent_id = get_team_id_by_abbr(conn, opponent_abbr)
+    if not opponent_id:
+        return None, desc, f"Unknown opponent: {opponent_abbr}"
+
+    mode = _mode_for_map(conn, map_name)
+    if not mode:
+        return None, desc, f"Unknown map: {map_name}"
+
+    return {
+        "date": d.isoformat(),
+        "week": infer_week(d, season),
+        "opponent_id": opponent_id,
+        "map_name": map_name,
+        "mode": mode,
+    }, desc, ""
 
 
 def ingest_scrims_team(conn: sqlite3.Connection, file: IO, season: int = 1) -> list[dict]:
-    """Ingest scrim team-level CSV. Returns list of result dicts per row."""
+    """Ingest scrim team-level CSV (Date,Opponent,Map,Score).
+
+    Week, mode, and result are derived — Score is always Us-Them.
+    Returns list of result dicts per row.
+    """
     reader = csv.DictReader(file)
     results = []
 
@@ -27,48 +92,31 @@ def ingest_scrims_team(conn: sqlite3.Connection, file: IO, season: int = 1) -> l
 
     rows_to_insert = []
     for row in reader:
-        date = row["Date"].strip()
-        week = int(row["Week"].strip())
-        opponent_abbr = row["Opponent"].strip()
-        map_name = row["Map"].strip()
-        mode = row["Mode"].strip()
-        score_str = row["Score"].strip()
-        result_raw = row["Result"].strip()
-        result = {"1": "W", "0": "L"}.get(result_raw, result_raw)
-
-        desc = f"{date} vs {opponent_abbr} {map_name} {mode}"
-
-        # Validate opponent
-        opponent_id = get_team_id_by_abbr(conn, opponent_abbr)
-        if not opponent_id:
-            results.append({"status": "error", "row": desc, "errors": f"Unknown opponent: {opponent_abbr}"})
+        parsed, desc, error = _parse_common(conn, row, season)
+        if error:
+            results.append({"status": "error", "row": desc, "errors": error})
             continue
 
-        # Parse and validate score
+        score_str = row["Score"].strip()
         try:
             our_score, opp_score = _parse_score(score_str)
         except (ValueError, IndexError):
             results.append({"status": "error", "row": desc, "errors": f"Invalid score format: {score_str}"})
             continue
-
-        if not _validate_result(our_score, opp_score, result):
-            results.append({"status": "error", "row": desc, "errors": f"Score {score_str} does not match result {result}"})
-            continue
-
-        if mode not in MODES:
-            results.append({"status": "error", "row": desc, "errors": f"Invalid mode: {mode}"})
+        if our_score == opp_score:
+            results.append({"status": "error", "row": desc, "errors": f"Tied score: {score_str}"})
             continue
 
         # Assign game_number
-        key = (date, opponent_id, map_name, mode)
+        key = (parsed["date"], parsed["opponent_id"], parsed["map_name"], parsed["mode"])
         game_counts[key] = game_counts.get(key, 0) + 1
-        game_number = game_counts[key]
 
         rows_to_insert.append({
-            "date": date, "week": week, "opponent_id": opponent_id,
-            "map_name": map_name, "mode": mode, "game_number": game_number,
+            **parsed,
+            "game_number": game_counts[key],
             "our_score": our_score, "opponent_score": opp_score,
-            "result": result, "desc": desc,
+            "result": "W" if our_score > opp_score else "L",
+            "desc": desc,
         })
 
     for r in rows_to_insert:
@@ -99,7 +147,10 @@ def ingest_scrims_team(conn: sqlite3.Connection, file: IO, season: int = 1) -> l
 
 
 def ingest_scrims_players(conn: sqlite3.Connection, file: IO, season: int = 1) -> list[dict]:
-    """Ingest scrim player-level CSV. Team CSV must be ingested first."""
+    """Ingest scrim player-level CSV (Date,Opponent,Map,Player,Kills,Deaths,Assists).
+
+    Team CSV must be ingested first.
+    """
     reader = csv.DictReader(file)
     results = []
 
@@ -109,24 +160,19 @@ def ingest_scrims_players(conn: sqlite3.Connection, file: IO, season: int = 1) -
     seen_in_batch: dict[tuple, int] = {}
 
     for row in reader:
-        date = row["Date"].strip()
-        opponent_abbr = row["Opponent"].strip()
-        map_name = row["Map"].strip()
-        mode = row["Mode"].strip()
+        parsed, desc, error = _parse_common(conn, row, season)
+        if error:
+            results.append({"status": "error", "row": desc, "errors": error})
+            continue
+
         player_name = row["Player"].strip()
         kills = int(row["Kills"].strip())
         deaths = int(row["Deaths"].strip())
         assists = int(row["Assists"].strip())
-
-        desc = f"{date} {map_name} {mode} {player_name}"
-
-        opponent_id = get_team_id_by_abbr(conn, opponent_abbr)
-        if not opponent_id:
-            results.append({"status": "error", "row": desc, "errors": f"Unknown opponent: {opponent_abbr}"})
-            continue
+        desc = f"{desc} {player_name}"
 
         # Determine game_number — same logic as team CSV: sequential per group
-        key = (date, opponent_id, map_name, mode)
+        key = (parsed["date"], parsed["opponent_id"], parsed["map_name"], parsed["mode"])
 
         # If we've already seen this player for this key at the current game_number,
         # that means we've moved to the next game
@@ -144,7 +190,8 @@ def ingest_scrims_players(conn: sqlite3.Connection, file: IO, season: int = 1) -
             """SELECT scrim_map_id FROM scrim_maps
                WHERE scrim_date = ? AND opponent_id = ? AND map_name = ?
                  AND mode = ? AND game_number = ? AND season = ?""",
-            (date, opponent_id, map_name, mode, game_number, season),
+            (parsed["date"], parsed["opponent_id"], parsed["map_name"],
+             parsed["mode"], game_number, season),
         ).fetchone()
 
         if not scrim_map:
