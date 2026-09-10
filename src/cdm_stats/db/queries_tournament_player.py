@@ -1,16 +1,19 @@
 import sqlite3
 
+from cdm_stats.metrics.filters import MatchFilter
+
 
 def player_summary(
     conn: sqlite3.Connection,
     player: str | None = None,
     mode: str | None = None,
     week_range: tuple[int, int] | None = None,
-    season: int = 1,
+    f: MatchFilter = MatchFilter(),
 ) -> list[dict]:
     """Return per-player totals: kills, deaths, assists, K/D, op kills/pulls."""
-    conditions = ["mt.season = ?"]
-    params: list = [season]
+    fw, fp = f.sql("mt")
+    conditions = ["1=1" + fw]
+    params: list = list(fp)
 
     if player:
         conditions.append("tp.player_name = ?")
@@ -75,11 +78,12 @@ def player_weekly_trend(
     conn: sqlite3.Connection,
     player: str | None = None,
     mode: str | None = None,
-    season: int = 1,
+    f: MatchFilter = MatchFilter(),
 ) -> list[dict]:
-    """Return per-week K/D per player for trend chart."""
-    conditions = ["mt.season = ?"]
-    params: list = [season]
+    """Return per-match-day K/D per player for the trend chart (keyed by match_date)."""
+    fw, fp = f.sql("mt")
+    conditions = ["1=1" + fw]
+    params: list = list(fp)
 
     if player:
         conditions.append("tp.player_name = ?")
@@ -91,7 +95,7 @@ def player_weekly_trend(
     where = " WHERE " + " AND ".join(conditions)
 
     rows = conn.execute(
-        f"""SELECT tp.player_name, tp.week,
+        f"""SELECT tp.player_name, mt.match_date,
                    SUM(tp.kills) as kills,
                    SUM(tp.deaths) as deaths
             FROM tournament_player_stats tp
@@ -99,14 +103,14 @@ def player_weekly_trend(
             JOIN maps m ON mr.map_id = m.map_id
             JOIN matches mt ON mr.match_id = mt.match_id
             {where}
-            GROUP BY tp.player_name, tp.week
-            ORDER BY tp.player_name, tp.week""",
+            GROUP BY tp.player_name, mt.match_date
+            ORDER BY tp.player_name, mt.match_date""",
         params,
     ).fetchall()
 
     return [
         {
-            "player_name": r[0], "week": r[1],
+            "player_name": r[0], "match_date": r[1],
             "kills": r[2], "deaths": r[3],
             "kd": round(r[2] / r[3], 2) if r[3] > 0 else 0.0,
         }
@@ -120,7 +124,7 @@ def recent_series_stats(
     player: str | None = None,
     mode: str | None = None,
     week_range: tuple[int, int] | None = None,
-    season: int = 1,
+    f: MatchFilter = MatchFilter(),
     limit: int | None = 10,
     opponent: str | None = None,
 ) -> list[dict]:
@@ -151,8 +155,9 @@ def recent_series_stats(
         SELECT result_id, week, player_name FROM ops_player_stats
     """
 
-    conditions = ["mt.season = ?"]
-    params: list = [season]
+    fw, fp = f.sql("mt")
+    conditions = ["1=1" + fw]
+    params: list = list(fp)
 
     if player:
         conditions.append("sr.player_name = ?")

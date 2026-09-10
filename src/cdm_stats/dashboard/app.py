@@ -7,6 +7,8 @@ import dash_bootstrap_components as dbc
 from dash import html, dcc
 from dash.dependencies import Input, Output
 
+from cdm_stats.metrics.filters import FAMILIES
+
 DB_PATH = Path(os.environ.get("DB_PATH", Path(__file__).resolve().parents[3] / "data" / "cdl.db"))
 
 app = dash.Dash(
@@ -48,17 +50,39 @@ app.layout = dbc.Container([
         dark=True,
         className="mb-0",
     ),
-    dcc.Store(id="season-store", data=2),
-    dbc.Tabs(id="season-tabs", active_tab="s2", className="mt-0 season-tabs", children=[
-        dbc.Tab(label="Season 1", tab_id="s1"),
-        dbc.Tab(label="Season 2", tab_id="s2"),
-    ]),
-    dbc.Tabs(id="main-tabs", active_tab="matchup-prep", className="mt-0", children=[
-        dbc.Tab(label="Match-Up Prep", tab_id="matchup-prep"),
+    # Shared filter bar: competition families + date range, applied to every tab.
+    dcc.Store(id="filter-store", data=None),
+    dbc.Row([
+        dbc.Col(
+            dbc.Checklist(
+                id="filter-families",
+                options=[{"label": f, "value": f} for f in FAMILIES],
+                value=list(FAMILIES),
+                inline=True,
+                inputClassName="btn-check",
+                labelClassName="btn btn-outline-light btn-sm me-1",
+                labelCheckedClassName="active",
+            ),
+            width="auto",
+        ),
+        dbc.Col(
+            dcc.DatePickerRange(
+                id="filter-dates",
+                start_date=None,
+                end_date=None,
+                clearable=True,
+                display_format="YYYY-MM-DD",
+                start_date_placeholder_text="From",
+                end_date_placeholder_text="To",
+            ),
+            width="auto",
+        ),
+    ], className="align-items-center py-2 px-3", style={"backgroundColor": "#0d1322"}),
+    dbc.Tabs(id="main-tabs", active_tab="team-profile", className="mt-0", children=[
         dbc.Tab(label="Team Profile", tab_id="team-profile"),
-        dbc.Tab(label="Player Stats", tab_id="player-stats"),
+        dbc.Tab(label="Head to Head", tab_id="head-to-head"),
         dbc.Tab(label="Scrim Performance", tab_id="scrim-performance"),
-        dbc.Tab(label="Elo Tracker", tab_id="elo-tracker"),
+        dbc.Tab(label="Elo", tab_id="elo"),
     ]),
     html.Div(id="tab-content", className="mt-3"),
 ], fluid=True, className="px-0")
@@ -68,40 +92,41 @@ def get_db() -> sqlite3.Connection:
     return sqlite3.connect(DB_PATH)
 
 
-@app.callback(Output("season-store", "data"), Input("season-tabs", "active_tab"))
-def sync_season(active_season_tab: str):
-    return 1 if active_season_tab == "s1" else 2
-
-
 @app.callback(
-    Output("tab-content", "children"),
-    Input("main-tabs", "active_tab"),
-    Input("season-store", "data"),
+    Output("filter-store", "data"),
+    Input("filter-families", "value"),
+    Input("filter-dates", "start_date"),
+    Input("filter-dates", "end_date"),
 )
-def render_tab(active_tab: str, season: int = 2):
-    from cdm_stats.dashboard.tabs import team_profile, matchup_prep, elo_tracker
-    from cdm_stats.dashboard.tabs import scrim_performance, player_stats
-    if active_tab == "matchup-prep":
-        return matchup_prep.layout(season)
-    elif active_tab == "team-profile":
-        return team_profile.layout(season)
-    elif active_tab == "player-stats":
-        return player_stats.layout(season)
+def sync_filter(families, start, end):
+    # DatePickerRange may hand back a full timestamp; keep the ISO date only.
+    return {
+        "families": list(families or []),
+        "start": start[:10] if start else None,
+        "end": end[:10] if end else None,
+    }
+
+
+@app.callback(Output("tab-content", "children"), Input("main-tabs", "active_tab"))
+def render_tab(active_tab: str):
+    from cdm_stats.dashboard.tabs import team_profile, head_to_head, elo_tracker, scrim_performance
+    if active_tab == "team-profile":
+        return team_profile.layout()
+    elif active_tab == "head-to-head":
+        return head_to_head.layout()
     elif active_tab == "scrim-performance":
-        return scrim_performance.layout(season)
-    elif active_tab == "elo-tracker":
-        return elo_tracker.layout(season)
+        return scrim_performance.layout()
+    elif active_tab == "elo":
+        return elo_tracker.layout()
     return html.Div("Select a tab")
 
 
 def register_all_callbacks():
-    from cdm_stats.dashboard.tabs import team_profile, matchup_prep, elo_tracker
-    from cdm_stats.dashboard.tabs import scrim_performance, player_stats
+    from cdm_stats.dashboard.tabs import team_profile, head_to_head, elo_tracker, scrim_performance
     team_profile.register_callbacks(app)
-    matchup_prep.register_callbacks(app)
+    head_to_head.register_callbacks(app)
     elo_tracker.register_callbacks(app)
     scrim_performance.register_callbacks(app)
-    player_stats.register_callbacks(app)
 
 
 def main():

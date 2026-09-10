@@ -1,6 +1,10 @@
 import io
 import sqlite3
 import pytest
+from cdm_stats.metrics.filters import MatchFilter
+
+SPRING = MatchFilter(families=frozenset({"CDM Spring"}))
+SUMMER = MatchFilter(families=frozenset({"CDM Summer"}))
 from cdm_stats.db.schema import create_tables, migrate
 from cdm_stats.ingestion.seed import seed_teams, seed_maps
 from cdm_stats.ingestion.tournament_loader import ingest_tournament
@@ -61,7 +65,7 @@ def test_team_ban_rates_counts_only_series_with_ban_data(db):
     empty = team_ban_rates(db, elv_id, opponent_id=gl_id)
     assert empty == {"total_series": 0, "by_map": {}}
 
-    assert team_ban_rates(db, elv_id, season=2)["total_series"] == 0
+    assert team_ban_rates(db, elv_id, f=SUMMER)["total_series"] == 0
 
 
 def test_opponent_ban_rates_counts_bans_against_team(db):
@@ -78,32 +82,32 @@ def test_opponent_ban_rates_counts_bans_against_team(db):
 
     gl_id = get_team_id_by_abbr(db, "GL")
     assert opponent_ban_rates(db, gl_id) == {"total_series": 0, "by_map": {}}
-    assert opponent_ban_rates(db, elv_id, season=2)["total_series"] == 0
+    assert opponent_ban_rates(db, elv_id, f=SUMMER)["total_series"] == 0
 
 
-def test_ban_summary_filters_by_season(db):
+def test_ban_summary_filters_by_family(db):
     ingest_tournament(db, io.StringIO(MAPS_CSV), io.StringIO(BANS_CSV))
     elv_id = get_team_id_by_abbr(db, "ELV")
     alu_id = get_team_id_by_abbr(db, "ALU")
 
-    assert len(get_ban_summary(db, elv_id, alu_id, season=1)) == 3
-    assert get_ban_summary(db, elv_id, alu_id, season=2) == []
+    assert len(get_ban_summary(db, elv_id, alu_id, f=SPRING)) == 3
+    assert get_ban_summary(db, elv_id, alu_id, f=SUMMER) == []
 
-    db.execute("UPDATE matches SET season = 2")
+    db.execute("UPDATE matches SET season = 2, competition = 'CDM'")
     db.commit()
-    assert get_ban_summary(db, elv_id, alu_id, season=1) == []
-    assert len(get_ban_summary(db, elv_id, alu_id, season=2)) == 3
+    assert get_ban_summary(db, elv_id, alu_id, f=SPRING) == []
+    assert len(get_ban_summary(db, elv_id, alu_id, f=SUMMER)) == 3
 
 
-def test_team_ban_summary_filters_by_season(db):
+def test_team_ban_summary_filters_by_family(db):
     from cdm_stats.db.queries import get_team_ban_summary
     ingest_tournament(db, io.StringIO(MAPS_CSV), io.StringIO(BANS_CSV))
     elv_id = get_team_id_by_abbr(db, "ELV")
 
-    s1 = get_team_ban_summary(db, elv_id, season=1)
+    s1 = get_team_ban_summary(db, elv_id, f=SPRING)
     assert len(s1["team_bans"]) > 0
 
-    s2 = get_team_ban_summary(db, elv_id, season=2)
+    s2 = get_team_ban_summary(db, elv_id, f=SUMMER)
     assert s2["team_bans"] == []
     assert s2["opponent_bans"] == []
 

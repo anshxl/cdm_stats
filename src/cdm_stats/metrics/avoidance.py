@@ -1,23 +1,26 @@
 import sqlite3
 
+from cdm_stats.metrics.filters import MatchFilter
 
-def pick_win_loss(conn: sqlite3.Connection, team_id: int, map_id: int, season: int = 1) -> dict:
+
+def pick_win_loss(conn: sqlite3.Connection, team_id: int, map_id: int, f: MatchFilter = MatchFilter()) -> dict:
+    fw, fp = f.sql()
     row = conn.execute(
-        """SELECT
+        f"""SELECT
                SUM(CASE WHEN mr.winner_team_id = ? THEN 1 ELSE 0 END),
                SUM(CASE WHEN mr.winner_team_id != ? THEN 1 ELSE 0 END)
            FROM map_results mr
            JOIN matches m ON mr.match_id = m.match_id
-           WHERE mr.picked_by_team_id = ? AND mr.map_id = ? AND mr.dq = 0
-             AND m.season = ?""",
-        (team_id, team_id, team_id, map_id, season),
+           WHERE mr.picked_by_team_id = ? AND mr.map_id = ? AND mr.dq = 0{fw}""",
+        [team_id, team_id, team_id, map_id] + fp,
     ).fetchone()
     return {"wins": row[0] or 0, "losses": row[1] or 0}
 
 
-def defend_win_loss(conn: sqlite3.Connection, team_id: int, map_id: int, season: int = 1) -> dict:
+def defend_win_loss(conn: sqlite3.Connection, team_id: int, map_id: int, f: MatchFilter = MatchFilter()) -> dict:
+    fw, fp = f.sql()
     row = conn.execute(
-        """SELECT
+        f"""SELECT
                SUM(CASE WHEN winner_team_id = ? THEN 1 ELSE 0 END),
                SUM(CASE WHEN winner_team_id != ? THEN 1 ELSE 0 END)
            FROM map_results mr
@@ -26,24 +29,23 @@ def defend_win_loss(conn: sqlite3.Connection, team_id: int, map_id: int, season:
              AND picked_by_team_id != ?
              AND map_id = ?
              AND mr.dq = 0
-             AND m.season = ?
-             AND (m.team1_id = ? OR m.team2_id = ?)""",
-        (team_id, team_id, team_id, map_id, season, team_id, team_id),
+             AND (m.team1_id = ? OR m.team2_id = ?){fw}""",
+        [team_id, team_id, team_id, map_id, team_id, team_id] + fp,
     ).fetchone()
     return {"wins": row[0] or 0, "losses": row[1] or 0}
 
 
 
-def pick_context_distribution(conn: sqlite3.Connection, team_id: int, map_id: int, season: int = 1) -> dict[str, int]:
+def pick_context_distribution(conn: sqlite3.Connection, team_id: int, map_id: int, f: MatchFilter = MatchFilter()) -> dict[str, int]:
     """Breakdown of how often a team picks this map in each context."""
+    fw, fp = f.sql()
     rows = conn.execute(
-        """SELECT mr.pick_context, COUNT(*)
+        f"""SELECT mr.pick_context, COUNT(*)
            FROM map_results mr
            JOIN matches m ON mr.match_id = m.match_id
-           WHERE mr.picked_by_team_id = ? AND mr.map_id = ? AND mr.dq = 0
-             AND m.season = ?
+           WHERE mr.picked_by_team_id = ? AND mr.map_id = ? AND mr.dq = 0{fw}
            GROUP BY mr.pick_context""",
-        (team_id, map_id, season),
+        [team_id, map_id] + fp,
     ).fetchall()
     result = {"Opener": 0, "Neutral": 0, "Must-Win": 0, "Close-Out": 0}
     for ctx, count in rows:

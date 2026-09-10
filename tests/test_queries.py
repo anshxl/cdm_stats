@@ -129,7 +129,7 @@ def test_get_team_map_wl_excludes_dq(db):
     assert tunisia_row is None
 
 
-def test_get_team_map_wl_filters_by_season(db):
+def test_get_team_map_wl_filters_by_family_and_date(db):
     import io
     from cdm_stats.ingestion.csv_loader import ingest_csv
     from cdm_stats.db.queries import get_team_map_wl
@@ -142,13 +142,17 @@ def test_get_team_map_wl_filters_by_season(db):
     ingest_csv(db, io.StringIO(match_csv))
     dvs = get_team_id_by_abbr(db, "DVS")
 
-    # Default season 1 sees the data
+    from cdm_stats.metrics.filters import MatchFilter
+    spring = MatchFilter(families=frozenset({"CDM Spring"}))
+    summer = MatchFilter(families=frozenset({"CDM Summer"}))
+    # Default filter (all families) sees the data
     assert len(get_team_map_wl(db, dvs)) > 0
-    # Season 2 is empty
-    assert get_team_map_wl(db, dvs, season=2) == []
+    assert len(get_team_map_wl(db, dvs, f=spring)) > 0
+    assert get_team_map_wl(db, dvs, f=summer) == []
+    assert get_team_map_wl(db, dvs, f=MatchFilter(start="2026-02-01")) == []
 
-    # Flip the match to season 2 → now season 2 sees it, season 1 does not
-    db.execute("UPDATE matches SET season = 2")
+    # Flip the match to S2 CDM → Summer sees it, Spring does not
+    db.execute("UPDATE matches SET season = 2, competition = 'CDM'")
     db.commit()
-    assert get_team_map_wl(db, dvs, season=1) == []
-    assert len(get_team_map_wl(db, dvs, season=2)) > 0
+    assert get_team_map_wl(db, dvs, f=spring) == []
+    assert len(get_team_map_wl(db, dvs, f=summer)) > 0

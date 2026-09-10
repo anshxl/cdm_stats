@@ -9,6 +9,11 @@ LOW_SAMPLE_THRESHOLD = 4
 # the repo changes hands.
 YOUR_TEAM = "GL"
 
+# Teams present in only one season (Felines: S1 only; RAG, i7: S2 only). They
+# break cross-season continuity, so they are hidden from pickers, tables and
+# the Elo chart. Their matches still count in every metric.
+HIDDEN_TEAMS = {"Felines", "RAG", "i7"}
+
 # Team logos live in src/cdm_stats/dashboard/assets/logos/<abbr>.png (lowercase).
 # Dash auto-serves the assets/ folder at /assets/, so the public URL is
 # /assets/logos/<abbr>.png. Missing logos fall back to text — safe to roll out
@@ -38,6 +43,24 @@ MODE_COLORS = {
     "Control": "#facc15",  # gold
 }
 
+# Competition families (see metrics.filters.FAMILIES). Distinct from the
+# mode and W/L palettes so a row can carry both without ambiguity.
+FAMILY_COLORS = {
+    "CDM Spring": "#94a3b8",  # slate
+    "CDM Summer": "#22d3ee",  # cyan
+    "Regionals":  "#e879f9",  # fuchsia
+}
+
+
+def family_tag(family: str, label: str | None = None):
+    """Small coloured label for a match's competition family."""
+    from dash import html
+    return html.Span(
+        label or family,
+        style={"color": FAMILY_COLORS.get(family, COLORS["muted"]), "fontSize": "0.75rem",
+               "fontWeight": "600", "whiteSpace": "nowrap"},
+    )
+
 
 def wl_color(wins: int, losses: int) -> str:
     """Return color string based on win rate."""
@@ -54,8 +77,11 @@ def wl_color(wins: int, losses: int) -> str:
 
 def get_all_teams(conn: sqlite3.Connection) -> list[tuple[int, str]]:
     """Return list of (team_id, abbreviation) sorted alphabetically."""
+    placeholders = ",".join("?" * len(HIDDEN_TEAMS))
     return conn.execute(
-        "SELECT team_id, abbreviation FROM teams ORDER BY abbreviation"
+        f"SELECT team_id, abbreviation FROM teams WHERE abbreviation NOT IN ({placeholders}) "
+        "ORDER BY abbreviation",
+        sorted(HIDDEN_TEAMS),
     ).fetchall()
 
 

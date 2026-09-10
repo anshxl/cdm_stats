@@ -16,9 +16,9 @@ def test_trend_pools_within_week(db_with_ops):
     rows = ops_player_weekly_trend(db_with_ops)
     # Alpha: (4+9) kills / (4+4) pulls = 1.63. Bravo: (5+0) / (3+2) = 1.00.
     assert rows == [
-        {"player_name": "Alpha", "week": 1, "op_kills": 13, "op_pulls": 8,
+        {"player_name": "Alpha", "match_date": "2026-02-15", "op_kills": 13, "op_pulls": 8,
          "maps": 2, "kills_per_pull": 1.62},
-        {"player_name": "Bravo", "week": 1, "op_kills": 5, "op_pulls": 5,
+        {"player_name": "Bravo", "match_date": "2026-02-15", "op_kills": 5, "op_pulls": 5,
          "maps": 2, "kills_per_pull": 1.0},
     ]
 
@@ -30,12 +30,12 @@ def test_trend_pools_rather_than_averaging_per_map_rates(db_with_ops):
     assert bravo["kills_per_pull"] == 1.0
 
 
-def test_trend_orders_by_player_then_week(db_with_match):  # noqa: F811
+def test_trend_orders_by_player_then_date(db_with_match):  # noqa: F811
     """Two weeks for one player come back chronologically, so the line is drawn in order."""
     _add_second_week(db_with_match)
     rows = ops_player_weekly_trend(db_with_match)
     alpha = [r for r in rows if r["player_name"] == "Alpha"]
-    assert [r["week"] for r in alpha] == [1, 2]
+    assert [r["match_date"] for r in alpha] == ["2026-02-15", "2026-02-22"]
     assert [r["kills_per_pull"] for r in alpha] == [1.62, 0.5]
 
 
@@ -59,8 +59,9 @@ def test_player_filter(db_with_ops):
     assert [r["player_name"] for r in rows] == ["Alpha"]
 
 
-def test_season_filter_excludes_other_seasons(db_with_ops):
-    assert ops_player_weekly_trend(db_with_ops, season=2) == []
+def test_family_filter_excludes_other_families(db_with_ops):
+    from cdm_stats.metrics.filters import MatchFilter
+    assert ops_player_weekly_trend(db_with_ops, f=MatchFilter(families=frozenset({"CDM Summer"}))) == []
 
 
 def _add_second_week(conn):

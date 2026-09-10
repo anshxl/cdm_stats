@@ -29,7 +29,7 @@ def db():
 
 
 def test_build_matchup_data(db):
-    from cdm_stats.dashboard.tabs.matchup_prep import _build_matchup_data
+    from cdm_stats.dashboard.tabs.head_to_head import _build_matchup_data
     dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
     oug_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'OUG'").fetchone()[0]
     data = _build_matchup_data(db, dvs_id, oug_id)
@@ -45,7 +45,7 @@ def test_build_matchup_data(db):
 
 def test_update_matchup_callback_renders(db, monkeypatch):
     """Regression: the callback body (mode loop over MODES) must run, not just _build_matchup_data."""
-    import cdm_stats.dashboard.tabs.matchup_prep as mp
+    import cdm_stats.dashboard.tabs.head_to_head as mp
 
     class _NoCloseConn:
         def __init__(self, real):
@@ -72,16 +72,25 @@ def test_update_matchup_callback_renders(db, monkeypatch):
 
     dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
     oug_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'OUG'").fetchone()[0]
-    content, badge = captured["update_matchup"](dvs_id, oug_id, 1)
+    content, badge = captured["update_matchup"](dvs_id, oug_id, None)
     assert content is not None
     assert badge is not None
 
 
-def test_build_matchup_data_filters_by_season(db):
-    from cdm_stats.dashboard.tabs.matchup_prep import _build_matchup_data
+def test_build_recent_series(db):
+    from cdm_stats.dashboard.tabs.head_to_head import _build_recent_series
+    oug_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'OUG'").fetchone()[0]
+    rows = _build_recent_series(db, oug_id)
+    assert rows == [{"match_date": "2026-01-15", "opponent": "DVS", "result": "L",
+                     "score": "1-3", "family": "CDM Spring", "label": "CDM Spring"}]
+
+
+def test_build_matchup_data_filters_by_family(db):
+    from cdm_stats.dashboard.tabs.head_to_head import _build_matchup_data
+    from cdm_stats.metrics.filters import MatchFilter
     dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
     oug_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'OUG'").fetchone()[0]
-    data = _build_matchup_data(db, dvs_id, oug_id, season=2)
+    data = _build_matchup_data(db, dvs_id, oug_id, f=MatchFilter(families=frozenset({"CDM Summer"})))
     tunisia = next(m for m in data["SnD"] if m["map_name"] == "Tunisia")
     # No season-2 data → empty head-to-head and per-team records
     assert tunisia["h2h"] == {"wins": 0, "losses": 0}
@@ -89,7 +98,7 @@ def test_build_matchup_data_filters_by_season(db):
 
 
 def test_build_matchup_data_includes_strength_and_delta(db):
-    from cdm_stats.dashboard.tabs.matchup_prep import _build_matchup_data
+    from cdm_stats.dashboard.tabs.head_to_head import _build_matchup_data
     dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
     oug_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'OUG'").fetchone()[0]
     data = _build_matchup_data(db, dvs_id, oug_id)
@@ -107,7 +116,7 @@ def test_build_matchup_data_includes_strength_and_delta(db):
 
 
 def test_build_matchup_data_no_avoidance_keys(db):
-    from cdm_stats.dashboard.tabs.matchup_prep import _build_matchup_data
+    from cdm_stats.dashboard.tabs.head_to_head import _build_matchup_data
     dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
     oug_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'OUG'").fetchone()[0]
     data = _build_matchup_data(db, dvs_id, oug_id)
@@ -121,7 +130,7 @@ def test_build_matchup_data_no_avoidance_keys(db):
 
 def test_build_matchup_data_delta_sign(db):
     """DVS won on Tunisia, OUG lost. DVS should have positive delta on Tunisia."""
-    from cdm_stats.dashboard.tabs.matchup_prep import _build_matchup_data
+    from cdm_stats.dashboard.tabs.head_to_head import _build_matchup_data
     dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
     oug_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'OUG'").fetchone()[0]
     data = _build_matchup_data(db, dvs_id, oug_id)

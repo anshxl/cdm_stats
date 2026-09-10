@@ -28,11 +28,34 @@ def db():
     conn.close()
 
 
-def test_build_map_record_data_filters_by_season(db):
+def test_build_map_record_data_filters_by_family(db):
     from cdm_stats.dashboard.tabs.team_profile import _build_map_record_data
+    from cdm_stats.metrics.filters import MatchFilter
     dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
-    # No season-2 match data → no map records
-    assert _build_map_record_data(db, dvs_id, season=2) == []
+    summer = MatchFilter(families=frozenset({"CDM Summer"}))
+    assert _build_map_record_data(db, dvs_id, f=summer) == []
+
+
+def test_build_map_results_detail_carries_label_and_family(db):
+    from cdm_stats.dashboard.tabs.team_profile import _build_map_results_detail
+    dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
+    tunisia_id = db.execute("SELECT map_id FROM maps WHERE map_name = 'Tunisia'").fetchone()[0]
+    row = _build_map_results_detail(db, dvs_id, tunisia_id)[0]
+    assert row["family"] == "CDM Spring"
+    assert row["label"] == "CDM Spring"
+
+
+def test_build_team_record(db):
+    from cdm_stats.dashboard.tabs.team_profile import _build_team_record
+    dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
+    rec = _build_team_record(db, dvs_id)
+    assert rec == {"series_wins": 1, "series_losses": 0, "map_wins": 3, "map_losses": 1}
+
+
+def test_player_section_only_for_your_team(db):
+    from cdm_stats.dashboard.tabs.team_profile import _player_section
+    dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
+    assert _player_section(db, "DVS") is None
 
 
 def test_build_map_record_data(db):

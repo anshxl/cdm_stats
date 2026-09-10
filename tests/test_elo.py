@@ -37,18 +37,26 @@ def test_update_elo_inserts_two_rows(db_with_match):
     assert count == 2
 
 
-def test_elo_functions_filter_by_season(db_with_match):
-    from cdm_stats.metrics.elo import get_elo_history, is_low_confidence, SEED_ELO
+def test_elo_accessors_span_seasons(db_with_match):
+    from cdm_stats.metrics.elo import get_elo_history, is_low_confidence, update_elo
     db, _ = db_with_match
     dvs_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'DVS'").fetchone()[0]
+    oug_id = db.execute("SELECT team_id FROM teams WHERE abbreviation = 'OUG'").fetchone()[0]
+    s1_elo = get_current_elo(db, dvs_id)
+    assert s1_elo > 1000
 
-    # Season 1 has the match data
-    assert len(get_elo_history(db, dvs_id, season=1)) == 1
-    assert get_current_elo(db, dvs_id, season=1) > 1000
-    # Season 2 is empty → seed/baseline behavior
-    assert get_elo_history(db, dvs_id, season=2) == []
-    assert get_current_elo(db, dvs_id, season=2) == SEED_ELO
-    assert is_low_confidence(db, dvs_id, season=2) is True
+    # One S2 CDM match on top: history spans both seasons, current = latest row,
+    # low-confidence counts only the current (latest) season.
+    s2 = db.execute(
+        "INSERT INTO matches (match_date, team1_id, team2_id, series_winner_id, season, competition) "
+        "VALUES ('2026-07-01',?,?,?,2,'CDM')", (dvs_id, oug_id, dvs_id)).lastrowid
+    db.commit()
+    update_elo(db, s2)
+    hist = get_elo_history(db, dvs_id)
+    assert [h["match_id"] for h in hist] == [1, s2]
+    assert get_current_elo(db, dvs_id) == hist[-1]["elo_after"]
+    assert get_current_elo(db, dvs_id) != s1_elo
+    assert is_low_confidence(db, dvs_id) is True
 
 
 def test_elo_winner_goes_up_loser_goes_down(db_with_match):
@@ -399,7 +407,7 @@ def test_early_season_k_bump(db):
     assert _team_k(db, tid, 2, "CDL_BO5") == base_k        # 4 played → normal
 
 
-def test_split_games_excluded_from_elo(db):
+def test_split_games_feed_elo(db):
     from cdm_stats.metrics.elo import update_elo
     dvs, oug = _tid(db, "DVS"), _tid(db, "OUG")
 
@@ -413,4 +421,9 @@ def test_split_games_excluded_from_elo(db):
     update_elo(db, cdm)
     update_elo(db, split)
     assert db.execute("SELECT COUNT(*) FROM team_elo WHERE match_id=?", (cdm,)).fetchone()[0] == 2
-    assert db.execute("SELECT COUNT(*) FROM team_elo WHERE match_id=?", (split,)).fetchone()[0] == 0
+    assert db.execute("SELECT COUNT(*) FROM team_elo WHERE match_id=?", (split,)).fetchone()[0] == 2
+
+
+def test_k_by_format_covers_s2_formats():
+    from cdm_stats.metrics.elo import K_BY_FORMAT
+    assert {K_BY_FORMAT[f] for f in ("Ro3", "Bo5", "Bo7")} == {32}

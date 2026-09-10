@@ -7,8 +7,9 @@ from dash.dependencies import Input, Output, State
 from cdm_stats.dashboard.app import get_db
 from cdm_stats.dashboard.helpers import (
     COLORS, MODE_COLORS, LOW_SAMPLE_THRESHOLD,
-    wl_color, get_all_maps,
+    wl_color, get_all_maps, family_tag,
 )
+from cdm_stats.metrics.filters import MatchFilter, family_of, match_label
 from cdm_stats.dashboard.components.team_badge import (
     team_badge, team_dropdown_options_rich,
 )
@@ -24,44 +25,103 @@ from cdm_stats.db.queries import team_ban_rates, team_pick_rates, MODES
 
 
 def _head_to_head(
-    conn: sqlite3.Connection, team_id: int, opp_id: int, map_id: int, season: int = 1
+    conn: sqlite3.Connection, team_id: int, opp_id: int, map_id: int, f: MatchFilter = MatchFilter()
 ) -> dict:
     """W-L between two specific teams on a specific map."""
+    fw, fp = f.sql()
     row = conn.execute(
-        """SELECT
+        f"""SELECT
                SUM(CASE WHEN mr.winner_team_id = ? THEN 1 ELSE 0 END),
                SUM(CASE WHEN mr.winner_team_id = ? THEN 1 ELSE 0 END)
            FROM map_results mr
            JOIN matches m ON mr.match_id = m.match_id
            WHERE mr.map_id = ?
-             AND m.season = ?
              AND ((m.team1_id = ? AND m.team2_id = ?)
-               OR (m.team1_id = ? AND m.team2_id = ?))""",
-        (team_id, opp_id, map_id, season, team_id, opp_id, opp_id, team_id),
+               OR (m.team1_id = ? AND m.team2_id = ?)){fw}""",
+        [team_id, opp_id, map_id, team_id, opp_id, opp_id, team_id] + fp,
     ).fetchone()
     return {"wins": row[0] or 0, "losses": row[1] or 0}
 
 
 def _team_map_wl(
-    conn: sqlite3.Connection, team_id: int, map_id: int, season: int = 1
+    conn: sqlite3.Connection, team_id: int, map_id: int, f: MatchFilter = MatchFilter()
 ) -> dict:
     """Overall W-L for a team on a map (all opponents)."""
+    fw, fp = f.sql()
     row = conn.execute(
-        """SELECT
+        f"""SELECT
                SUM(CASE WHEN mr.winner_team_id = ? THEN 1 ELSE 0 END),
                SUM(CASE WHEN mr.winner_team_id != ? THEN 1 ELSE 0 END)
            FROM map_results mr
            JOIN matches m ON mr.match_id = m.match_id
            WHERE mr.map_id = ?
-             AND m.season = ?
-             AND (m.team1_id = ? OR m.team2_id = ?)""",
-        (team_id, team_id, map_id, season, team_id, team_id),
+             AND (m.team1_id = ? OR m.team2_id = ?){fw}""",
+        [team_id, team_id, map_id, team_id, team_id] + fp,
     ).fetchone()
     return {"wins": row[0] or 0, "losses": row[1] or 0}
 
 
+def _build_recent_series(
+    conn: sqlite3.Connection, team_id: int, f: MatchFilter = MatchFilter(), limit: int = 10
+) -> list[dict]:
+    """A team's most recent series, newest first, oriented to that team."""
+    fw, fp = f.sql()
+    rows = conn.execute(
+        f"""SELECT m.match_date, m.team1_id, m.team2_id, m.series_winner_id,
+                   m.competition, m.round, m.season,
+                   SUM(mr.winner_team_id = ?), SUM(mr.winner_team_id != ?)
+            FROM matches m JOIN map_results mr ON mr.match_id = m.match_id
+            WHERE (m.team1_id = ? OR m.team2_id = ?) AND mr.dq = 0{fw}
+            GROUP BY m.match_id
+            ORDER BY m.match_date DESC, m.match_id DESC
+            LIMIT ?""",
+        [team_id, team_id, team_id, team_id] + fp + [limit],
+    ).fetchall()
+    out = []
+    for match_date, t1, t2, winner, competition, round_, season, won, lost in rows:
+        opp_id = t2 if t1 == team_id else t1
+        opp = conn.execute("SELECT abbreviation FROM teams WHERE team_id = ?", (opp_id,)).fetchone()[0]
+        out.append({
+            "match_date": match_date, "opponent": opp,
+            "result": "W" if winner == team_id else "L",
+            "score": f"{won}-{lost}",
+            "family": family_of(competition, season),
+            "label": match_label(competition, round_, season),
+        })
+    return out
+
+
+def _recent_series_card(rows: list[dict], opp_abbr: str) -> dbc.Card:
+    header = dbc.CardHeader(
+        html.H5(f"{opp_abbr} — recent series", className="mb-0", style={"color": COLORS["opponent"]}),
+        style={"backgroundColor": COLORS["card_bg"], "borderBottom": f"1px solid {COLORS['border']}"},
+    )
+    if not rows:
+        body = [html.Div("No series in this window", style={"color": COLORS["muted"], "padding": "12px"})]
+    else:
+        body = []
+        for r in rows:
+            res_color = COLORS["win"] if r["result"] == "W" else COLORS["loss"]
+            body.append(html.Div(
+                [
+                    html.Span(r["match_date"], style={"width": "100px", "display": "inline-block"}),
+                    html.Span(family_tag(r["family"], r["label"]), style={"width": "200px", "display": "inline-block"}),
+                    html.Span(f"vs {r['opponent']}", style={"width": "80px", "display": "inline-block"}),
+                    html.Span(r["result"], style={"width": "30px", "display": "inline-block", "color": res_color, "fontWeight": "700"}),
+                    html.Span(r["score"], style={"display": "inline-block", "color": COLORS["muted"]}),
+                ],
+                style={"padding": "6px 12px", "borderBottom": f"1px solid {COLORS['border']}",
+                       "display": "flex", "fontSize": "0.85rem", "color": COLORS["text"]},
+            ))
+    return dbc.Card(
+        [header, dbc.CardBody(body, style={"padding": "0"})],
+        style={"backgroundColor": COLORS["card_bg"], "border": f"1px solid {COLORS['border']}"},
+        className="mb-3",
+    )
+
+
 def _build_matchup_data(
-    conn: sqlite3.Connection, your_id: int, opp_id: int, season: int = 1
+    conn: sqlite3.Connection, your_id: int, opp_id: int, f: MatchFilter = MatchFilter()
 ) -> dict[str, list[dict]]:
     """Build per-mode map comparison data between two teams.
 
@@ -72,22 +132,22 @@ def _build_matchup_data(
     maps = get_all_maps(conn)
     result: dict[str, list[dict]] = {"SnD": [], "HP": [], "Control": []}
 
-    opp_bans = team_ban_rates(conn, opp_id, season=season)
-    opp_bans_h2h = team_ban_rates(conn, opp_id, season=season, opponent_id=your_id)
-    opp_picks = team_pick_rates(conn, opp_id, season=season)
+    opp_bans = team_ban_rates(conn, opp_id, f=f)
+    opp_bans_h2h = team_ban_rates(conn, opp_id, f=f, opponent_id=your_id)
+    opp_picks = team_pick_rates(conn, opp_id, f=f)
 
     for map_id, map_name, mode in maps:
-        h2h = _head_to_head(conn, your_id, opp_id, map_id, season=season)
-        your_wl = _team_map_wl(conn, your_id, map_id, season=season)
-        opp_wl = _team_map_wl(conn, opp_id, map_id, season=season)
+        h2h = _head_to_head(conn, your_id, opp_id, map_id, f=f)
+        your_wl = _team_map_wl(conn, your_id, map_id, f=f)
+        opp_wl = _team_map_wl(conn, opp_id, map_id, f=f)
 
-        your_ms = map_strength(conn, your_id, map_id, season=season)
-        opp_ms = map_strength(conn, opp_id, map_id, season=season)
+        your_ms = map_strength(conn, your_id, map_id, f=f)
+        opp_ms = map_strength(conn, opp_id, map_id, f=f)
 
-        your_pwl = pick_win_loss(conn, your_id, map_id, season=season)
-        your_dwl = defend_win_loss(conn, your_id, map_id, season=season)
-        opp_pwl = pick_win_loss(conn, opp_id, map_id, season=season)
-        opp_dwl = defend_win_loss(conn, opp_id, map_id, season=season)
+        your_pwl = pick_win_loss(conn, your_id, map_id, f=f)
+        your_dwl = defend_win_loss(conn, your_id, map_id, f=f)
+        opp_pwl = pick_win_loss(conn, opp_id, map_id, f=f)
+        opp_dwl = defend_win_loss(conn, opp_id, map_id, f=f)
 
         # Compute delta (positive = your advantage)
         if your_ms["rating"] is not None and opp_ms["rating"] is not None:
@@ -327,8 +387,8 @@ def _map_row(m: dict, row_idx: int, opp_abbr: str) -> html.Div:
 # ---------------------------------------------------------------------------
 
 
-def layout(season: int = 1):
-    """Return the Match-Up Prep tab layout with two team selectors."""
+def layout():
+    """Return the Head to Head tab layout with two team selectors."""
     return html.Div([
         dbc.Row(
             [
@@ -385,7 +445,7 @@ def layout(season: int = 1):
 
 
 def register_callbacks(app):
-    """Register all callbacks for the Match-Up Prep tab."""
+    """Register all callbacks for the Head to Head tab."""
 
     # Populate both team dropdowns on load
     @app.callback(
@@ -428,10 +488,11 @@ def register_callbacks(app):
     @app.callback(
         [Output("mp-content", "children"), Output("mp-elo-badge", "children")],
         [Input("mp-your-team", "value"), Input("mp-opp-team", "value"),
-         Input("season-store", "data")],
+         Input("filter-store", "data")],
         prevent_initial_call=True,
     )
-    def update_matchup(your_team, opp_team, season):
+    def update_matchup(your_team, opp_team, filter_data):
+        f = MatchFilter.from_dict(filter_data)
         if not your_team or not opp_team:
             msg = "Select both teams to view match-up analysis"
             return (
@@ -453,13 +514,13 @@ def register_callbacks(app):
             your_abbr = conn.execute("SELECT abbreviation FROM teams WHERE team_id = ?", (your_id,)).fetchone()[0]
             opp_abbr = conn.execute("SELECT abbreviation FROM teams WHERE team_id = ?", (opp_id,)).fetchone()[0]
 
-            data = _build_matchup_data(conn, your_id, opp_id, season=season)
+            data = _build_matchup_data(conn, your_id, opp_id, f=f)
 
-            # Elo badge
-            your_elo = get_current_elo(conn, your_id, season=season)
-            opp_elo = get_current_elo(conn, opp_id, season=season)
-            your_low = is_low_confidence(conn, your_id, season=season)
-            opp_low = is_low_confidence(conn, opp_id, season=season)
+            # Elo badge (rating is one chronological chain; not filtered)
+            your_elo = get_current_elo(conn, your_id)
+            opp_elo = get_current_elo(conn, opp_id)
+            your_low = is_low_confidence(conn, your_id)
+            opp_low = is_low_confidence(conn, opp_id)
 
             elo_badge = html.Div(
                 [
@@ -484,7 +545,7 @@ def register_callbacks(app):
 
             # Build mode sections
             row_idx = 0
-            sections = []
+            sections = [_recent_series_card(_build_recent_series(conn, opp_id, f=f), opp_abbr)]
             for mode in MODES:
                 mode_maps = data.get(mode, [])
                 mode_color = MODE_COLORS.get(mode, COLORS["text"])

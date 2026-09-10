@@ -1,5 +1,7 @@
 import sqlite3
 
+from cdm_stats.metrics.filters import MatchFilter
+
 from cdm_stats.metrics.elo import get_current_elo, SEED_ELO
 
 CONTEXT_WEIGHTS = {
@@ -58,7 +60,7 @@ def _get_opponent_elo_at_match(
 
 
 def map_strength(
-    conn: sqlite3.Connection, team_id: int, map_id: int, season: int = 1
+    conn: sqlite3.Connection, team_id: int, map_id: int, f: MatchFilter = MatchFilter()
 ) -> dict:
     """Compute the Map Strength Rating for a team on a specific map.
 
@@ -70,16 +72,16 @@ def map_strength(
             "low_confidence": bool,
         }
     """
+    fw, fp = f.sql()
     rows = conn.execute(
-        """SELECT mr.match_id, mr.winner_team_id, mr.pick_context, mr.slot
+        f"""SELECT mr.match_id, mr.winner_team_id, mr.pick_context, mr.slot
            FROM map_results mr
            JOIN matches m ON mr.match_id = m.match_id
            WHERE mr.map_id = ?
              AND mr.dq = 0
-             AND m.season = ?
-             AND (m.team1_id = ? OR m.team2_id = ?)
+             AND (m.team1_id = ? OR m.team2_id = ?){fw}
            ORDER BY m.match_date""",
-        (map_id, season, team_id, team_id),
+        [map_id, team_id, team_id] + fp,
     ).fetchall()
 
     if not rows:

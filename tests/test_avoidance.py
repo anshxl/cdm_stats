@@ -1,6 +1,7 @@
 import sqlite3
 import io
 import pytest
+from cdm_stats.metrics.filters import MatchFilter
 from cdm_stats.db.schema import create_tables
 from cdm_stats.ingestion.seed import seed_teams, seed_maps
 from cdm_stats.ingestion.csv_loader import ingest_csv
@@ -48,30 +49,34 @@ def test_pick_win_loss_dvs_tunisia(db):
     assert result == {"wins": 1, "losses": 0}
 
 
-def test_pick_win_loss_filters_by_season(db):
+SPRING = MatchFilter(families=frozenset({"CDM Spring"}))
+SUMMER = MatchFilter(families=frozenset({"CDM Summer"}))
+
+
+def test_pick_win_loss_filters_by_family(db):
     ingest_csv(db, io.StringIO(MATCH_CSV))
     dvs, _, tunisia, _, _ = _get_ids(db)
-    assert pick_win_loss(db, dvs, tunisia, season=1) == {"wins": 1, "losses": 0}
-    assert pick_win_loss(db, dvs, tunisia, season=2) == {"wins": 0, "losses": 0}
+    assert pick_win_loss(db, dvs, tunisia, f=SPRING) == {"wins": 1, "losses": 0}
+    assert pick_win_loss(db, dvs, tunisia, f=SUMMER) == {"wins": 0, "losses": 0}
 
-    db.execute("UPDATE matches SET season = 2")
+    db.execute("UPDATE matches SET season = 2, competition = 'CDM'")
     db.commit()
-    assert pick_win_loss(db, dvs, tunisia, season=1) == {"wins": 0, "losses": 0}
-    assert pick_win_loss(db, dvs, tunisia, season=2) == {"wins": 1, "losses": 0}
+    assert pick_win_loss(db, dvs, tunisia, f=SPRING) == {"wins": 0, "losses": 0}
+    assert pick_win_loss(db, dvs, tunisia, f=SUMMER) == {"wins": 1, "losses": 0}
 
 
-def test_defend_win_loss_filters_by_season(db):
+def test_defend_win_loss_filters_by_family(db):
     ingest_csv(db, io.StringIO(MATCH_CSV))
     _, oug, tunisia, _, _ = _get_ids(db)
-    assert defend_win_loss(db, oug, tunisia, season=1) == {"wins": 0, "losses": 1}
-    assert defend_win_loss(db, oug, tunisia, season=2) == {"wins": 0, "losses": 0}
+    assert defend_win_loss(db, oug, tunisia, f=SPRING) == {"wins": 0, "losses": 1}
+    assert defend_win_loss(db, oug, tunisia, f=SUMMER) == {"wins": 0, "losses": 0}
 
 
-def test_pick_context_distribution_filters_by_season(db):
+def test_pick_context_distribution_filters_by_family(db):
     ingest_csv(db, io.StringIO(MATCH_CSV))
     dvs, _, tunisia, _, _ = _get_ids(db)
-    assert pick_context_distribution(db, dvs, tunisia, season=1)["Opener"] == 1
-    assert pick_context_distribution(db, dvs, tunisia, season=2)["Opener"] == 0
+    assert pick_context_distribution(db, dvs, tunisia, f=SPRING)["Opener"] == 1
+    assert pick_context_distribution(db, dvs, tunisia, f=SUMMER)["Opener"] == 0
 
 
 def test_defend_win_loss_oug_tunisia(db):

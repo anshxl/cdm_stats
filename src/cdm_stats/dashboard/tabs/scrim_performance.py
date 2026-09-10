@@ -12,20 +12,20 @@ from cdm_stats.db.queries_scrim import (
     scrim_map_results_detail,
 )
 from cdm_stats.db.queries import MODES, MODE_ORDER
+from cdm_stats.metrics.filters import MatchFilter
 
 
 def _build_summary_data(
     conn: sqlite3.Connection,
     mode: str | None = None,
     map_name: str | None = None,
-    week_range: tuple[int, int] | None = None,
-    season: int = 1,
+    f: MatchFilter = MatchFilter(),
     opponent: str | None = None,
 ) -> dict:
-    overall = scrim_win_loss(conn, mode=mode, map_name=map_name, week_range=week_range, season=season, opponent=opponent)
+    overall = scrim_win_loss(conn, mode=mode, map_name=map_name, f=f, opponent=opponent)
     by_mode = {}
     for m in MODES:
-        result = scrim_win_loss(conn, mode=m, map_name=map_name, week_range=week_range, season=season, opponent=opponent)
+        result = scrim_win_loss(conn, mode=m, map_name=map_name, f=f, opponent=opponent)
         if result["total"] > 0:
             by_mode[m] = result
     return {"overall": overall, "by_mode": by_mode}
@@ -53,13 +53,13 @@ def _trend_figure(trend_data: list[dict]) -> go.Figure:
     fig = go.Figure()
     if trend_data:
         fig.add_trace(go.Scatter(
-            x=[f"W{d['week']}" for d in trend_data],
+            x=[d["match_date"] for d in trend_data],
             y=[d["win_pct"] for d in trend_data],
             mode="lines+markers",
             name="Win %",
             marker={"size": 8, "color": COLORS["win"]},
             line={"width": 2, "color": COLORS["win"]},
-            text=[f"W{d['week']}: {d['win_pct']:.0f}% ({d['wins']}/{d['played']})" for d in trend_data],
+            text=[f"{d['match_date']}: {d['win_pct']:.0f}% ({d['wins']}/{d['played']})" for d in trend_data],
             hovertemplate="%{text}<extra></extra>",
         ))
     fig.add_hline(y=50, line_dash="dash", line_color="gray", opacity=0.4)
@@ -70,32 +70,17 @@ def _trend_figure(trend_data: list[dict]) -> go.Figure:
         margin={"l": 50, "r": 20, "t": 30, "b": 50},
         height=350,
         yaxis={"title": "Win %", "range": [0, 105], "gridcolor": COLORS["border"]},
-        xaxis={"title": "Week", "gridcolor": COLORS["border"]},
+        xaxis={"title": "Date", "type": "date", "gridcolor": COLORS["border"]},
         showlegend=False,
     )
     return fig
 
 
-def _get_available_weeks(conn: sqlite3.Connection, season: int = 1) -> list[int]:
-    rows = conn.execute(
-        "SELECT DISTINCT week FROM scrim_maps WHERE season = ? ORDER BY week", (season,)
-    ).fetchall()
-    return [r[0] for r in rows]
-
-
-def _get_available_maps(conn: sqlite3.Connection, season: int = 1) -> list[str]:
-    rows = conn.execute(
-        "SELECT DISTINCT map_name FROM scrim_maps WHERE season = ? ORDER BY map_name", (season,)
-    ).fetchall()
-    return [r[0] for r in rows]
-
-
-def _get_available_opponents(conn: sqlite3.Connection, season: int = 1) -> list[str]:
+def _get_available_opponents(conn: sqlite3.Connection) -> list[str]:
     rows = conn.execute(
         """SELECT DISTINCT t.abbreviation
            FROM scrim_maps sm JOIN teams t ON sm.opponent_id = t.team_id
-           WHERE sm.season = ? ORDER BY t.abbreviation""",
-        (season,),
+           ORDER BY t.abbreviation""",
     ).fetchall()
     return [r[0] for r in rows]
 
@@ -113,10 +98,9 @@ def _filter_dropdown(label: str, dd_id: str, options: list) -> dbc.Col:
     ], width=2)
 
 
-def layout(season: int = 1):
+def layout():
     conn = get_db()
-    weeks = _get_available_weeks(conn, season)
-    opponents = _get_available_opponents(conn, season)
+    opponents = _get_available_opponents(conn)
     conn.close()
     all_opt = [{"label": "All", "value": "All"}]
     return dbc.Container([
@@ -126,11 +110,9 @@ def layout(season: int = 1):
             _filter_dropdown("Map", "scrim-map-filter", all_opt),
             _filter_dropdown("Opponent", "scrim-opponent-filter",
                              all_opt + [{"label": o, "value": o} for o in opponents]),
-            _filter_dropdown("Week", "scrim-week-filter",
-                             all_opt + [{"label": f"W{w}", "value": w} for w in weeks]),
         ], className="mb-3"),
         html.Div(id="scrim-summary-cards"),
-        html.H5("Weekly Trend", style={"color": COLORS["text"]}, className="mt-4 mb-2"),
+        html.H5("Trend", style={"color": COLORS["text"]}, className="mt-4 mb-2"),
         dcc.Graph(id="scrim-trend-chart"),
         html.H5("Map Breakdown", style={"color": COLORS["text"]}, className="mt-4 mb-2"),
         html.Div(id="scrim-map-table"),
@@ -204,8 +186,7 @@ def _result_detail_rows(details: list[dict]) -> list[html.Div]:
 def _map_breakdown_card(
     conn: sqlite3.Connection,
     map_data: list[dict],
-    week_range: tuple[int, int] | None,
-    season: int = 1,
+    f: MatchFilter = MatchFilter(),
     opponent: str | None = None,
 ) -> dbc.Card:
     sorted_data = sorted(
@@ -252,7 +233,7 @@ def _map_breakdown_card(
         )
 
         details = scrim_map_results_detail(
-            conn, d["map_name"], week_range=week_range, limit=5, season=season, opponent=opponent,
+            conn, d["map_name"], limit=5, f=f, opponent=opponent,
         )
         detail = html.Div(
             _result_detail_rows(details),
@@ -274,38 +255,17 @@ def register_callbacks(app):
     @app.callback(
         Output("scrim-map-filter", "options"),
         Input("scrim-mode-filter", "value"),
-        Input("season-store", "data"),
     )
-    def update_map_options(mode, season):
+    def update_map_options(mode):
         conn = get_db()
         if mode and mode != "All":
             rows = conn.execute(
-                "SELECT DISTINCT map_name FROM scrim_maps WHERE mode = ? AND season = ? ORDER BY map_name",
-                (mode, season),
+                "SELECT DISTINCT map_name FROM scrim_maps WHERE mode = ? ORDER BY map_name", (mode,),
             ).fetchall()
         else:
-            rows = conn.execute(
-                "SELECT DISTINCT map_name FROM scrim_maps WHERE season = ? ORDER BY map_name",
-                (season,),
-            ).fetchall()
+            rows = conn.execute("SELECT DISTINCT map_name FROM scrim_maps ORDER BY map_name").fetchall()
         conn.close()
         return [{"label": "All", "value": "All"}] + [{"label": r[0], "value": r[0]} for r in rows]
-
-    @app.callback(
-        Output("scrim-week-filter", "options"),
-        Output("scrim-opponent-filter", "options"),
-        Input("season-store", "data"),
-    )
-    def populate_week_and_opponent_options(season):
-        conn = get_db()
-        weeks = _get_available_weeks(conn, season)
-        opponents = _get_available_opponents(conn, season)
-        conn.close()
-        all_opt = [{"label": "All", "value": "All"}]
-        return (
-            all_opt + [{"label": f"W{w}", "value": w} for w in weeks],
-            all_opt + [{"label": o, "value": o} for o in opponents],
-        )
 
     @app.callback(
         Output("scrim-summary-cards", "children"),
@@ -314,18 +274,17 @@ def register_callbacks(app):
         Input("scrim-mode-filter", "value"),
         Input("scrim-map-filter", "value"),
         Input("scrim-opponent-filter", "value"),
-        Input("scrim-week-filter", "value"),
-        Input("season-store", "data"),
+        Input("filter-store", "data"),
     )
-    def update_scrim_tab(mode, map_name, opponent, week_value, season):
+    def update_scrim_tab(mode, map_name, opponent, filter_data):
+        f = MatchFilter.from_dict(filter_data)
         conn = get_db()
         mode_val = mode if mode != "All" else None
         map_val = map_name if map_name != "All" else None
         opp_val = opponent if opponent != "All" else None
-        wr = (int(week_value), int(week_value)) if week_value != "All" else None
 
         summary = _build_summary_data(
-            conn, mode=mode_val, map_name=map_val, week_range=wr, season=season, opponent=opp_val,
+            conn, mode=mode_val, map_name=map_val, f=f, opponent=opp_val,
         )
         cards = [
             dbc.Col(_summary_card(
@@ -339,20 +298,16 @@ def register_callbacks(app):
             ), width=3))
         card_row = dbc.Row(cards)
 
-        map_data = scrim_map_breakdown(
-            conn, mode=mode_val, week_range=wr, season=season, opponent=opp_val,
-        )
+        map_data = scrim_map_breakdown(conn, mode=mode_val, f=f, opponent=opp_val)
         if map_data:
             table = html.Div([
                 _mode_legend(),
-                _map_breakdown_card(conn, map_data, wr, season=season, opponent=opp_val),
+                _map_breakdown_card(conn, map_data, f=f, opponent=opp_val),
             ])
         else:
             table = html.P("No scrim data found.", style={"color": COLORS["muted"]})
 
-        trend_data = scrim_weekly_trend(
-            conn, mode=mode_val, map_name=map_val, season=season, opponent=opp_val,
-        )
+        trend_data = scrim_weekly_trend(conn, mode=mode_val, map_name=map_val, f=f, opponent=opp_val)
         fig = _trend_figure(trend_data)
 
         conn.close()

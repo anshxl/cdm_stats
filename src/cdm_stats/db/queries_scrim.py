@@ -1,5 +1,7 @@
 import sqlite3
 
+from cdm_stats.metrics.filters import MatchFilter
+
 
 def _opponent_condition(conditions: list, params: list, opponent: str | None) -> None:
     """Append an opponent-abbreviation filter against scrim_maps.opponent_id."""
@@ -15,12 +17,13 @@ def scrim_win_loss(
     mode: str | None = None,
     map_name: str | None = None,
     week_range: tuple[int, int] | None = None,
-    season: int = 1,
+    f: MatchFilter = MatchFilter(),
     opponent: str | None = None,
 ) -> dict:
     """Return W, L, Win% for scrims with optional filters."""
-    conditions = ["season = ?"]
-    params: list = [season]
+    fw, fp = f.date_sql("scrim_date")
+    conditions = ["1=1" + fw]
+    params: list = list(fp)
 
     if mode:
         conditions.append("mode = ?")
@@ -53,12 +56,13 @@ def scrim_map_breakdown(
     conn: sqlite3.Connection,
     mode: str | None = None,
     week_range: tuple[int, int] | None = None,
-    season: int = 1,
+    f: MatchFilter = MatchFilter(),
     opponent: str | None = None,
 ) -> list[dict]:
     """Return per-map: played, W, L, Win%, avg scores."""
-    conditions = ["season = ?"]
-    params: list = [season]
+    fw, fp = f.date_sql("scrim_date")
+    conditions = ["1=1" + fw]
+    params: list = list(fp)
 
     if mode:
         conditions.append("mode = ?")
@@ -97,12 +101,13 @@ def scrim_weekly_trend(
     conn: sqlite3.Connection,
     mode: str | None = None,
     map_name: str | None = None,
-    season: int = 1,
+    f: MatchFilter = MatchFilter(),
     opponent: str | None = None,
 ) -> list[dict]:
-    """Return per-week win rate for trend chart."""
-    conditions = ["season = ?"]
-    params: list = [season]
+    """Return per-scrim-day win rate for the trend chart (keyed by match_date)."""
+    fw, fp = f.date_sql("scrim_date")
+    conditions = ["1=1" + fw]
+    params: list = list(fp)
 
     if mode:
         conditions.append("mode = ?")
@@ -115,18 +120,18 @@ def scrim_weekly_trend(
     where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
 
     rows = conn.execute(
-        f"""SELECT week,
+        f"""SELECT scrim_date,
                    COUNT(*) as played,
                    SUM(CASE WHEN result = 'W' THEN 1 ELSE 0 END) as wins
             FROM scrim_maps{where}
-            GROUP BY week
-            ORDER BY week""",
+            GROUP BY scrim_date
+            ORDER BY scrim_date""",
         params,
     ).fetchall()
 
     return [
         {
-            "week": r[0], "played": r[1], "wins": r[2],
+            "match_date": r[0], "played": r[1], "wins": r[2],
             "win_pct": round(r[2] / r[1] * 100, 2) if r[1] > 0 else 0.0,
         }
         for r in rows
@@ -138,7 +143,7 @@ def scrim_map_results_detail(
     map_name: str,
     week_range: tuple[int, int] | None = None,
     limit: int = 5,
-    season: int = 1,
+    f: MatchFilter = MatchFilter(),
     opponent: str | None = None,
 ) -> list[dict]:
     """Return individual scrim results on a specific map, newest first.
@@ -146,8 +151,9 @@ def scrim_map_results_detail(
     If week_range is given, returns all matches within that range (no limit).
     Otherwise returns up to `limit` most recent matches.
     """
-    conditions = ["sm.map_name = ?", "sm.season = ?"]
-    params: list = [map_name, season]
+    fw, fp = f.date_sql("sm.scrim_date")
+    conditions = ["sm.map_name = ?" + fw]
+    params: list = [map_name] + fp
     if week_range:
         conditions.append("sm.week BETWEEN ? AND ?")
         params.extend(week_range)
@@ -181,11 +187,12 @@ def player_summary(
     player: str | None = None,
     mode: str | None = None,
     week_range: tuple[int, int] | None = None,
-    season: int = 1,
+    f: MatchFilter = MatchFilter(),
 ) -> list[dict]:
     """Return per-player totals: kills, deaths, assists, K/D."""
-    conditions = ["sm.season = ?"]
-    params: list = [season]
+    fw, fp = f.date_sql("sm.scrim_date")
+    conditions = ["1=1" + fw]
+    params: list = list(fp)
 
     if player:
         conditions.append("sp.player_name = ?")
@@ -229,11 +236,12 @@ def player_weekly_trend(
     conn: sqlite3.Connection,
     player: str | None = None,
     mode: str | None = None,
-    season: int = 1,
+    f: MatchFilter = MatchFilter(),
 ) -> list[dict]:
-    """Return per-week K/D per player for trend chart."""
-    conditions = ["sm.season = ?"]
-    params: list = [season]
+    """Return per-scrim-day K/D per player for the trend chart (keyed by match_date)."""
+    fw, fp = f.date_sql("sm.scrim_date")
+    conditions = ["1=1" + fw]
+    params: list = list(fp)
 
     if player:
         conditions.append("sp.player_name = ?")
@@ -245,20 +253,20 @@ def player_weekly_trend(
     where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
 
     rows = conn.execute(
-        f"""SELECT sp.player_name, sm.week,
+        f"""SELECT sp.player_name, sm.scrim_date,
                    SUM(sp.kills) as kills,
                    SUM(sp.deaths) as deaths
             FROM scrim_player_stats sp
             JOIN scrim_maps sm ON sp.scrim_map_id = sm.scrim_map_id
             {where}
-            GROUP BY sp.player_name, sm.week
-            ORDER BY sp.player_name, sm.week""",
+            GROUP BY sp.player_name, sm.scrim_date
+            ORDER BY sp.player_name, sm.scrim_date""",
         params,
     ).fetchall()
 
     return [
         {
-            "player_name": r[0], "week": r[1],
+            "player_name": r[0], "match_date": r[1],
             "kills": r[2], "deaths": r[3],
             "kd": round(r[2] / r[3], 2) if r[3] > 0 else 0.0,
         }

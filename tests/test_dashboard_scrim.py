@@ -42,20 +42,18 @@ def test_scrim_performance_build_summary(scrim_db):
     assert "HP" in data["by_mode"]
 
 
-def test_scrim_performance_build_summary_filters_by_season(scrim_db):
+def test_scrim_performance_build_summary_filters_by_date(scrim_db):
     from cdm_stats.dashboard.tabs.scrim_performance import _build_summary_data
-    # Add a season-2 scrim
+    from cdm_stats.metrics.filters import MatchFilter
     s2 = """Date,Opponent,Map,Score
 2026-06-10,DVS,Raid,3-1"""
     ingest_scrims_team(scrim_db, io.StringIO(s2), season=2)
 
-    s1 = _build_summary_data(scrim_db, season=1)
-    assert s1["overall"]["wins"] == 2
-    assert s1["overall"]["losses"] == 1
+    both = _build_summary_data(scrim_db)
+    assert (both["overall"]["wins"], both["overall"]["losses"]) == (3, 1)
 
-    s2_data = _build_summary_data(scrim_db, season=2)
-    assert s2_data["overall"]["wins"] == 1
-    assert s2_data["overall"]["losses"] == 0
+    s2_data = _build_summary_data(scrim_db, f=MatchFilter(start="2026-06-01"))
+    assert (s2_data["overall"]["wins"], s2_data["overall"]["losses"]) == (1, 0)
 
 
 def test_scrim_queries_filter_by_opponent(scrim_db):
@@ -66,7 +64,7 @@ def test_scrim_queries_filter_by_opponent(scrim_db):
     dvs = scrim_win_loss(scrim_db, opponent="DVS")
     assert (dvs["wins"], dvs["losses"]) == (2, 0)
     assert all(r["losses"] == 0 for r in scrim_map_breakdown(scrim_db, opponent="DVS"))
-    assert [r["week"] for r in scrim_weekly_trend(scrim_db, opponent="OUG")] == [2]
+    assert [r["match_date"] for r in scrim_weekly_trend(scrim_db, opponent="OUG")] == ["2026-03-03"]
     tunisia = scrim_map_results_detail(scrim_db, "Tunisia", opponent="DVS")
     assert [d["opponent"] for d in tunisia] == ["DVS"]
 
@@ -87,11 +85,10 @@ def test_scrim_performance_build_map_table(scrim_db):
     assert tunisia["losses"] == 1
 
 
-def test_scrim_performance_build_trend(scrim_db):
+def test_scrim_performance_build_trend_is_by_date(scrim_db):
     from cdm_stats.db.queries_scrim import scrim_weekly_trend
     rows = scrim_weekly_trend(scrim_db)
-    assert len(rows) == 2
-    assert rows[0]["week"] == 1
+    assert [r["match_date"] for r in rows] == ["2026-02-25", "2026-03-03"]
     assert rows[0]["win_pct"] == 100.0
 
 
@@ -101,11 +98,11 @@ def test_scrim_performance_layout():
     assert result is not None
 
 
-def test_scrim_player_summary_filters_by_season(scrim_db):
+def test_scrim_player_summary_filters_by_date(scrim_db):
     from cdm_stats.db.queries_scrim import player_summary
-    # Season 1 has 5 players; season 2 has none
-    assert len(player_summary(scrim_db, season=1)) == 5
-    assert player_summary(scrim_db, season=2) == []
+    from cdm_stats.metrics.filters import MatchFilter
+    assert len(player_summary(scrim_db)) == 5
+    assert player_summary(scrim_db, f=MatchFilter(start="2026-06-01")) == []
 
 
 def test_scrim_player_summary(scrim_db):
@@ -121,33 +118,16 @@ def test_scrim_player_weekly_trend(scrim_db):
     from cdm_stats.db.queries_scrim import player_weekly_trend
     rows = player_weekly_trend(scrim_db)
     assert len(rows) >= 1
-    alpha_w1 = next(r for r in rows if r["player_name"] == "Alpha" and r["week"] == 1)
+    alpha_w1 = next(r for r in rows if r["player_name"] == "Alpha" and r["match_date"] == "2026-02-25")
     assert alpha_w1["kd"] == pytest.approx(20 / 15, abs=0.01)
 
 
-def test_player_stats_layout():
-    from cdm_stats.dashboard.tabs.player_stats import layout
-    result = layout()
-    assert result is not None
-
-
 def test_scrim_performance_layout_filters():
-    """Scrim layout has Week and Opponent dropdowns, no week pills."""
+    """Scrim layout has Mode/Map/Opponent dropdowns; dates come from the shared filter."""
     from cdm_stats.dashboard.tabs.scrim_performance import layout
     import json
     result = layout()
     serialized = json.dumps(result.to_plotly_json(), default=str)
-    assert "scrim-week-filter" in serialized
     assert "scrim-opponent-filter" in serialized
+    assert "scrim-week-filter" not in serialized
     assert "scrim-week-pills" not in serialized
-
-
-def test_player_stats_layout_has_pills_no_source_toggle():
-    from cdm_stats.dashboard.tabs.player_stats import layout
-    import json
-    result = layout()
-    serialized = json.dumps(result.to_plotly_json(), default=str)
-    assert "player-week-pills" in serialized
-    assert "player-week-slider" not in serialized
-    assert "player-source-filter" not in serialized
-    assert "player-opponent-filter" in serialized

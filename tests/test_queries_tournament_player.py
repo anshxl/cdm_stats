@@ -78,16 +78,21 @@ def test_player_summary_all(db_with_tournament_players):
     assert alpha["kd"] == pytest.approx(50 / 40, abs=0.01)
 
 
-def test_player_summary_filters_by_season(db_with_tournament_players):
+def test_player_summary_filters_by_family_and_date(db_with_tournament_players):
     from cdm_stats.db.queries_tournament_player import player_summary
+    from cdm_stats.metrics.filters import MatchFilter
+    spring = MatchFilter(families=frozenset({"CDM Spring"}))
+    summer = MatchFilter(families=frozenset({"CDM Summer"}))
     db = db_with_tournament_players
-    assert len(player_summary(db, season=1)) == 2
-    assert player_summary(db, season=2) == []
+    assert len(player_summary(db)) == 2
+    assert len(player_summary(db, f=spring)) == 2
+    assert player_summary(db, f=summer) == []
+    assert player_summary(db, f=MatchFilter(end="2026-02-14")) == []
 
-    db.execute("UPDATE matches SET season = 2")
+    db.execute("UPDATE matches SET season = 2, competition = 'CDM'")
     db.commit()
-    assert player_summary(db, season=1) == []
-    assert len(player_summary(db, season=2)) == 2
+    assert player_summary(db, f=spring) == []
+    assert len(player_summary(db, f=summer)) == 2
 
 
 def test_team_pick_rates(db_with_tournament_players):
@@ -99,7 +104,9 @@ def test_team_pick_rates(db_with_tournament_players):
     assert rates["total_series"] == 1
     # DVS picked Tunisia; OUG picked Summit.
     assert rates["by_map"] == {get_map_id(conn, "Tunisia", "SnD"): 1}
-    assert team_pick_rates(conn, dvs, season=2) == {"total_series": 0, "by_map": {}}
+    from cdm_stats.metrics.filters import MatchFilter
+    summer = MatchFilter(families=frozenset({"CDM Summer"}))
+    assert team_pick_rates(conn, dvs, f=summer) == {"total_series": 0, "by_map": {}}
 
 
 def test_player_summary_op_totals(db_with_tournament_players):
@@ -147,7 +154,7 @@ def test_player_weekly_trend(db_with_tournament_players):
     from cdm_stats.db.queries_tournament_player import player_weekly_trend
     rows = player_weekly_trend(db_with_tournament_players, player="Alpha")
     assert len(rows) == 1
-    assert rows[0]["week"] == 1
+    assert rows[0]["match_date"] == "2026-02-15"
     assert rows[0]["kd"] == pytest.approx(50 / 40, abs=0.01)
 
 
@@ -226,7 +233,9 @@ def test_recent_series_stats_respects_limit_and_filters(db_with_tournament_playe
     conn = db_with_tournament_players
     assert len(recent_series_stats(conn, "DVS", limit=1)) == 1
     assert recent_series_stats(conn, "DVS", week_range=(9, 9)) == []
-    assert recent_series_stats(conn, "DVS", season=2) == []
+    from cdm_stats.metrics.filters import MatchFilter
+    assert recent_series_stats(conn, "DVS", f=MatchFilter(families=frozenset({"CDM Summer"}))) == []
+    assert recent_series_stats(conn, "DVS", f=MatchFilter(start="2026-03-01")) == []
 
     # Mode filter hides maps from display but not from the series score.
     hp_only = recent_series_stats(conn, "DVS", mode="HP")

@@ -28,18 +28,23 @@ def db():
     conn.close()
 
 
-def test_build_elo_traces_filters_by_season(db):
+def test_build_elo_traces_date_filter_hides_points(db):
     from cdm_stats.dashboard.tabs.elo_tracker import _build_elo_traces
-    # No season-2 matches → no traces
-    assert _build_elo_traces(db, season=2) == []
+    from cdm_stats.metrics.filters import MatchFilter
+    traces = _build_elo_traces(db, f=MatchFilter(start="2026-02-01"))
+    assert all(t["dates"] == [] for t in traces)
 
 
-def test_build_elo_traces(db):
+def test_build_elo_traces_uses_dates(db):
     from cdm_stats.dashboard.tabs.elo_tracker import _build_elo_traces
     traces = _build_elo_traces(db)
-    teams_with_data = {t["abbr"] for t in traces if len(t["elos"]) > 1}
-    assert "DVS" in teams_with_data
-    assert "OUG" in teams_with_data
     dvs_trace = next(t for t in traces if t["abbr"] == "DVS")
-    assert dvs_trace["elos"][0] == SEED_ELO
-    assert dvs_trace["elos"][1] > SEED_ELO
+    assert dvs_trace["dates"] == ["2026-01-15"]
+    assert dvs_trace["elos"][0] > SEED_ELO
+    assert "CDM Spring" in dvs_trace["hover_texts"][0]
+    assert "vs OUG (W)" in dvs_trace["hover_texts"][0]
+
+
+def test_build_elo_traces_excludes_hidden_teams(db):
+    from cdm_stats.dashboard.tabs.elo_tracker import _build_elo_traces
+    assert "Felines" not in {t["abbr"] for t in _build_elo_traces(db)}

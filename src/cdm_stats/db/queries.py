@@ -1,5 +1,7 @@
 import sqlite3
 
+from cdm_stats.metrics.filters import MatchFilter
+
 from cdm_stats.ingestion.formats import FORMATS
 
 # The three game modes, in canonical display order.
@@ -106,28 +108,27 @@ def insert_map_ban(
 
 
 def get_ban_summary(
-    conn: sqlite3.Connection, team_id: int, opponent_id: int, season: int = 1
+    conn: sqlite3.Connection, team_id: int, opponent_id: int, f: MatchFilter = MatchFilter()
 ) -> list[dict]:
     """Get ban frequency for team_id in matches against opponent_id."""
+    fw, fp = f.sql()
     rows = conn.execute(
-        """SELECT mb.team_id, m2.map_name, m2.mode, COUNT(*) as ban_count
+        f"""SELECT mb.team_id, m2.map_name, m2.mode, COUNT(*) as ban_count
            FROM map_bans mb
            JOIN maps m2 ON mb.map_id = m2.map_id
            JOIN matches m ON mb.match_id = m.match_id
            WHERE mb.team_id = ?
-             AND m.season = ?
-             AND ((m.team1_id = ? AND m.team2_id = ?) OR (m.team1_id = ? AND m.team2_id = ?))
+             AND ((m.team1_id = ? AND m.team2_id = ?) OR (m.team1_id = ? AND m.team2_id = ?)){fw}
            GROUP BY mb.team_id, m2.map_name, m2.mode
            ORDER BY ban_count DESC""",
-        (team_id, season, team_id, opponent_id, opponent_id, team_id),
+        [team_id, team_id, opponent_id, opponent_id, team_id] + fp,
     ).fetchall()
 
     total_series = conn.execute(
-        """SELECT COUNT(*) FROM matches
-           WHERE match_format != 'CDL_BO5'
-             AND season = ?
-             AND ((team1_id = ? AND team2_id = ?) OR (team1_id = ? AND team2_id = ?))""",
-        (season, team_id, opponent_id, opponent_id, team_id),
+        f"""SELECT COUNT(*) FROM matches m
+           WHERE m.match_format != 'CDL_BO5'
+             AND ((m.team1_id = ? AND m.team2_id = ?) OR (m.team1_id = ? AND m.team2_id = ?)){fw}""",
+        [team_id, opponent_id, opponent_id, team_id] + fp,
     ).fetchone()[0]
 
     return [
@@ -139,7 +140,7 @@ def get_ban_summary(
 def team_ban_rates(
     conn: sqlite3.Connection,
     team_id: int,
-    season: int = 1,
+    f: MatchFilter = MatchFilter(),
     opponent_id: int | None = None,
 ) -> dict:
     """Per-map ban counts for a team, optionally only in series vs opponent_id.
@@ -148,12 +149,14 @@ def team_ban_rates(
     counts only series where this team's bans were recorded — ban ingestion is
     partial, so dividing by all series played would understate every rate.
     """
-    conditions = ["mb.team_id = ?", "m.season = ?"]
-    params: list = [team_id, season]
+    conditions = ["mb.team_id = ?"]
+    params: list = [team_id]
     if opponent_id is not None:
         conditions.append("? IN (m.team1_id, m.team2_id)")
         params.append(opponent_id)
-    where = " AND ".join(conditions)
+    fw, fp = f.sql()
+    where = " AND ".join(conditions) + fw
+    params += fp
 
     by_map = dict(conn.execute(
         f"""SELECT mb.map_id, COUNT(*)
@@ -176,46 +179,47 @@ def team_ban_rates(
 
 
 def team_pick_rates(
-    conn: sqlite3.Connection, team_id: int, season: int = 1
+    conn: sqlite3.Connection, team_id: int, f: MatchFilter = MatchFilter()
 ) -> dict:
     """Per-map counts of maps this team picked, across all series.
 
     Same shape as team_ban_rates: `total_series` counts only series where
     pick data was recorded (picked_by is missing for some events).
     """
+    fw, fp = f.sql()
     by_map = dict(conn.execute(
-        """SELECT mr.map_id, COUNT(*)
+        f"""SELECT mr.map_id, COUNT(*)
            FROM map_results mr
            JOIN matches m ON mr.match_id = m.match_id
-           WHERE mr.picked_by_team_id = ? AND m.season = ? AND mr.dq = 0
+           WHERE mr.picked_by_team_id = ? AND mr.dq = 0{fw}
            GROUP BY mr.map_id""",
-        (team_id, season),
+        [team_id] + fp,
     ).fetchall())
 
     total_series = conn.execute(
-        """SELECT COUNT(DISTINCT mr.match_id)
+        f"""SELECT COUNT(DISTINCT mr.match_id)
            FROM map_results mr
            JOIN matches m ON mr.match_id = m.match_id
-           WHERE m.season = ? AND ? IN (m.team1_id, m.team2_id)
-             AND mr.picked_by_team_id IS NOT NULL""",
-        (season, team_id),
+           WHERE ? IN (m.team1_id, m.team2_id)
+             AND mr.picked_by_team_id IS NOT NULL{fw}""",
+        [team_id] + fp,
     ).fetchone()[0]
 
     return {"total_series": total_series, "by_map": by_map}
 
 
 def opponent_ban_rates(
-    conn: sqlite3.Connection, team_id: int, season: int = 1
+    conn: sqlite3.Connection, team_id: int, f: MatchFilter = MatchFilter()
 ) -> dict:
     """Per-map counts of what opponents ban against a team, across all series.
 
     Same shape and denominator rule as team_ban_rates: `total_series` counts
     only series where an opponent's bans were recorded.
     """
+    fw, fp = f.sql()
     where = """mb.team_id != ?
-               AND ? IN (m.team1_id, m.team2_id)
-               AND m.season = ?"""
-    params = [team_id, team_id, season]
+               AND ? IN (m.team1_id, m.team2_id)""" + fw
+    params = [team_id, team_id] + fp
 
     by_map = dict(conn.execute(
         f"""SELECT mb.map_id, COUNT(*)
@@ -238,81 +242,64 @@ def opponent_ban_rates(
 
 
 def get_team_map_wl(
-    conn: sqlite3.Connection, team_id: int, format_filter: str | None = None, season: int = 1
+    conn: sqlite3.Connection, team_id: int, format_filter: str | None = None,
+    f: MatchFilter = MatchFilter(),
 ) -> list[dict]:
     """Get W-L per map for a team, optionally filtered by format prefix (e.g. 'TOURNAMENT')."""
-    if format_filter:
-        rows = conn.execute(
-            """SELECT m2.map_name, m2.mode,
-                      SUM(CASE WHEN mr.winner_team_id = ? THEN 1 ELSE 0 END) as wins,
-                      SUM(CASE WHEN mr.winner_team_id != ? THEN 1 ELSE 0 END) as losses
-               FROM map_results mr
-               JOIN maps m2 ON mr.map_id = m2.map_id
-               JOIN matches m ON mr.match_id = m.match_id
-               WHERE (m.team1_id = ? OR m.team2_id = ?)
-                 AND m.season = ?
-                 AND m.match_format LIKE ? || '%'
-                 AND mr.dq = 0
-               GROUP BY m2.map_name, m2.mode
-               ORDER BY m2.mode, wins DESC""",
-            (team_id, team_id, team_id, team_id, season, format_filter),
-        ).fetchall()
-    else:
-        rows = conn.execute(
-            """SELECT m2.map_name, m2.mode,
-                      SUM(CASE WHEN mr.winner_team_id = ? THEN 1 ELSE 0 END) as wins,
-                      SUM(CASE WHEN mr.winner_team_id != ? THEN 1 ELSE 0 END) as losses
-               FROM map_results mr
-               JOIN maps m2 ON mr.map_id = m2.map_id
-               JOIN matches m ON mr.match_id = m.match_id
-               WHERE (m.team1_id = ? OR m.team2_id = ?)
-                 AND m.season = ?
-                 AND mr.dq = 0
-               GROUP BY m2.map_name, m2.mode
-               ORDER BY m2.mode, wins DESC""",
-            (team_id, team_id, team_id, team_id, season),
-        ).fetchall()
+    fw, fp = f.sql()
+    fmt = " AND m.match_format LIKE ? || '%'" if format_filter else ""
+    rows = conn.execute(
+        f"""SELECT m2.map_name, m2.mode,
+                  SUM(CASE WHEN mr.winner_team_id = ? THEN 1 ELSE 0 END) as wins,
+                  SUM(CASE WHEN mr.winner_team_id != ? THEN 1 ELSE 0 END) as losses
+           FROM map_results mr
+           JOIN maps m2 ON mr.map_id = m2.map_id
+           JOIN matches m ON mr.match_id = m.match_id
+           WHERE (m.team1_id = ? OR m.team2_id = ?)
+             AND mr.dq = 0{fmt}{fw}
+           GROUP BY m2.map_name, m2.mode
+           ORDER BY m2.mode, wins DESC""",
+        [team_id, team_id, team_id, team_id] + ([format_filter] if format_filter else []) + fp,
+    ).fetchall()
 
     return [{"map_name": r[0], "mode": r[1], "wins": r[2], "losses": r[3]} for r in rows]
 
 
 def get_team_ban_summary(
-    conn: sqlite3.Connection, team_id: int, season: int = 1
+    conn: sqlite3.Connection, team_id: int, f: MatchFilter = MatchFilter()
 ) -> dict:
     """Get ban tendencies for a team: what they ban and what opponents ban against them."""
+    fw, fp = f.sql()
     # What this team bans
     team_bans = conn.execute(
-        """SELECT m2.map_name, m2.mode, COUNT(*) as ban_count
+        f"""SELECT m2.map_name, m2.mode, COUNT(*) as ban_count
            FROM map_bans mb
            JOIN maps m2 ON mb.map_id = m2.map_id
            JOIN matches m ON mb.match_id = m.match_id
-           WHERE mb.team_id = ?
-             AND m.season = ?
+           WHERE mb.team_id = ?{fw}
            GROUP BY m2.map_name, m2.mode
            ORDER BY ban_count DESC""",
-        (team_id, season),
+        [team_id] + fp,
     ).fetchall()
 
     # What opponents ban against this team
     opp_bans = conn.execute(
-        """SELECT m2.map_name, m2.mode, COUNT(*) as ban_count
+        f"""SELECT m2.map_name, m2.mode, COUNT(*) as ban_count
            FROM map_bans mb
            JOIN maps m2 ON mb.map_id = m2.map_id
            JOIN matches m ON mb.match_id = m.match_id
            WHERE mb.team_id != ?
-             AND m.season = ?
-             AND (m.team1_id = ? OR m.team2_id = ?)
+             AND (m.team1_id = ? OR m.team2_id = ?){fw}
            GROUP BY m2.map_name, m2.mode
            ORDER BY ban_count DESC""",
-        (team_id, season, team_id, team_id),
+        [team_id, team_id, team_id] + fp,
     ).fetchall()
 
     total_series = conn.execute(
-        """SELECT COUNT(*) FROM matches
-           WHERE match_format != 'CDL_BO5'
-             AND season = ?
-             AND (team1_id = ? OR team2_id = ?)""",
-        (season, team_id, team_id),
+        f"""SELECT COUNT(*) FROM matches m
+           WHERE m.match_format != 'CDL_BO5'
+             AND (m.team1_id = ? OR m.team2_id = ?){fw}""",
+        [team_id, team_id] + fp,
     ).fetchone()[0]
 
     return {

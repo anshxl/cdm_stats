@@ -76,12 +76,15 @@ def test_map_strength_no_data_returns_none_rating(db):
     assert result["total_played"] == 0
 
 
-def test_map_strength_filters_by_season(db):
+def test_map_strength_filters_by_family(db):
     from cdm_stats.metrics.map_strength import map_strength
+    from cdm_stats.metrics.filters import MatchFilter
+    spring = MatchFilter(families=frozenset({"CDM Spring"}))
+    summer = MatchFilter(families=frozenset({"CDM Summer"}))
     dvs, _, tunisia, _, _ = _get_ids(db)
-    assert map_strength(db, dvs, tunisia, season=1)["total_played"] == 1
-    assert map_strength(db, dvs, tunisia, season=2)["total_played"] == 0
-    assert map_strength(db, dvs, tunisia, season=2)["rating"] is None
+    assert map_strength(db, dvs, tunisia, f=spring)["total_played"] == 1
+    assert map_strength(db, dvs, tunisia, f=summer)["total_played"] == 0
+    assert map_strength(db, dvs, tunisia, f=summer)["rating"] is None
 
 
 def test_map_strength_low_confidence_under_3(db):

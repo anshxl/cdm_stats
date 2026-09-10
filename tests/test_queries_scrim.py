@@ -58,24 +58,26 @@ def two_season_scrim_db():
     conn.close()
 
 
-def test_scrim_win_loss_defaults_to_season_1(two_season_scrim_db):
+def test_scrim_win_loss_defaults_to_all_seasons(two_season_scrim_db):
     from cdm_stats.db.queries_scrim import scrim_win_loss
     result = scrim_win_loss(two_season_scrim_db)
-    assert result["wins"] == 4
+    assert result["wins"] == 5
     assert result["losses"] == 2
 
 
-def test_scrim_win_loss_season_2(two_season_scrim_db):
+def test_scrim_win_loss_date_filter(two_season_scrim_db):
     from cdm_stats.db.queries_scrim import scrim_win_loss
-    result = scrim_win_loss(two_season_scrim_db, season=2)
+    from cdm_stats.metrics.filters import MatchFilter
+    result = scrim_win_loss(two_season_scrim_db, f=MatchFilter(start="2026-06-01"))
     assert result["wins"] == 1
     assert result["losses"] == 0
     assert result["total"] == 1
 
 
-def test_scrim_map_breakdown_season_2(two_season_scrim_db):
+def test_scrim_map_breakdown_date_filter(two_season_scrim_db):
     from cdm_stats.db.queries_scrim import scrim_map_breakdown
-    rows = scrim_map_breakdown(two_season_scrim_db, season=2)
+    from cdm_stats.metrics.filters import MatchFilter
+    rows = scrim_map_breakdown(two_season_scrim_db, f=MatchFilter(start="2026-06-01", end="2026-06-30"))
     assert len(rows) == 1
     assert rows[0]["map_name"] == "Raid"
 
@@ -124,10 +126,10 @@ def test_scrim_weekly_trend(scrim_db):
     from cdm_stats.db.queries_scrim import scrim_weekly_trend
     rows = scrim_weekly_trend(scrim_db)
     assert len(rows) == 2
-    week1 = next(r for r in rows if r["week"] == 1)
-    assert week1["win_pct"] == 100.0
-    week2 = next(r for r in rows if r["week"] == 2)
-    assert week2["win_pct"] == pytest.approx(33.33, abs=0.01)
+    d1 = next(r for r in rows if r["match_date"] == "2026-02-25")
+    assert d1["win_pct"] == 100.0
+    d2 = next(r for r in rows if r["match_date"] == "2026-03-03")
+    assert d2["win_pct"] == pytest.approx(33.33, abs=0.01)
 
 
 def test_player_summary_all(scrim_db):
@@ -151,7 +153,7 @@ def test_player_weekly_trend(scrim_db):
     from cdm_stats.db.queries_scrim import player_weekly_trend
     rows = player_weekly_trend(scrim_db, player="Alpha")
     assert len(rows) == 2
-    week1 = next(r for r in rows if r["week"] == 1)
-    assert week1["kd"] == pytest.approx(20 / 15, abs=0.01)
+    d1 = next(r for r in rows if r["match_date"] == "2026-02-25")
+    assert d1["kd"] == pytest.approx(20 / 15, abs=0.01)
 
 

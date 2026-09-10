@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import date, timedelta
 
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
@@ -8,11 +9,10 @@ from dash.dependencies import Input, Output
 from cdm_stats.dashboard.app import get_db
 from cdm_stats.dashboard.helpers import COLORS, get_all_teams, team_logo_src
 from cdm_stats.dashboard.team_colors import team_colors
-from cdm_stats.metrics.elo import get_elo_history, SEED_ELO
+from cdm_stats.metrics.elo import get_elo_history, get_current_elo, SEED_ELO
+from cdm_stats.metrics.filters import MatchFilter, family_of, match_label
 
-# 14 distinct colors for 14 CDL teams — tuned for the Twilight Ops dark canvas.
-# Each hue is bright enough to read on #0a0e18 but desaturated enough to avoid
-# the neon-default-Plotly look.
+# Distinct colors for the team lines — tuned for the Twilight Ops dark canvas.
 TEAM_COLORS = [
     "#7dd3fc",  # sky
     "#fb923c",  # orange
@@ -31,52 +31,41 @@ TEAM_COLORS = [
 ]
 
 
-def _week_number(date_str: str, earliest: str) -> int:
-    from datetime import datetime
-    d = datetime.strptime(date_str, "%Y-%m-%d")
-    e = datetime.strptime(earliest, "%Y-%m-%d")
-    return (d - e).days // 7 + 1
+def _build_elo_traces(conn: sqlite3.Connection, f: MatchFilter = MatchFilter()) -> list[dict]:
+    """Elo trajectory per (non-hidden) team on a date axis across all seasons.
 
-
-def _build_elo_traces(conn: sqlite3.Connection, season: int = 1) -> list[dict]:
-    """Build Elo trajectory data for all teams.
-    Returns list of dicts with keys: team_id, abbr, weeks, elos, hover_texts.
-    Week 0 = seed. Each subsequent point is the last Elo of that week.
+    The rating itself is one chronological chain and ignores the filter; the
+    filter only decides which points are drawn. Returns dicts with keys:
+    team_id, abbr, dates, elos, hover_texts.
     """
-    teams = get_all_teams(conn)
-    row = conn.execute("SELECT MIN(match_date) FROM matches WHERE season = ?", (season,)).fetchone()
-    if not row or not row[0]:
-        return []
-    earliest_date = row[0]
-
     traces = []
-    for team_id, abbr in teams:
-        history = get_elo_history(conn, team_id, season=season)
-        week_elo = {}
-        week_hover = {}
-        for h in history:
-            wk = _week_number(h["match_date"], earliest_date)
-            week_elo[wk] = h["elo_after"]
+    for team_id, abbr in get_all_teams(conn):
+        dates, elos, hovers = [], [], []
+        for h in get_elo_history(conn, team_id):
             match = conn.execute(
-                "SELECT team1_id, team2_id, series_winner_id FROM matches WHERE match_id = ?",
+                """SELECT m.team1_id, m.team2_id, m.series_winner_id,
+                          m.competition, m.round, m.season, m.match_date
+                   FROM matches m WHERE m.match_id = ?""",
                 (h["match_id"],),
             ).fetchone()
-            if match:
-                opp_id = match[1] if match[0] == team_id else match[0]
-                opp_abbr = conn.execute(
-                    "SELECT abbreviation FROM teams WHERE team_id = ?", (opp_id,)
-                ).fetchone()[0]
-                result = "W" if match[2] == team_id else "L"
-                week_hover[wk] = f"{abbr}: {h['elo_after']:.0f}<br>vs {opp_abbr} ({result})"
-
-        weeks = sorted(week_elo.keys())
-        traces.append({
-            "team_id": team_id,
-            "abbr": abbr,
-            "weeks": [0] + weeks,
-            "elos": [SEED_ELO] + [week_elo[w] for w in weeks],
-            "hover_texts": ["Seed: 1000"] + [week_hover.get(w, "") for w in weeks],
-        })
+            t1, t2, winner, competition, round_, season, match_date = match
+            if family_of(competition, season) not in f.families:
+                continue
+            if (f.start and match_date < f.start) or (f.end and match_date > f.end):
+                continue
+            opp_id = t2 if t1 == team_id else t1
+            opp_abbr = conn.execute(
+                "SELECT abbreviation FROM teams WHERE team_id = ?", (opp_id,)
+            ).fetchone()[0]
+            result = "W" if winner == team_id else "L"
+            dates.append(match_date)
+            elos.append(h["elo_after"])
+            hovers.append(
+                f"{abbr}: {h['elo_after']:.0f}<br>{match_date} · {match_label(competition, round_, season)}"
+                f"<br>vs {opp_abbr} ({result})"
+            )
+        traces.append({"team_id": team_id, "abbr": abbr, "dates": dates,
+                       "elos": elos, "hover_texts": hovers})
     return traces
 
 
@@ -85,11 +74,11 @@ def _build_figure(traces: list[dict]) -> go.Figure:
     color_idx = 0
     plotted: list[tuple[dict, str]] = []
     for trace in traces:
-        if len(trace["elos"]) <= 1:
+        if not trace["elos"]:
             continue
         color = TEAM_COLORS[color_idx % len(TEAM_COLORS)]
         fig.add_trace(go.Scatter(
-            x=trace["weeks"],
+            x=trace["dates"],
             y=trace["elos"],
             mode="lines+markers",
             name=trace["abbr"],
@@ -102,48 +91,36 @@ def _build_figure(traces: list[dict]) -> go.Figure:
         color_idx += 1
     fig.add_hline(y=SEED_ELO, line_dash="dash", line_color="#7d8aa3", opacity=0.4,
                   annotation_text="Seed (1000)", annotation_position="bottom right")
-    fig.add_vrect(x0=0, x1=6, fillcolor="#7d8aa3", opacity=0.06, line_width=0,
-                  annotation_text="Low Confidence Zone", annotation_position="top left",
-                  annotation_font_color="#7d8aa3")
 
-    # Drop a logo at the right end of every team line that has one. Sized in
-    # data units relative to the visible range so it stays roughly stable.
+    x_range = None
     if plotted:
-        all_elos = [e for trace, _ in plotted for e in trace["elos"]]
+        all_dates = sorted(d for t, _ in plotted for d in t["dates"])
+        first, last = date.fromisoformat(all_dates[0]), date.fromisoformat(all_dates[-1])
+        span_days = max((last - first).days, 14)
+        x_range = [(first - timedelta(days=3)).isoformat(),
+                   (last + timedelta(days=max(span_days * 0.06, 3))).isoformat()]
+        all_elos = [e for t, _ in plotted for e in t["elos"]]
         y_range = max(all_elos) - min(all_elos)
-        x_max = max(t["weeks"][-1] for t, _ in plotted)
         logo_h = max(y_range * 0.05, 8)
-        logo_w = max(x_max * 0.04, 0.3)
+        logo_w = span_days * 0.04 * 86_400_000  # date-axis image sizes are in ms
         for trace, _ in plotted:
             src = team_logo_src(trace["abbr"])
             if not src:
                 continue
             fig.add_layout_image(dict(
-                source=src,
-                xref="x", yref="y",
-                x=trace["weeks"][-1], y=trace["elos"][-1],
+                source=src, xref="x", yref="y",
+                x=trace["dates"][-1], y=trace["elos"][-1],
                 sizex=logo_w, sizey=logo_h,
-                xanchor="left", yanchor="middle",
-                sizing="contain",
-                layer="above",
+                xanchor="left", yanchor="middle", sizing="contain", layer="above",
             ))
 
-    max_week = max((t["weeks"][-1] for t in traces if t["weeks"]), default=1)
     fig.update_layout(
         plot_bgcolor=COLORS["page_bg"],
         paper_bgcolor=COLORS["page_bg"],
         font={"color": COLORS["text"]},
         margin={"l": 60, "r": 60, "t": 40, "b": 60},
         height=500,
-        xaxis={
-            "title": "Week",
-            "tickmode": "array",
-            "tickvals": list(range(0, max_week + 1)),
-            "ticktext": ["Start"] + [f"W{w}" for w in range(1, max_week + 1)],
-            "gridcolor": COLORS["border"],
-            # Pad the right edge so end-of-line team logos aren't clipped.
-            "range": [-0.3, max_week + max(max_week * 0.06, 0.6)],
-        },
+        xaxis={"title": "Date", "type": "date", "gridcolor": COLORS["border"], "range": x_range},
         yaxis={"title": "Elo Rating", "gridcolor": COLORS["border"]},
         legend={"font": {"size": 10}},
         hovermode="closest",
@@ -151,36 +128,28 @@ def _build_figure(traces: list[dict]) -> go.Figure:
     return fig
 
 
-def _build_current_figure(traces: list[dict]) -> go.Figure:
-    """Bar chart of each team's latest Elo, sorted descending."""
+def _current_entries(conn: sqlite3.Connection) -> list[dict]:
+    """Latest Elo per non-hidden team with any rated match (filter-independent)."""
     entries = []
-    color_idx = 0
-    for trace in traces:
-        if len(trace["elos"]) <= 1:
+    for i, (team_id, abbr) in enumerate(get_all_teams(conn)):
+        if not get_elo_history(conn, team_id):
             continue
-        # Fall back to the high-contrast palette when a team has no
-        # registry entry, so unfilled rows still render distinctly.
-        fallback = TEAM_COLORS[color_idx % len(TEAM_COLORS)]
-        primary, secondary = team_colors(trace["abbr"], fallback)
-        entries.append({
-            "abbr": trace["abbr"],
-            "elo": trace["elos"][-1],
-            "primary": primary,
-            "secondary": secondary,
-        })
-        color_idx += 1
+        primary, secondary = team_colors(abbr, TEAM_COLORS[i % len(TEAM_COLORS)])
+        entries.append({"abbr": abbr, "elo": get_current_elo(conn, team_id),
+                        "primary": primary, "secondary": secondary})
     entries.sort(key=lambda e: e["elo"], reverse=True)
+    return entries
 
+
+def _build_current_figure(entries: list[dict]) -> go.Figure:
+    """Bar chart of each team's latest Elo, sorted descending."""
     fig = go.Figure()
     fig.add_trace(go.Bar(
         x=[e["abbr"] for e in entries],
         y=[e["elo"] for e in entries],
         marker={
             "color": [e["primary"] for e in entries],
-            "line": {
-                "color": [e["secondary"] for e in entries],
-                "width": 2,
-            },
+            "line": {"color": [e["secondary"] for e in entries], "width": 2},
         },
         text=[f"{e['elo']:.0f}" for e in entries],
         textposition="outside",
@@ -191,8 +160,7 @@ def _build_current_figure(traces: list[dict]) -> go.Figure:
 
     if entries:
         y_min = min(e["elo"] for e in entries) - 20
-        y_max = max(e["elo"] for e in entries) + 60  # extra headroom for logos
-        # Bars sit at integer x positions; size logos in those units.
+        y_max = max(e["elo"] for e in entries) + 60  # headroom for logos
         logo_w = 0.7
         logo_h = (y_max - y_min) * 0.07
         for i, e in enumerate(entries):
@@ -200,13 +168,10 @@ def _build_current_figure(traces: list[dict]) -> go.Figure:
             if not src:
                 continue
             fig.add_layout_image(dict(
-                source=src,
-                xref="x", yref="y",
+                source=src, xref="x", yref="y",
                 x=i, y=e["elo"] + (y_max - y_min) * 0.045,
                 sizex=logo_w, sizey=logo_h,
-                xanchor="center", yanchor="bottom",
-                sizing="contain",
-                layer="above",
+                xanchor="center", yanchor="bottom", sizing="contain", layer="above",
             ))
     else:
         y_min, y_max = None, None
@@ -218,17 +183,14 @@ def _build_current_figure(traces: list[dict]) -> go.Figure:
         margin={"l": 60, "r": 20, "t": 40, "b": 60},
         height=500,
         xaxis={"title": "Team", "gridcolor": COLORS["border"]},
-        yaxis={
-            "title": "Current Elo Rating",
-            "gridcolor": COLORS["border"],
-            "range": [y_min, y_max] if entries else None,
-        },
+        yaxis={"title": "Current Elo Rating", "gridcolor": COLORS["border"],
+               "range": [y_min, y_max] if entries else None},
         showlegend=False,
     )
     return fig
 
 
-def layout(season: int = 1):
+def layout():
     return dbc.Container([
         dbc.Row([
             dbc.Col([
@@ -245,6 +207,11 @@ def layout(season: int = 1):
                     labelCheckedClassName="active",
                 ),
             ], width="auto"),
+            dbc.Col(html.Small(
+                "Elo is one chronological chain across seasons and is not affected by the "
+                "filter bar; the filter only chooses which points are drawn.",
+                style={"color": COLORS["muted"]},
+            ), width="auto", className="align-self-center"),
         ], className="mb-3 mt-2"),
         dcc.Graph(id="elo-chart"),
     ], fluid=True)
@@ -254,12 +221,13 @@ def register_callbacks(app):
     @app.callback(
         Output("elo-chart", "figure"),
         Input("elo-view-toggle", "value"),
-        Input("season-store", "data"),
+        Input("filter-store", "data"),
     )
-    def update_chart(view, season):
+    def update_chart(view, filter_data):
         conn = get_db()
-        traces = _build_elo_traces(conn, season=season)
-        conn.close()
-        if view == "current":
-            return _build_current_figure(traces)
-        return _build_figure(traces)
+        try:
+            if view == "current":
+                return _build_current_figure(_current_entries(conn))
+            return _build_figure(_build_elo_traces(conn, MatchFilter.from_dict(filter_data)))
+        finally:
+            conn.close()

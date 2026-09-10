@@ -5,13 +5,15 @@ from dash import html, dcc, callback_context, ALL
 from dash.dependencies import Input, Output, State
 
 from cdm_stats.dashboard.app import get_db
+from cdm_stats.dashboard.components import player_section
 from cdm_stats.dashboard.components.team_badge import (
     team_badge, team_dropdown_options_rich,
 )
 from cdm_stats.dashboard.helpers import (
-    COLORS, MODE_COLORS, LOW_SAMPLE_THRESHOLD,
-    wl_color, get_all_maps,
+    COLORS, MODE_COLORS, LOW_SAMPLE_THRESHOLD, YOUR_TEAM,
+    wl_color, get_all_maps, family_tag,
 )
+from cdm_stats.metrics.filters import MatchFilter, family_of, match_label
 from cdm_stats.metrics.avoidance import (
     pick_win_loss, defend_win_loss,
 )
@@ -26,18 +28,43 @@ from cdm_stats.db.queries import (
 # Data builders (tested directly)
 # ---------------------------------------------------------------------------
 
-def _build_map_record_data(conn: sqlite3.Connection, team_id: int, season: int = 1) -> list[dict]:
+def _build_team_record(conn: sqlite3.Connection, team_id: int, f: MatchFilter = MatchFilter()) -> dict:
+    """Series and map W/L over the filtered window (DQ'd maps excluded)."""
+    fw, fp = f.sql()
+    sw, sl = conn.execute(
+        f"""SELECT SUM(m.series_winner_id = ?), SUM(m.series_winner_id != ?)
+            FROM matches m WHERE (m.team1_id = ? OR m.team2_id = ?){fw}""",
+        [team_id, team_id, team_id, team_id] + fp,
+    ).fetchone()
+    mw, ml = conn.execute(
+        f"""SELECT SUM(mr.winner_team_id = ?), SUM(mr.winner_team_id != ?)
+            FROM map_results mr JOIN matches m ON mr.match_id = m.match_id
+            WHERE (m.team1_id = ? OR m.team2_id = ?) AND mr.dq = 0{fw}""",
+        [team_id, team_id, team_id, team_id] + fp,
+    ).fetchone()
+    return {"series_wins": sw or 0, "series_losses": sl or 0,
+            "map_wins": mw or 0, "map_losses": ml or 0}
+
+
+def _player_section(conn: sqlite3.Connection, abbr: str, f: MatchFilter = MatchFilter()):
+    """Player stats exist only for our own roster; None for any other team."""
+    if abbr != YOUR_TEAM:
+        return None
+    return player_section.layout(conn)
+
+
+def _build_map_record_data(conn: sqlite3.Connection, team_id: int, f: MatchFilter = MatchFilter()) -> list[dict]:
     """Build per-map W/L records enriched with pick/defend splits and Map Strength."""
-    base = get_team_map_wl(conn, team_id, season=season)
+    base = get_team_map_wl(conn, team_id, f=f)
     maps = get_all_maps(conn)
     map_lookup = {(m[1], m[2]): m[0] for m in maps}
 
     for entry in base:
         map_id = map_lookup.get((entry["map_name"], entry["mode"]))
         if map_id:
-            pwl = pick_win_loss(conn, team_id, map_id, season=season)
-            dwl = defend_win_loss(conn, team_id, map_id, season=season)
-            ms = map_strength(conn, team_id, map_id, season=season)
+            pwl = pick_win_loss(conn, team_id, map_id, f=f)
+            dwl = defend_win_loss(conn, team_id, map_id, f=f)
+            ms = map_strength(conn, team_id, map_id, f=f)
             entry["map_id"] = map_id
             entry["pick_wins"] = pwl["wins"]
             entry["pick_losses"] = pwl["losses"]
@@ -53,32 +80,34 @@ def _build_map_record_data(conn: sqlite3.Connection, team_id: int, season: int =
 
 
 def _build_map_results_detail(
-    conn: sqlite3.Connection, team_id: int, map_id: int, season: int = 1
+    conn: sqlite3.Connection, team_id: int, map_id: int, f: MatchFilter = MatchFilter()
 ) -> list[dict]:
     """Build individual match results for a team on a specific map.
 
-    Returns list of dicts with: opponent, score, pick_context, picked_by, result, match_date.
-    Sorted by date descending.
+    Returns list of dicts with: opponent, score, pick_context, picked_by, result,
+    match_date, family, label. Sorted by date descending.
     """
     team_abbr = conn.execute(
         "SELECT abbreviation FROM teams WHERE team_id = ?", (team_id,)
     ).fetchone()[0]
 
+    fw, fp = f.sql()
     rows = conn.execute(
-        """SELECT m.match_date, m.team1_id, m.team2_id,
+        f"""SELECT m.match_date, m.team1_id, m.team2_id,
                   mr.winner_team_id, mr.picking_team_score, mr.non_picking_team_score,
-                  mr.pick_context, mr.picked_by_team_id
+                  mr.pick_context, mr.picked_by_team_id,
+                  m.competition, m.round, m.season
            FROM map_results mr
            JOIN matches m ON mr.match_id = m.match_id
            WHERE mr.map_id = ?
-             AND m.season = ?
-             AND (m.team1_id = ? OR m.team2_id = ?)
+             AND (m.team1_id = ? OR m.team2_id = ?){fw}
            ORDER BY m.match_date DESC""",
-        (map_id, season, team_id, team_id),
+        [map_id, team_id, team_id] + fp,
     ).fetchall()
 
     results = []
-    for match_date, t1_id, t2_id, winner_id, pick_score, non_pick_score, pick_ctx, picker_id in rows:
+    for (match_date, t1_id, t2_id, winner_id, pick_score, non_pick_score, pick_ctx, picker_id,
+         competition, round_, season) in rows:
         opp_id = t2_id if team_id == t1_id else t1_id
         opp_abbr = conn.execute(
             "SELECT abbreviation FROM teams WHERE team_id = ?", (opp_id,)
@@ -109,6 +138,8 @@ def _build_map_results_detail(
             "pick_context": pick_ctx,
             "picked_by": picked_by,
             "result": result_str,
+            "family": family_of(competition, season),
+            "label": match_label(competition, round_, season),
         })
 
     return results
@@ -145,16 +176,33 @@ def _ban_rate_span(label: str, count: int, total: int, hi_color: str) -> html.Sp
     )
 
 
-def _map_strength_card(conn: sqlite3.Connection, team_id: int, records: list[dict], season: int = 1) -> dbc.Card:
+def _record_card(rec: dict) -> dbc.Card:
+    """Overall series and map W/L for the filtered window."""
+    def block(label, w, l):
+        return html.Div([
+            html.Div(label, style={"fontSize": "0.7rem", "color": COLORS["muted"]}),
+            html.Span(f"{w}-{l}", style={"fontWeight": "700", "fontSize": "1.4rem", "color": wl_color(w, l)}),
+        ], style={"display": "inline-block", "marginRight": "28px"})
+    return dbc.Card(
+        dbc.CardBody([
+            block("Series", rec["series_wins"], rec["series_losses"]),
+            block("Maps", rec["map_wins"], rec["map_losses"]),
+        ]),
+        style={"backgroundColor": COLORS["card_bg"], "border": f"1px solid {COLORS['border']}"},
+        className="mb-3",
+    )
+
+
+def _map_strength_card(conn: sqlite3.Connection, team_id: int, records: list[dict], f: MatchFilter = MatchFilter()) -> dbc.Card:
     """Render the MAP STRENGTH card with expandable rows showing pick/defend splits and match history."""
     header = dbc.CardHeader(
         html.H5("Map Strength", className="mb-0", style={"color": COLORS["text"]}),
         style={"backgroundColor": COLORS["card_bg"], "borderBottom": f"1px solid {COLORS['border']}"},
     )
 
-    own_bans = team_ban_rates(conn, team_id, season=season)
-    picks = team_pick_rates(conn, team_id, season=season)
-    opp_bans = opponent_ban_rates(conn, team_id, season=season)
+    own_bans = team_ban_rates(conn, team_id, f=f)
+    picks = team_pick_rates(conn, team_id, f=f)
+    opp_bans = opponent_ban_rates(conn, team_id, f=f)
 
     rows = []
     for rec in records:
@@ -226,13 +274,14 @@ def _map_strength_card(conn: sqlite3.Connection, team_id: int, records: list[dic
 
         # Match history rows
         if rec.get("map_id"):
-            match_history = _build_map_results_detail(conn, team_id, rec["map_id"], season=season)
+            match_history = _build_map_results_detail(conn, team_id, rec["map_id"], f=f)
             if match_history:
                 # Header row
                 detail_children.append(
                     html.Div(
                         [
                             html.Span("Date", style={"width": "90px", "display": "inline-block", "fontWeight": "600"}),
+                            html.Span("Event", style={"width": "170px", "display": "inline-block", "fontWeight": "600"}),
                             html.Span("Opp", style={"width": "50px", "display": "inline-block", "fontWeight": "600"}),
                             html.Span("Result", style={"width": "40px", "display": "inline-block", "fontWeight": "600"}),
                             html.Span("Score", style={"width": "60px", "display": "inline-block", "fontWeight": "600"}),
@@ -256,6 +305,7 @@ def _map_strength_card(conn: sqlite3.Connection, team_id: int, records: list[dic
                         html.Div(
                             [
                                 html.Span(mh["match_date"], style={"width": "90px", "display": "inline-block"}),
+                                html.Span(family_tag(mh["family"], mh["label"]), style={"width": "170px", "display": "inline-block"}),
                                 html.Span(mh["opponent"], style={"width": "50px", "display": "inline-block"}),
                                 html.Span(mh["result"], style={"width": "40px", "display": "inline-block", "color": result_color, "fontWeight": "700"}),
                                 html.Span(mh["score"], style={"width": "60px", "display": "inline-block"}),
@@ -328,7 +378,7 @@ def _map_strength_card(conn: sqlite3.Connection, team_id: int, records: list[dic
 # Layout and callbacks
 # ---------------------------------------------------------------------------
 
-def layout(season: int = 1):
+def layout():
     """Return the team profile tab layout with team selector and content area."""
     return html.Div([
         dbc.Row([
@@ -372,10 +422,11 @@ def register_callbacks(app):
     @app.callback(
         Output("tp-content", "children"),
         Input("tp-team-select", "value"),
-        Input("season-store", "data"),
+        Input("filter-store", "data"),
         prevent_initial_call=True,
     )
-    def update_content(team_id, season):
+    def update_content(team_id, filter_data):
+        f = MatchFilter.from_dict(filter_data)
         if not team_id:
             return html.Div("Select a team to view profile", style={"color": COLORS["muted"], "padding": "20px"})
 
@@ -388,10 +439,10 @@ def register_callbacks(app):
             ).fetchone()
             abbr, full_name = row[0], row[1]
 
-            records = _build_map_record_data(conn, team_id, season=season)
+            records = _build_map_record_data(conn, team_id, f=f)
 
-            elo = get_current_elo(conn, team_id, season=season)
-            low_conf = is_low_confidence(conn, team_id, season=season)
+            elo = get_current_elo(conn, team_id)
+            low_conf = is_low_confidence(conn, team_id)
             header = html.Div(
                 [
                     team_badge(abbr, COLORS["your_team"], size=56, font_size="1.6rem"),
@@ -425,14 +476,20 @@ def register_callbacks(app):
                 },
             )
 
+            players = _player_section(conn, abbr, f)
             return html.Div([
                 header,
                 dbc.Row([
-                    dbc.Col(_map_strength_card(conn, team_id, records, season=season), md=8),
+                    dbc.Col(_record_card(_build_team_record(conn, team_id, f)), md=4),
                 ]),
-            ])
+                dbc.Row([
+                    dbc.Col(_map_strength_card(conn, team_id, records, f=f), md=8),
+                ]),
+            ] + ([players] if players is not None else []))
         finally:
             conn.close()
+
+    player_section.register_callbacks(app)
 
     # Toggle expand/collapse on map rows
     @app.callback(
