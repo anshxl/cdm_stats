@@ -110,9 +110,8 @@ def test_ro3_sweep_all_maps_played(db):
     assert db.execute("SELECT COUNT(*) FROM map_results").fetchone()[0] == 3
 
 
-def test_two_series_same_day_distinguished_by_stage(db):
-    # GL vs GAL play two series on the same day (different bracket stages).
-    csv = HEADER + "\n" + "\n".join([
+# GL vs GAL play two series on the same day (different bracket stages).
+SAME_DAY = HEADER + "\n" + "\n".join([
         "2026-06-14,SPLIT II,UB,Bo5,GL,GAL,Arsenal,250,101,,,",
         "2026-06-14,SPLIT II,UB,Bo5,GL,GAL,Firing Range,4,9,,,",
         "2026-06-14,SPLIT II,UB,Bo5,GL,GAL,Raid,2,3,,,",
@@ -124,7 +123,11 @@ def test_two_series_same_day_distinguished_by_stage(db):
         "2026-06-14,SPLIT II,Finals,Bo7,GL,GAL,Combine,246,250,,,",
         "2026-06-14,SPLIT II,Finals,Bo7,GL,GAL,Raid,1,3,,,",
         "2026-06-14,SPLIT II,Finals,Bo7,GL,GAL,Meltdown,3,9,,GAL,",   # override -> GAL
-    ])
+])
+
+
+def test_two_series_same_day_distinguished_by_stage(db):
+    csv = SAME_DAY
     results = ingest_s2_matches(db, io.StringIO(csv))
     assert [r["status"] for r in results] == ["ok", "ok"]
 
@@ -231,16 +234,16 @@ def test_duplicate_series_skipped(db):
     assert db.execute("SELECT COUNT(*) FROM matches").fetchone()[0] == 1
 
 
-BANS_HEADER = "date,competition,team1,team2,banned_by,map"
+BANS_HEADER = "date,competition,stage,team1,team2,banned_by,map"
 
 # 6 attributed bans (3 per team) for the BASIC series.
 BANS = BANS_HEADER + "\n" + "\n".join([
-    "2026-06-25,CDM,DVS,OUG,DVS,Arsenal",
-    "2026-06-25,CDM,DVS,OUG,DVS,Coastal",
-    "2026-06-25,CDM,DVS,OUG,DVS,Standoff",
-    "2026-06-25,CDM,DVS,OUG,OUG,Takeoff",
-    "2026-06-25,CDM,DVS,OUG,OUG,Meltdown",
-    "2026-06-25,CDM,DVS,OUG,OUG,Crossroads Strike",
+    "2026-06-25,CDM,Stage 1 Masters,DVS,OUG,DVS,Arsenal",
+    "2026-06-25,CDM,Stage 1 Masters,DVS,OUG,DVS,Coastal",
+    "2026-06-25,CDM,Stage 1 Masters,DVS,OUG,DVS,Standoff",
+    "2026-06-25,CDM,Stage 1 Masters,DVS,OUG,OUG,Takeoff",
+    "2026-06-25,CDM,Stage 1 Masters,DVS,OUG,OUG,Meltdown",
+    "2026-06-25,CDM,Stage 1 Masters,DVS,OUG,OUG,Crossroads Strike",
 ])
 
 
@@ -263,9 +266,9 @@ def test_s2_bans_partial_reingest_adds_missing(db):
     # Ingest 3 bans, then re-run with all 6 -> the missing 3 get added, not skipped.
     ingest_s2_matches(db, io.StringIO(BASIC))
     half = BANS_HEADER + "\n" + "\n".join([
-        "2026-06-25,CDM,DVS,OUG,DVS,Arsenal",
-        "2026-06-25,CDM,DVS,OUG,DVS,Coastal",
-        "2026-06-25,CDM,DVS,OUG,DVS,Standoff",
+        "2026-06-25,CDM,Stage 1 Masters,DVS,OUG,DVS,Arsenal",
+        "2026-06-25,CDM,Stage 1 Masters,DVS,OUG,DVS,Coastal",
+        "2026-06-25,CDM,Stage 1 Masters,DVS,OUG,DVS,Standoff",
     ])
     ingest_s2_bans(db, io.StringIO(half))
     results = ingest_s2_bans(db, io.StringIO(BANS))
@@ -276,8 +279,8 @@ def test_s2_bans_partial_reingest_adds_missing(db):
 
 def test_s2_bans_missing_competition_gives_clear_error(db):
     ingest_s2_matches(db, io.StringIO(BASIC))
-    # Row missing the competition value: 5 fields under a 6-column header.
-    csv = BANS_HEADER + "\n2026-06-25,DVS,OUG,DVS,Arsenal"
+    # Row missing the competition value: 6 fields under a 7-column header.
+    csv = BANS_HEADER + "\n2026-06-25,Stage 1 Masters,DVS,OUG,DVS,Arsenal"
     results = ingest_s2_bans(db, io.StringIO(csv))
     assert results[0]["status"] == "error"
     errs = " ".join(results[0]["errors"]).lower()
@@ -316,12 +319,29 @@ def test_s2_bans_soft_count_warning(db):
     ingest_s2_matches(db, io.StringIO(BASIC))
     # Only 4 bans for a Bo5 (expected 6): still inserts, but warns.
     csv = BANS_HEADER + "\n" + "\n".join([
-        "2026-06-25,CDM,DVS,OUG,DVS,Arsenal",
-        "2026-06-25,CDM,DVS,OUG,DVS,Coastal",
-        "2026-06-25,CDM,DVS,OUG,OUG,Takeoff",
-        "2026-06-25,CDM,DVS,OUG,OUG,Meltdown",
+        "2026-06-25,CDM,Stage 1 Masters,DVS,OUG,DVS,Arsenal",
+        "2026-06-25,CDM,Stage 1 Masters,DVS,OUG,DVS,Coastal",
+        "2026-06-25,CDM,Stage 1 Masters,DVS,OUG,OUG,Takeoff",
+        "2026-06-25,CDM,Stage 1 Masters,DVS,OUG,OUG,Meltdown",
     ])
     results = ingest_s2_bans(db, io.StringIO(csv))
     assert results[0]["status"] == "ok"
     assert results[0]["bans"] == 4
     assert "warning" in results[0]
+
+
+def test_s2_bans_same_day_series_attributed_by_stage(db):
+    ingest_s2_matches(db, io.StringIO(SAME_DAY))
+    csv = BANS_HEADER + "\n" + "\n".join([
+        "2026-06-14,SPLIT II,UB,GL,GAL,GL,Combine",
+        "2026-06-14,SPLIT II,UB,GL,GAL,GAL,Takeoff",
+        "2026-06-14,SPLIT II,Finals,GL,GAL,GL,Combine",   # same map as UB, must not dedup
+        "2026-06-14,SPLIT II,Finals,GL,GAL,GAL,Tunisia",
+    ])
+    results = ingest_s2_bans(db, io.StringIO(csv))
+    assert [r["status"] for r in results] == ["ok", "ok"]
+    rows = db.execute(
+        "SELECT m.round, COUNT(*) FROM map_bans b JOIN matches m USING (match_id) "
+        "GROUP BY m.round ORDER BY m.round"
+    ).fetchall()
+    assert rows == [("Finals", 2), ("UB", 2)]

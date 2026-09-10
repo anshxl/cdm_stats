@@ -26,7 +26,7 @@ SEASON = 2
 def _group_rows(reader: csv.DictReader) -> dict[tuple, list[dict]]:
     series: dict[tuple, list[dict]] = {}
     for row in reader:
-        key = (row["date"], row["competition"], row["team1"], row["team2"])
+        key = (row["date"], row["competition"], row["stage"], row["team1"], row["team2"])
         series.setdefault(key, []).append(row)
     return series
 
@@ -224,14 +224,14 @@ def ingest_s2_matches(conn: sqlite3.Connection, file: IO[str]) -> list[dict]:
     return results
 
 
-def _find_match(conn, date, competition, team1_id, team2_id):
+def _find_match(conn, date, competition, stage, team1_id, team2_id):
     """Return (match_id, match_format) for the series, or None."""
     return conn.execute(
         """SELECT match_id, match_format FROM matches
-           WHERE match_date = ? AND competition = ? AND (
+           WHERE match_date = ? AND competition = ? AND round = ? AND (
                (team1_id = ? AND team2_id = ?) OR (team1_id = ? AND team2_id = ?)
            )""",
-        (date, competition, team1_id, team2_id, team2_id, team1_id),
+        (date, competition, stage, team1_id, team2_id, team2_id, team1_id),
     ).fetchone()
 
 
@@ -240,7 +240,7 @@ def ingest_s2_bans(conn: sqlite3.Connection, file: IO[str]) -> list[dict]:
     results = []
 
     for key, bans in _group_rows(reader).items():
-        date, competition, team1_abbr, team2_abbr = key
+        date, competition, stage, team1_abbr, team2_abbr = key
 
         # A short row (missing a value, e.g. competition) shifts columns left and
         # leaves the trailing 'map' empty. Catch it here so the error is clear
@@ -248,14 +248,14 @@ def ingest_s2_bans(conn: sqlite3.Connection, file: IO[str]) -> list[dict]:
         if any(not (b.get("map") or "").strip() for b in bans):
             results.append({"match": key, "status": "error", "errors": [
                 "Malformed row(s): missing fields. Expected columns "
-                "date,competition,team1,team2,banned_by,map (is the competition value present?)"
+                "date,competition,stage,team1,team2,banned_by,map (is the competition value present?)"
             ]})
             continue
 
         team1_id = get_team_id_by_abbr(conn, team1_abbr)
         team2_id = get_team_id_by_abbr(conn, team2_abbr)
 
-        match = _find_match(conn, date, competition, team1_id, team2_id) if (team1_id and team2_id) else None
+        match = _find_match(conn, date, competition, stage, team1_id, team2_id) if (team1_id and team2_id) else None
         if match is None:
             results.append({"match": key, "status": "error",
                             "errors": ["No matching series found for these bans"]})

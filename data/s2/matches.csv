@@ -363,3 +363,19 @@ date,competition,stage,format,team1,team2,map,team1_score,team2_score,picked_by,
 2026-08-09,Fall Split II,Finals,Bo7,GL,GAL,Raid,3,2,,,,GL
 2026-08-09,Fall Split II,Finals,Bo7,GL,GAL,Summit,250,123,,,,GL
 2026-08-09,Fall Split II,Finals,Bo7,GL,GAL,Standoff,3,1,,,,GL
+2026-08-23,Fall Split III,UB,Bo5,GL,GAL,Summit,250,195,GL
+2026-08-23,Fall Split III,UB,Bo5,GL,GAL,Slums,9,6,GAL
+2026-08-23,Fall Split III,UB,Bo5,GL,GAL,Standoff,3,1
+2026-08-23,Fall Split III,UB,Bo5,GL,GAL,Hacienda,250,238,GAL
+2026-08-23,Fall Split III,Finals,Bo7,GL,GAL,Summit,193,250,GL,,,GL
+2026-08-23,Fall Split III,Finals,Bo7,GL,GAL,Meltdown,6,9,GAL,,,GL
+2026-08-23,Fall Split III,Finals,Bo7,GL,GAL,Standoff,3,0,GL,,,GL
+2026-08-23,Fall Split III,Finals,Bo7,GL,GAL,Hacienda,250,144,GAL,,,GL
+2026-08-23,Fall Split III,Finals,Bo7,GL,GAL,Crossroads Strike,3,0,GAL,,,GL
+2026-09-06,Regionals,UB,Bo5,GL,GAL,Hacienda,238,250
+2026-09-06,Regionals,UB,Bo5,GL,GAL,Meltdown,9,2
+2026-09-06,Regionals,UB,Bo5,GL,GAL,Crossroads Strike,2,3
+2026-09-06,Regionals,UB,Bo5,GL,GAL,Takeoff,184,250
+2026-09-06,Regionals,Finals,Bo7,GL,GAL,Combine,214,250,,,,GAL
+2026-09-06,Regionals,Finals,Bo7,GL,GAL,Slums,10,12,,,,GAL
+2026-09-06,Regionals,Finals,Bo7,GL,GAL,Standoff,0,3,,,,GAL
