@@ -95,32 +95,6 @@ html, body {
   text-shadow: 0 0 18px var(--tw-glow-mint);
 }
 
-/* ---------- Season selector (top-level) ------------------- */
-/* Distinguish the season toggle from the content tabs below it:
-   pill-shaped, amber accent, sitting on its own hairline strip. */
-.season-tabs.nav-tabs {
-  border-bottom: 1px solid var(--tw-hairline-2);
-  padding: 6px 8px 0;
-  gap: 6px;
-}
-
-.season-tabs .nav-link {
-  border: 1px solid transparent !important;
-  border-radius: 999px !important;
-  padding: 4px 18px !important;
-  font-size: 0.8rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.season-tabs .nav-link.active {
-  color: var(--tw-amber) !important;
-  border: 1px solid var(--tw-amber) !important;
-  border-bottom-color: var(--tw-amber) !important;
-  background: rgba(245, 181, 68, 0.08) !important;
-  text-shadow: 0 0 18px var(--tw-glow-amber);
-}
-
 /* ---------- Cards ----------------------------------------- */
 .card {
   background-color: var(--tw-slate) !important;
@@ -376,3 +350,97 @@ a:hover {
   background-color: rgba(94, 234, 212, 0.30);
   color: var(--tw-text);
 }
+
+/* ---------- Shared filter bar ----------------------------- */
+/* Family pills carry the same colours as the event tags in the
+   tables (helpers.FAMILY_COLORS), so a pill reads as a legend.
+   Option order is fixed in metrics.filters.FAMILIES. */
+.filter-bar {
+  background-color: rgba(13, 19, 34, 0.85);
+  border-bottom: 1px solid var(--tw-hairline);
+}
+
+.filter-label {
+  color: var(--tw-muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#filter-families .btn {
+  --fam: var(--tw-muted);
+  color: var(--fam) !important;
+  border: 1px solid var(--fam) !important;
+  background: transparent !important;
+  opacity: 0.55;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+#filter-families .btn.active {
+  opacity: 1;
+  background: color-mix(in srgb, var(--fam) 18%, transparent) !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--fam) 40%, transparent);
+}
+#filter-families label[for$="CDM Spring"] { --fam: #94a3b8; }
+#filter-families label[for$="CDM Summer"] { --fam: #22d3ee; }
+#filter-families label[for$="Regionals"]  { --fam: #e879f9; }
+
+/* dcc.DatePickerRange (Dash 4 "dash-datepicker") ships a light theme; repaint it. */
+.dash-datepicker-input-wrapper {
+  background-color: var(--tw-slate) !important;
+  border: 1px solid var(--tw-hairline) !important;
+  border-radius: 6px !important;
+  color: var(--tw-text) !important;
+}
+.dash-datepicker-input {
+  background: transparent !important;
+  border: 0 !important;
+  color: var(--tw-text) !important;
+  font-size: 0.85rem !important;
+  min-width: 96px;
+}
+.dash-datepicker-input::placeholder { color: var(--tw-muted) !important; }
+.dash-datepicker-input:focus { outline: none !important; box-shadow: none !important; }
+.dash-datepicker-input-wrapper:focus-within {
+  border-color: var(--tw-mint) !important;
+  box-shadow: 0 0 0 3px var(--tw-glow-mint) !important;
+}
+.dash-datepicker-input-wrapper svg { fill: var(--tw-muted); stroke: var(--tw-muted); }
+.dash-datepicker-clear { color: var(--tw-muted) !important; }
+.dash-datepicker-clear:hover { color: var(--tw-text) !important; }
+
+.dash-datepicker-content,
+.dash-datepicker-calendar-wrapper,
+.dash-datepicker-calendar-container,
+.dash-datepicker-calendar {
+  background-color: var(--tw-slate) !important;
+  color: var(--tw-text) !important;
+  border-color: var(--tw-hairline) !important;
+}
+.dash-datepicker-content {
+  border: 1px solid var(--tw-hairline) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 12px 32px -8px var(--tw-glow-deep) !important;
+}
+.dash-datepicker-controls,
+.dash-datepicker-month-nav,
+.dash-datepicker-calendar-month-header,
+.dash-datepicker-calendar-week { color: var(--tw-text) !important; }
+.dash-datepicker-month-nav button,
+.dash-datepicker-controls button {
+  background: var(--tw-slate-2) !important;
+  color: var(--tw-text) !important;
+  border: 1px solid var(--tw-hairline) !important;
+}
+.dash-datepicker-calendar-date-inside { color: var(--tw-text) !important; }
+.dash-datepicker-calendar-date-inside:hover { background: var(--tw-slate-2) !important; }
+.dash-datepicker-calendar [class*="in-range"],
+.dash-datepicker-calendar [class*="range"] { background: var(--tw-glow-mint) !important; }
+.dash-datepicker-calendar [class*="selected"] {
+  background: var(--tw-mint) !important;
+  color: var(--tw-ink) !important;
+}
+.dash-datepicker-calendar [class*="today"] { box-shadow: inset 0 0 0 1px var(--tw-amber); }
+.dash-datepicker-calendar [class*="disabled"],
+.dash-datepicker-calendar [class*="outside"] { color: var(--tw-hairline-2) !important; }

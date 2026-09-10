@@ -262,16 +262,13 @@ def _delta_badge(delta: float | None) -> html.Span:
 
     if delta > 0.05:
         color = COLORS["win"]
-        prefix = "+"
     elif delta < -0.05:
         color = COLORS["loss"]
-        prefix = ""
     else:
         color = COLORS["neutral"]
-        prefix = ""
 
     return html.Span(
-        f"{prefix}{delta:+.0%}",
+        f"{delta:+.0%}",
         style={"fontWeight": "700", "color": color, "fontSize": "0.9rem"},
     )
 

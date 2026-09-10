@@ -53,6 +53,7 @@ app.layout = dbc.Container([
     # Shared filter bar: competition families + date range, applied to every tab.
     dcc.Store(id="filter-store", data=None),
     dbc.Row([
+        dbc.Col(html.Span("Events", className="filter-label"), width="auto"),
         dbc.Col(
             dbc.Checklist(
                 id="filter-families",
@@ -65,6 +66,7 @@ app.layout = dbc.Container([
             ),
             width="auto",
         ),
+        dbc.Col(html.Span("Dates", className="filter-label ms-3"), width="auto"),
         dbc.Col(
             dcc.DatePickerRange(
                 id="filter-dates",
@@ -77,7 +79,7 @@ app.layout = dbc.Container([
             ),
             width="auto",
         ),
-    ], className="align-items-center py-2 px-3", style={"backgroundColor": "#0d1322"}),
+    ], className="align-items-center py-2 px-3 filter-bar"),
     dbc.Tabs(id="main-tabs", active_tab="team-profile", className="mt-0", children=[
         dbc.Tab(label="Team Profile", tab_id="team-profile"),
         dbc.Tab(label="Head to Head", tab_id="head-to-head"),
