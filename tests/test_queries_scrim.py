@@ -157,3 +157,11 @@ def test_player_weekly_trend(scrim_db):
     assert d1["kd"] == pytest.approx(20 / 15, abs=0.01)
 
 
+
+
+def test_scrim_opponents_sorted_and_date_filtered(scrim_db):
+    from cdm_stats.db.queries_scrim import scrim_opponents
+    from cdm_stats.metrics.filters import MatchFilter
+    assert scrim_opponents(scrim_db) == ["DVS", "OUG"]
+    assert scrim_opponents(scrim_db, MatchFilter(start="2026-03-01")) == ["OUG"]
+    assert scrim_opponents(scrim_db, MatchFilter(end="2026-02-01")) == []

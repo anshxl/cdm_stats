@@ -279,3 +279,33 @@ def test_recent_series_stats_match_ids(db_with_tournament_players):
     assert [s["match_id"] for s in recent_series_stats(conn, "DVS", match_ids=[mid])] == [mid]
     assert recent_series_stats(conn, "DVS", match_ids=[]) == []
     assert recent_series_stats(conn, "DVS", match_ids=[mid + 1]) == []
+
+
+def test_player_series_kd_per_series_oldest_first(db_with_tournament_players):
+    from cdm_stats.db.queries_tournament_player import player_series_kd
+    conn = db_with_tournament_players
+    dvs, oug = (conn.execute("SELECT team_id FROM teams WHERE abbreviation = ?", (a,)).fetchone()[0]
+                for a in ("DVS", "OUG"))
+    tunisia = conn.execute("SELECT map_id FROM maps WHERE map_name = 'Tunisia'").fetchone()[0]
+    # An older second series (inserted later) must come first.
+    conn.execute(
+        """INSERT INTO matches (match_date, team1_id, team2_id, two_v_two_winner_id,
+                                series_winner_id, match_format, series_number)
+           VALUES ('2026-02-01', ?, ?, ?, ?, 'CDL_BO5', 1)""", (dvs, oug, dvs, dvs))
+    old = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+    conn.execute(
+        """INSERT INTO map_results (match_id, slot, map_id, picked_by_team_id, winner_team_id,
+                                    picking_team_score, non_picking_team_score,
+                                    team1_score_before, team2_score_before, pick_context)
+           VALUES (?, 1, ?, ?, ?, 6, 3, 0, 0, 'Opener')""", (old, tunisia, dvs, dvs))
+    rid = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+    conn.execute("""INSERT INTO tournament_player_stats (result_id, week, player_name, kills, deaths, assists)
+                    VALUES (?, 1, 'Alpha', 7, 3, 0)""", (rid,))
+    new = conn.execute("SELECT match_id FROM matches WHERE match_date = '2026-02-15'").fetchone()[0]
+
+    got = player_series_kd(conn, [new, old])
+    assert got["Alpha"] == [(7, 3), (50, 40)]
+    assert got["Bravo"] == [(46, 32)]
+    assert player_series_kd(conn, [new], mode="SnD") == {"Alpha": [(20, 15)], "Bravo": [(18, 12)]}
+    assert player_series_kd(conn, [new, old], player="Bravo") == {"Bravo": [(46, 32)]}
+    assert player_series_kd(conn, []) == {}

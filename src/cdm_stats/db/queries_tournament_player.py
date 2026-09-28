@@ -285,3 +285,37 @@ def recent_series_stats(
     return out
 
 
+def player_series_kd(
+    conn: sqlite3.Connection,
+    match_ids: list[int],
+    player: str | None = None,
+    mode: str | None = None,
+) -> dict[str, list[tuple[int, int]]]:
+    """Per-player (kills, deaths) per series among `match_ids`, oldest first.
+
+    Input for the Hot/Cold form flag; series where a player has no scoreboard
+    rows (after the mode filter) are simply absent from that player's list.
+    """
+    conditions = [f"mt.match_id IN ({','.join('?' * len(match_ids))})"]
+    params: list = list(match_ids)
+    if player:
+        conditions.append("tp.player_name = ?")
+        params.append(player)
+    if mode:
+        conditions.append("m.mode = ?")
+        params.append(mode)
+    rows = conn.execute(
+        f"""SELECT tp.player_name, SUM(tp.kills), SUM(tp.deaths)
+            FROM tournament_player_stats tp
+            JOIN map_results mr ON tp.result_id = mr.result_id
+            JOIN maps m ON mr.map_id = m.map_id
+            JOIN matches mt ON mr.match_id = mt.match_id
+            WHERE {' AND '.join(conditions)}
+            GROUP BY tp.player_name, mt.match_id
+            ORDER BY tp.player_name, mt.match_date, mt.match_id""",
+        params,
+    ).fetchall()
+    out: dict[str, list[tuple[int, int]]] = {}
+    for name, kills, deaths in rows:
+        out.setdefault(name, []).append((kills, deaths))
+    return out

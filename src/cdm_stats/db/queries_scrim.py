@@ -12,6 +12,19 @@ def _opponent_condition(conditions: list, params: list, opponent: str | None) ->
         params.append(opponent)
 
 
+def scrim_opponents(conn: sqlite3.Connection, f: MatchFilter = MatchFilter()) -> list[str]:
+    """Abbreviations of teams we scrimmed within the filter's dates."""
+    fw, fp = f.date_sql("sm.scrim_date")
+    rows = conn.execute(
+        f"""SELECT DISTINCT t.abbreviation
+            FROM scrim_maps sm JOIN teams t ON sm.opponent_id = t.team_id
+            WHERE 1=1{fw}
+            ORDER BY t.abbreviation""",
+        fp,
+    ).fetchall()
+    return [r[0] for r in rows]
+
+
 def scrim_win_loss(
     conn: sqlite3.Connection,
     mode: str | None = None,

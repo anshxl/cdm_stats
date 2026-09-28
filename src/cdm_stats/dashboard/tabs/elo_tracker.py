@@ -8,7 +8,7 @@ from dash.dependencies import Input, Output
 
 from cdm_stats.dashboard.app import get_db
 from cdm_stats.dashboard.helpers import COLORS, get_all_teams, team_logo_src
-from cdm_stats.dashboard.team_colors import team_colors
+from cdm_stats.team_colors import team_colors
 from cdm_stats.metrics.elo import get_elo_history, get_current_elo, SEED_ELO
 from cdm_stats.metrics.filters import MatchFilter, family_of, match_label
 

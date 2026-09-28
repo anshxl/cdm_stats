@@ -12,6 +12,8 @@ dependencies = [
     "dash-bootstrap-components>=1.6",
     "plotly>=5.24",
     "gunicorn>=22.0",
+    "fastapi>=0.141.1",
+    "uvicorn>=0.54.0",
 ]
 
 [build-system]
@@ -22,7 +24,10 @@ build-backend = "hatchling.build"
 packages = ["src/cdm_stats"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dev = [
+    "httpx2>=2.13.1",
+    "pytest>=8.0",
+]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

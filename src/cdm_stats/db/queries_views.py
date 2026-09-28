@@ -12,7 +12,7 @@ from cdm_stats.metrics.map_strength import map_strength
 YOUR_TEAM = "GL"
 
 
-def _all_maps(conn: sqlite3.Connection) -> list[tuple[int, str, str]]:
+def all_maps(conn: sqlite3.Connection) -> list[tuple[int, str, str]]:
     """(map_id, map_name, mode) sorted by mode then name."""
     return conn.execute(
         "SELECT map_id, map_name, mode FROM maps ORDER BY mode, map_name"
@@ -50,7 +50,7 @@ def team_record(conn: sqlite3.Connection, team_id: int, f: MatchFilter = MatchFi
 def map_record_data(conn: sqlite3.Connection, team_id: int, f: MatchFilter = MatchFilter()) -> list[dict]:
     """Per-map W/L records enriched with pick/defend splits and Map Strength."""
     base = get_team_map_wl(conn, team_id, f=f)
-    map_lookup = {(name, mode): map_id for map_id, name, mode in _all_maps(conn)}
+    map_lookup = {(name, mode): map_id for map_id, name, mode in all_maps(conn)}
 
     for entry in base:
         map_id = map_lookup.get((entry["map_name"], entry["mode"]))
@@ -205,7 +205,7 @@ def matchup_data(
     opp_bans_h2h = team_ban_rates(conn, opp_id, f=f, opponent_id=your_id)
     opp_picks = team_pick_rates(conn, opp_id, f=f)
 
-    for map_id, map_name, mode in _all_maps(conn):
+    for map_id, map_name, mode in all_maps(conn):
         your_ms = map_strength(conn, your_id, map_id, f=f)
         opp_ms = map_strength(conn, opp_id, map_id, f=f)
         if your_ms["rating"] is not None and opp_ms["rating"] is not None:
@@ -278,3 +278,31 @@ def player_opponents(conn: sqlite3.Connection, team_abbr: str = YOUR_TEAM) -> li
         (team_abbr, team_abbr),
     ).fetchall()
     return [r[0] for r in rows]
+
+
+# ---------------------------------------------------------------------------
+# Elo
+# ---------------------------------------------------------------------------
+
+def elo_points(conn: sqlite3.Connection, team_id: int, f: MatchFilter = MatchFilter()) -> list[dict]:
+    """A team's Elo after each match inside `f`, oldest first.
+
+    The rating is one chain over every competition; `f` only chooses which
+    points are returned. Each dict: match_date, elo, opponent, result, label.
+    """
+    fw, fp = f.sql()
+    rows = conn.execute(
+        f"""SELECT te.match_date, te.elo_after, m.team1_id, m.team2_id, m.series_winner_id,
+                   m.competition, m.round, m.season
+            FROM team_elo te JOIN matches m ON te.match_id = m.match_id
+            WHERE te.team_id = ?{fw}
+            ORDER BY te.match_date, te.elo_id""",
+        [team_id] + fp,
+    ).fetchall()
+    return [
+        {"match_date": match_date, "elo": elo,
+         "opponent": _abbr(conn, t2 if t1 == team_id else t1),
+         "result": "W" if winner == team_id else "L",
+         "label": match_label(competition, round_, season)}
+        for match_date, elo, t1, t2, winner, competition, round_, season in rows
+    ]
