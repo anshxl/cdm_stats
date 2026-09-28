@@ -66,3 +66,28 @@ def test_from_dict_roundtrip():
     assert f == MatchFilter(families=frozenset({"Regionals"}), start="2026-08-01")
     assert MatchFilter.from_dict(None) == MatchFilter()
     assert MatchFilter.from_dict({}) == MatchFilter()
+
+
+@pytest.mark.parametrize("event,families", [
+    ("all", set(FAMILIES)),
+    ("spring", {"CDM Spring"}),
+    ("summer", {"CDM Summer"}),
+    ("regionals", {"Regionals"}),
+])
+def test_from_event_maps_event_to_one_family(event, families):
+    f = MatchFilter.from_event(event, "2026-03-01", "2026-09-30")
+    assert f.families == frozenset(families)
+    assert (f.start, f.end) == ("2026-03-01", "2026-09-30")
+
+
+def test_from_event_defaults_to_no_dates():
+    assert MatchFilter.from_event("all") == MatchFilter()
+
+
+def test_from_event_rejects_unknown_event():
+    with pytest.raises(ValueError):
+        MatchFilter.from_event("winter")
+
+
+def test_from_event_spring_selects_only_spring_matches(db_three_families):
+    assert _dates(db_three_families, MatchFilter.from_event("spring")) == ["2026-03-12"]

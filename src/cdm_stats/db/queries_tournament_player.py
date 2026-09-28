@@ -9,6 +9,7 @@ def player_summary(
     mode: str | None = None,
     week_range: tuple[int, int] | None = None,
     f: MatchFilter = MatchFilter(),
+    match_ids: list[int] | None = None,
 ) -> list[dict]:
     """Return per-player totals: kills, deaths, assists, K/D, op kills/pulls."""
     fw, fp = f.sql("mt")
@@ -25,6 +26,9 @@ def player_summary(
         conditions.append("tp.week BETWEEN ? AND ?")
         params.extend(week_range)
 
+    if match_ids is not None:
+        conditions.append(f"mt.match_id IN ({','.join('?' * len(match_ids))})")
+        params.extend(match_ids)
     where = " WHERE " + " AND ".join(conditions)
 
     # Same filters over the footage table; kept as its own aggregate because
@@ -79,6 +83,7 @@ def player_weekly_trend(
     player: str | None = None,
     mode: str | None = None,
     f: MatchFilter = MatchFilter(),
+    match_ids: list[int] | None = None,
 ) -> list[dict]:
     """Return per-match-day K/D per player for the trend chart (keyed by match_date)."""
     fw, fp = f.sql("mt")
@@ -92,6 +97,9 @@ def player_weekly_trend(
         conditions.append("m.mode = ?")
         params.append(mode)
 
+    if match_ids is not None:
+        conditions.append(f"mt.match_id IN ({','.join('?' * len(match_ids))})")
+        params.extend(match_ids)
     where = " WHERE " + " AND ".join(conditions)
 
     rows = conn.execute(
@@ -127,12 +135,14 @@ def recent_series_stats(
     f: MatchFilter = MatchFilter(),
     limit: int | None = 10,
     opponent: str | None = None,
+    match_ids: list[int] | None = None,
 ) -> list[dict]:
     """Return the most recent series, newest first, each with its maps and
     raw per-player stats.
 
     `limit=None` returns every qualifying series. `opponent` (an abbreviation)
-    restricts to series against that team.
+    restricts to series against that team. `match_ids` (from
+    `series_match_ids`) restricts to exactly those series.
 
     A series qualifies if any of its maps has scoreboard stats OR operator
     stats — the two are ingested independently and footage lags the
@@ -172,6 +182,9 @@ def recent_series_stats(
         conditions.append("? IN (t1.abbreviation, t2.abbreviation)")
         params.append(opponent)
 
+    if match_ids is not None:
+        conditions.append(f"mt.match_id IN ({','.join('?' * len(match_ids))})")
+        params.extend(match_ids)
     where = " WHERE " + " AND ".join(conditions)
     limit_clause = "LIMIT ?" if limit is not None else ""
     limit_params = [limit] if limit is not None else []

@@ -8,6 +8,7 @@ def ops_player_weekly_trend(
     player: str | None = None,
     mode: str | None = None,
     f: MatchFilter = MatchFilter(),
+    match_ids: list[int] | None = None,
 ) -> list[dict]:
     """Return per-match-day operator kills per pull per player, for the trend chart.
 
@@ -29,6 +30,9 @@ def ops_player_weekly_trend(
         conditions.append("m.mode = ?")
         params.append(mode)
 
+    if match_ids is not None:
+        conditions.append(f"mt.match_id IN ({','.join('?' * len(match_ids))})")
+        params.extend(match_ids)
     where = " WHERE " + " AND ".join(conditions)
 
     rows = conn.execute(

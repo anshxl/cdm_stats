@@ -5,6 +5,7 @@ Requires `matches m` to be in scope of the query the fragment is spliced into.
 from dataclasses import dataclass
 
 FAMILIES = ("CDM Spring", "CDM Summer", "Regionals")
+EVENT_FAMILIES = {"spring": "CDM Spring", "summer": "CDM Summer", "regionals": "Regionals"}
 
 # Season 1 rows predate the competition column (NULL). Everything that is not
 # league play (splits, majors, regionals) is grouped as "Regionals".
@@ -45,6 +46,15 @@ class MatchFilter:
             start=(data.get("start") or None),
             end=(data.get("end") or None),
         )
+
+    @classmethod
+    def from_event(cls, event: str, start: str | None = None, end: str | None = None) -> "MatchFilter":
+        """Build from the API's exclusive `event` value: `all` or one family."""
+        if event == "all":
+            return cls(start=start, end=end)
+        if event not in EVENT_FAMILIES:
+            raise ValueError(f"unknown event: {event!r}")
+        return cls(families=frozenset({EVENT_FAMILIES[event]}), start=start, end=end)
 
     def date_sql(self, col: str) -> tuple[str, list]:
         """Date-only fragment for tables with no `matches` join (scrims)."""

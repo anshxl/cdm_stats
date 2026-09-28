@@ -91,3 +91,12 @@ def _add_second_week(conn):
         """Date,Week,Opponent,Map,Player,OpKills,OpPulls,FootageMin
 2026-02-22,2,OUG,Tunisia,Alpha,2,4,10.0"""
     ))
+
+
+def test_match_ids_restricts_to_selected_series(db_with_match):  # noqa: F811
+    _add_second_week(db_with_match)
+    m2 = db_with_match.execute("SELECT MAX(match_id) FROM matches").fetchone()[0]
+    rows = ops_player_weekly_trend(db_with_match, match_ids=[m2])
+    assert [(r["player_name"], r["match_date"]) for r in rows] == [("Alpha", "2026-02-22")]
+    assert ops_player_weekly_trend(db_with_match, match_ids=[]) == []
+    assert ops_player_weekly_trend(db_with_match, match_ids=None) == ops_player_weekly_trend(db_with_match)

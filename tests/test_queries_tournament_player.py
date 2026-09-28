@@ -247,3 +247,35 @@ def test_recent_series_stats_respects_limit_and_filters(db_with_tournament_playe
         [p["player_name"] for p in m["players"]] == ["Alpha"]
         for s in alpha_only for m in s["maps"]
     )
+
+
+def test_player_queries_match_ids_restrict_rows(db_with_tournament_players):
+    from cdm_stats.db.queries_tournament_player import player_summary, player_weekly_trend
+    conn = db_with_tournament_players
+    mid = conn.execute("SELECT match_id FROM matches").fetchone()[0]
+    assert player_summary(conn, match_ids=[mid]) == player_summary(conn)
+    assert player_summary(conn, match_ids=[mid + 1]) == []
+    assert player_summary(conn, match_ids=[]) == []
+    assert player_weekly_trend(conn, match_ids=[mid]) == player_weekly_trend(conn)
+    assert player_weekly_trend(conn, match_ids=[]) == []
+
+
+def test_player_summary_match_ids_restrict_op_totals(db_with_tournament_players):
+    from cdm_stats.db.queries_tournament_player import player_summary
+    conn = db_with_tournament_players
+    rid = conn.execute("SELECT MIN(result_id) FROM map_results").fetchone()[0]
+    conn.execute(
+        """INSERT INTO ops_player_stats (result_id, week, player_name, op_kills, op_pulls, footage_min)
+           VALUES (?, 1, 'Alpha', 4, 3, 11.0)""", (rid,))
+    mid = conn.execute("SELECT match_id FROM matches").fetchone()[0]
+    alpha = next(r for r in player_summary(conn, match_ids=[mid]) if r["player_name"] == "Alpha")
+    assert (alpha["op_kills"], alpha["op_pulls"]) == (4, 3)
+
+
+def test_recent_series_stats_match_ids(db_with_tournament_players):
+    from cdm_stats.db.queries_tournament_player import recent_series_stats
+    conn = db_with_tournament_players
+    mid = conn.execute("SELECT match_id FROM matches").fetchone()[0]
+    assert [s["match_id"] for s in recent_series_stats(conn, "DVS", match_ids=[mid])] == [mid]
+    assert recent_series_stats(conn, "DVS", match_ids=[]) == []
+    assert recent_series_stats(conn, "DVS", match_ids=[mid + 1]) == []
