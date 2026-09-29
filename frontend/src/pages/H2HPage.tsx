@@ -1,26 +1,84 @@
+import { useSearchParams } from 'react-router'
 import type { H2H, TeamInfo } from '@/api/models'
 import { PageBody } from '@/components/AppShell'
 import { Card } from '@/components/Card'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorCard } from '@/components/ErrorCard'
 import { FilterBar } from '@/components/FilterBar'
-import { MapTable } from '@/components/MapTable'
 import { Skeleton } from '@/components/Skeleton'
-import { TeamBadge } from '@/components/TeamBadge'
 import { TeamSelect } from '@/components/TeamSelect'
 import { useApi } from '@/hooks/useApi'
 import { useFilter } from '@/hooks/useFilter'
 import { useScopedTeam } from '@/hooks/useScopedTeam'
+import { MatchupHeader } from './h2h/MatchupHeader'
+import { ModeTable } from './h2h/ModeTable'
+import { RecentSeries } from './h2h/RecentSeries'
 
-// Placeholder page: proves the shell wiring. The full H2H page replaces the body.
+function Loading() {
+  return (
+    <>
+      <Skeleton className="h-[98px]" />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="flex flex-col gap-4">
+          {[0, 1, 2].map((i) => <Skeleton key={i} className="h-64" />)}
+        </div>
+        <Skeleton className="h-96" />
+      </div>
+    </>
+  )
+}
+
+function Body({ d, teams, busy }: { d: H2H; teams: TeamInfo[]; busy: boolean }) {
+  return (
+    <>
+      <div className={busy ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
+        <MatchupHeader d={d} />
+      </div>
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="flex flex-col gap-4">
+          {d.modes.map((m) => (
+            <ModeTable key={m.mode} mode={m} team={d.team} opp={d.opp} busy={busy} />
+          ))}
+          <p className="px-1 text-xs leading-5 text-muted-foreground">
+            Tags are suggestions from win rates with n ≥ 4: PICK = our biggest edge, BAN = their biggest edge,
+            THEY BAN = their most-banned map (≥30%). Rows marked low sample have n &lt; 4 for at least one team.
+          </p>
+        </div>
+        <div className="lg:sticky lg:top-[4.25rem]">
+          <RecentSeries opp={d.opp} rows={d.opp_recent_series} teams={teams} busy={busy} />
+        </div>
+      </div>
+    </>
+  )
+}
+
 export default function H2HPage() {
   const { params } = useFilter()
   const scope = useApi<TeamInfo[]>('/api/scope', { ...params })
   const [team, setTeam] = useScopedTeam(scope.data)
   const opponents = useApi<TeamInfo[]>(team ? `/api/teams/${team}/opponents` : null, { ...params })
-  const [opp, setOpp] = useScopedTeam(opponents.data, 'opp')
+  // Wait for the list that belongs to the current team, so a stale list does not rewrite `opp`.
+  const [scopedOpp, setOpp] = useScopedTeam(opponents.loading ? null : opponents.data, 'opp')
+  // While the list loads, keep showing the URL's opponent instead of blanking the page.
+  const [searchParams] = useSearchParams()
+  const urlOpp = searchParams.get('opp')
+  const opp = opponents.loading ? (urlOpp !== team ? urlOpp : null) : scopedOpp
   const h2h = useApi<H2H>('/api/h2h', { ...params, team, opp }, { required: ['team', 'opp'] })
-  const d = h2h.data
+
+  let body: React.ReactNode
+  if (scope.error) body = <ErrorCard error={scope.error} title="Team list" />
+  else if (scope.data?.length === 0) body = <Card><EmptyState /></Card>
+  else if (opponents.error) body = <ErrorCard error={opponents.error} title="Opponent list" />
+  else if (!opponents.loading && opponents.data?.length === 0)
+    body = (
+      <Card>
+        <EmptyState message={`${team} played no one in this filter`} hint="Pick another team or event, or widen the date range." />
+      </Card>
+    )
+  // An unchecked URL opponent can fail while the list loads; wait for the checked one.
+  else if (h2h.error && !opponents.loading) body = <ErrorCard error={h2h.error} title="Head to head" />
+  else if (!h2h.data) body = <Loading />
+  else body = <Body d={h2h.data} teams={scope.data ?? []} busy={h2h.loading} />
 
   return (
     <>
@@ -28,43 +86,7 @@ export default function H2HPage() {
         <TeamSelect label="Team" options={scope.data ?? []} value={team} onChange={(a) => a && setTeam(a)} />
         <TeamSelect label="Opponent" options={opponents.data ?? []} value={opp} onChange={(a) => a && setOpp(a)} />
       </FilterBar>
-      <PageBody>
-        {scope.error || opponents.error || h2h.error ? (
-          <ErrorCard error={(scope.error ?? opponents.error ?? h2h.error)!} title="Head to head" />
-        ) : opponents.data?.length === 0 || scope.data?.length === 0 ? (
-          <Card><EmptyState /></Card>
-        ) : !d ? (
-          <Skeleton className="h-80" />
-        ) : (
-          <div className={h2h.loading ? 'flex flex-col gap-4 opacity-60' : 'flex flex-col gap-4'}>
-            <header className="flex items-center gap-3 text-lg font-semibold">
-              <TeamBadge team={d.team} showName />
-              <span className="text-sm font-normal text-muted-foreground">vs</span>
-              <TeamBadge team={d.opp} showName />
-            </header>
-            {d.modes.map((m) => (
-              <Card key={m.mode} title={m.mode} flush>
-                {m.not_enough_data ? (
-                  <EmptyState message="Not enough data for this mode" hint="" />
-                ) : (
-                  <MapTable
-                    rows={m.maps}
-                    rowKey={(r) => String(r.map_id)}
-                    mapName={(r) => r.map_name}
-                    columns={[
-                      { key: 'h2h', header: 'H2H', render: (r) => `${r.h2h.wins}–${r.h2h.losses}` },
-                      { key: 'opp', header: 'Opp W–L', render: (r) => `${r.opp_wl.wins}–${r.opp_wl.losses}`, hideOnMobile: true },
-                    ]}
-                    winRate={(r) => ({ value: r.your_rate.value, n: r.your_rate.n })}
-                    winRateLabel="Your win rate"
-                    tags={(r) => r.tags}
-                  />
-                )}
-              </Card>
-            ))}
-          </div>
-        )}
-      </PageBody>
+      <PageBody>{body}</PageBody>
     </>
   )
 }
