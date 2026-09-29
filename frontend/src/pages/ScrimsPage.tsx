@@ -65,7 +65,7 @@ export default function ScrimsPage() {
 
   return (
     <>
-      <FilterBar eventDisabledNote="Events do not apply to scrims">
+      <FilterBar hideEvent>
         <ModeToggle value={mode} onChange={(m) => setParam('mode', m)} />
         <MapSelect options={options.data?.maps ?? []} value={map} onChange={(m) => setParam('map', m)} />
         <TeamSelect

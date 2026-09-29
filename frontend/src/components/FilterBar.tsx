@@ -12,38 +12,31 @@ const EVENT_LABEL: Record<EventKey, string> = {
 export interface FilterBarProps {
   /** The page's selects (TeamSelect etc.), placed after the shared filter. */
   children?: ReactNode
-  /** Disables the event control and shows this note (Scrims). */
-  eventDisabledNote?: string
+  /** Hides the event control (Scrims have no event). */
+  hideEvent?: boolean
 }
 
 /** Shared top bar: event segmented control, then the page's selects. */
-export function FilterBar({ children, eventDisabledNote }: FilterBarProps) {
+export function FilterBar({ children, hideEvent }: FilterBarProps) {
   const { filter, setEvent } = useFilter()
-  const eventDisabled = Boolean(eventDisabledNote)
 
   return (
     <div className="sticky top-0 z-20 border-b border-line bg-page/90 backdrop-blur supports-[backdrop-filter]:bg-page/75">
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2.5 px-4 py-2.5 md:px-6">
-        <div className="flex items-center gap-2.5">
-          <div
-            role="radiogroup"
-            aria-label="Event"
-            aria-disabled={eventDisabled || undefined}
-            className={cn('inline-flex h-8 rounded-md border border-line bg-surface p-0.5', eventDisabled && 'opacity-45')}
-          >
+        {!hideEvent && (
+          <div role="radiogroup" aria-label="Event" className="inline-flex h-8 rounded-md border border-line bg-surface p-0.5">
             {EVENTS.map((e) => {
-              const selected = !eventDisabled && filter.event === e
+              const selected = filter.event === e
               return (
                 <button
                   key={e}
                   type="button"
                   role="radio"
                   aria-checked={selected}
-                  disabled={eventDisabled}
                   onClick={() => setEvent(e)}
                   className={cn(
-                    'rounded-[5px] px-2.5 text-[13px] font-medium transition-colors disabled:cursor-not-allowed sm:px-3',
-                    selected ? 'bg-gold text-page' : 'text-muted-foreground enabled:hover:text-foreground',
+                    'rounded-[5px] px-2.5 text-[13px] font-medium transition-colors sm:px-3',
+                    selected ? 'bg-gold text-page' : 'text-muted-foreground hover:text-foreground',
                   )}
                 >
                   {EVENT_LABEL[e]}
@@ -51,8 +44,7 @@ export function FilterBar({ children, eventDisabledNote }: FilterBarProps) {
               )
             })}
           </div>
-          {eventDisabledNote && <span className="text-xs text-muted-foreground">{eventDisabledNote}</span>}
-        </div>
+        )}
 
         {children && <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5">{children}</div>}
       </div>
