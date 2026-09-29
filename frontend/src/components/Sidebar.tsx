@@ -1,4 +1,4 @@
-import { Crosshair, LineChart, Shield, Swords, type LucideIcon } from 'lucide-react'
+import { Crosshair, Dumbbell, LineChart, Shield, Swords, type LucideIcon } from 'lucide-react'
 import { NavLink, useSearchParams } from 'react-router'
 import { SHARED_KEYS } from '@/hooks/useFilter'
 import { cn } from '@/lib/utils'
@@ -8,6 +8,7 @@ const LINKS: { to: string; label: string; icon: LucideIcon }[] = [
   { to: '/h2h', label: 'Head to Head', icon: Swords },
   { to: '/scrims', label: 'Scrims', icon: Crosshair },
   { to: '/elo', label: 'Elo', icon: LineChart },
+  { to: '/training', label: 'Training', icon: Dumbbell },
 ]
 
 /** Page links. Icons only below md; the filter query is kept when switching pages. */

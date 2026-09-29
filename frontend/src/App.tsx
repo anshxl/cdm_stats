@@ -4,6 +4,7 @@ import EloPage from '@/pages/EloPage'
 import H2HPage from '@/pages/H2HPage'
 import ScrimsPage from '@/pages/ScrimsPage'
 import TeamPage from '@/pages/TeamPage'
+import TrainingPage from '@/pages/TrainingPage'
 
 function ToTeam() {
   const { search } = useLocation()
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="/h2h" element={<H2HPage />} />
         <Route path="/scrims" element={<ScrimsPage />} />
         <Route path="/elo" element={<EloPage />} />
+        <Route path="/training" element={<TrainingPage />} />
         <Route path="*" element={<ToTeam />} />
       </Route>
     </Routes>

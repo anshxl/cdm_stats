@@ -303,3 +303,25 @@ class Elo(BaseModel):
     seed: float
     trajectory: list[EloSeries]
     current: list[EloCurrent]
+
+
+# --- Training (proxied from the Discord bot) ------------------------------------
+
+class TrainingPlayer(BaseModel):
+    username: str
+    sessions: int
+    days_trained: int
+
+
+class TrainingDay(BaseModel):
+    date: str
+    username: str
+    sessions: int
+
+
+class Training(BaseModel):
+    """`months` lists months with any submission, ascending; `players` in recap order."""
+    month: str
+    months: list[str]
+    players: list[TrainingPlayer]
+    daily: list[TrainingDay]

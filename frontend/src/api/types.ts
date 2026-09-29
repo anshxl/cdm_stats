@@ -144,6 +144,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/training": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Training */
+        get: operations["training_api_training_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -617,6 +634,38 @@ export interface components {
             /** Logo */
             logo: string | null;
         };
+        /**
+         * Training
+         * @description `months` lists months with any submission, ascending; `players` in recap order.
+         */
+        Training: {
+            /** Month */
+            month: string;
+            /** Months */
+            months: string[];
+            /** Players */
+            players: components["schemas"]["TrainingPlayer"][];
+            /** Daily */
+            daily: components["schemas"]["TrainingDay"][];
+        };
+        /** TrainingDay */
+        TrainingDay: {
+            /** Date */
+            date: string;
+            /** Username */
+            username: string;
+            /** Sessions */
+            sessions: number;
+        };
+        /** TrainingPlayer */
+        TrainingPlayer: {
+            /** Username */
+            username: string;
+            /** Sessions */
+            sessions: number;
+            /** Days Trained */
+            days_trained: number;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -911,6 +960,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Elo"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    training_api_training_get: {
+        parameters: {
+            query?: {
+                month?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Training"];
                 };
             };
             /** @description Validation Error */

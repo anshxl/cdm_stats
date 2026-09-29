@@ -122,6 +122,7 @@ These aren't blocked by settings but are high-blast-radius — surface the inten
   - [scripts/](scripts/) — currently unused; add one-shot scripts here if needed
 - **Install / sync:** `uv sync --extra dev` (reads [pyproject.toml](pyproject.toml) + [uv.lock](uv.lock); pytest lives in the `dev` extra, so a plain `uv sync` removes it); `npm ci` in `frontend/`
 - **Dashboard dev server:** `uv run uvicorn cdm_stats.api.app:app --reload` + `npm run dev` in `frontend/` → http://localhost:5173
+- **Training page:** reads live from the Discord bot (`../discord-bot`, `GET /training`) via `TRAINING_API_URL` + `TRAINING_API_TOKEN`; unset → the page shows a 503 card. Locally: seed with `../discord-bot/scripts/seed_sample_training.py` and run its endpoint (see that script's docstring).
 
 ---
 
