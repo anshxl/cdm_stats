@@ -165,3 +165,19 @@ def test_scrim_opponents_sorted_and_date_filtered(scrim_db):
     assert scrim_opponents(scrim_db) == ["DVS", "OUG"]
     assert scrim_opponents(scrim_db, MatchFilter(start="2026-03-01")) == ["OUG"]
     assert scrim_opponents(scrim_db, MatchFilter(end="2026-02-01")) == []
+
+
+def test_map_results_detail_orders_by_date_across_seasons():
+    """Week numbers restart each season, so a season-1 week 2 must not sort
+    ahead of a later season-2 week 1."""
+    from cdm_stats.db.queries_scrim import scrim_map_results_detail
+    conn = sqlite3.connect(":memory:")
+    create_tables(conn)
+    migrate(conn)
+    seed_teams(conn)
+    seed_maps(conn)
+    ingest_scrims_team(conn, io.StringIO(TEAM_CSV + "\n2026-03-10,OUG,Raid,3-0"), season=1)
+    ingest_scrims_team(conn, io.StringIO("Date,Opponent,Map,Score\n2026-06-10,DVS,Raid,3-2"), season=2)
+    dates = [r["date"] for r in scrim_map_results_detail(conn, "Raid")]
+    assert dates == sorted(dates, reverse=True)
+    conn.close()

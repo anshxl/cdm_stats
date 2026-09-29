@@ -5,19 +5,19 @@ def test_scrims_shape(client):
     resp = client.get("/api/scrims")
     assert resp.status_code == 200
     body = resp.json()
-    assert body["overall"] == {"wins": 3, "losses": 1, "total": 4, "win_pct": 75.0}
+    assert body["overall"] == {"wins": 3, "losses": 1, "total": 4, "win_pct": 0.75}
     assert [m["mode"] for m in body["by_mode"]] == ["SnD", "HP", "Control"]
-    assert body["by_mode"][0] == {"mode": "SnD", "wins": 1, "losses": 1, "total": 2, "win_pct": 50.0}
+    assert body["by_mode"][0] == {"mode": "SnD", "wins": 1, "losses": 1, "total": 2, "win_pct": 0.5}
     assert [m["map_name"] for m in body["maps"]] == ["Tunisia", "Summit", "Raid"]
     tun = body["maps"][0]
-    assert (tun["played"], tun["wins"], tun["losses"], tun["win_pct"]) == (2, 1, 1, 50.0)
+    assert (tun["played"], tun["wins"], tun["losses"], tun["win_pct"]) == (2, 1, 1, 0.5)
     assert tun["avg_margin"] == pytest.approx(-0.5)
     assert tun["flag"] == {"kind": "low_sample", "label": "n=2"}
     assert [r["opponent"] for r in tun["recent"]] == ["OUG", "DVS"]
     assert set(tun["recent"][0]) == {"date", "week", "opponent", "our_score", "opp_score", "result"}
     assert body["trend"] == [
-        {"match_date": "2026-02-25", "played": 2, "wins": 2, "win_pct": 100.0},
-        {"match_date": "2026-03-03", "played": 2, "wins": 1, "win_pct": 50.0},
+        {"match_date": "2026-02-25", "played": 2, "wins": 2, "win_pct": 1.0},
+        {"match_date": "2026-03-03", "played": 2, "wins": 1, "win_pct": 0.5},
     ]
 
 
@@ -28,13 +28,20 @@ def test_scrims_mode_map_opponent_filters(client):
     assert summit["overall"]["total"] == 1 and len(summit["trend"]) == 1
     assert len(summit["maps"]) == 3  # as in Dash, the map table ignores the map filter
     oug = client.get("/api/scrims?opponent=OUG").json()
-    assert oug["overall"] == {"wins": 1, "losses": 1, "total": 2, "win_pct": 50.0}
+    assert oug["overall"] == {"wins": 1, "losses": 1, "total": 2, "win_pct": 0.5}
 
 
 def test_scrims_filter_by_date_only(client):
     late = client.get("/api/scrims?start=2026-03-01").json()
     assert late["overall"]["total"] == 2
-    assert client.get("/api/scrims?event=regionals").json() == client.get("/api/scrims").json()
+
+
+@pytest.mark.parametrize("path", ["/api/scrims", "/api/scrims/options"])
+def test_scrim_endpoints_take_dates_not_event(client, path):
+    params = client.get("/openapi.json").json()["paths"][path]["get"]["parameters"]
+    names = {p["name"] for p in params}
+    assert {"start", "end"} <= names
+    assert "event" not in names
 
 
 def test_scrims_errors(client):

@@ -827,7 +827,6 @@ export interface operations {
                 mode?: ("SnD" | "HP" | "Control") | null;
                 map?: string | null;
                 opponent?: string | null;
-                event?: "all" | "spring" | "summer" | "regionals";
                 start?: string | null;
                 end?: string | null;
             };
@@ -861,7 +860,6 @@ export interface operations {
         parameters: {
             query?: {
                 mode?: ("SnD" | "HP" | "Control") | null;
-                event?: "all" | "spring" | "summer" | "regionals";
                 start?: string | null;
                 end?: string | null;
             };

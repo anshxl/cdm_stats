@@ -174,14 +174,14 @@ def scrim_map_results_detail(
         conditions.append("t.abbreviation = ?")
         params.append(opponent)
 
-    # scrim_date is stored as text like '7-Jul', which sorts alphabetically —
-    # week plus insertion id is the reliable chronological key.
+    # scrim_date is ISO (the loader normalizes it); week restarts each season,
+    # so it cannot order results across seasons.
     sql = f"""SELECT sm.scrim_date, sm.week, t.abbreviation,
                      sm.our_score, sm.opponent_score, sm.result
               FROM scrim_maps sm
               JOIN teams t ON sm.opponent_id = t.team_id
               WHERE {' AND '.join(conditions)}
-              ORDER BY sm.week DESC, sm.scrim_map_id DESC"""
+              ORDER BY sm.scrim_date DESC, sm.scrim_map_id DESC"""
     if week_range is None:
         sql += f" LIMIT {int(limit)}"
 
