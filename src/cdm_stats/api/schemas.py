@@ -222,6 +222,10 @@ class H2H(BaseModel):
     modes: list[H2HMode]
 
 
+class Brief(BaseModel):
+    text: str
+
+
 # --- Scrims ----------------------------------------------------------------------
 
 class ScrimWL(BaseModel):

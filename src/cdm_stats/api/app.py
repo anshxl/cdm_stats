@@ -10,7 +10,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, PlainTextResponse
 
-from cdm_stats.api import elo, h2h, scrims, teams, training
+from cdm_stats.api import brief, elo, h2h, scrims, teams, training
 from cdm_stats.api.deps import ROOT, get_conn  # noqa: F401  (get_conn: override point for tests)
 
 DEFAULT_DIST = ROOT / "frontend" / "dist"
@@ -66,7 +66,7 @@ def create_app(dist_dir: Path | None = DEFAULT_DIST) -> FastAPI:
     app = FastAPI(title="CDM Stats")
     if os.environ.get("DASHBOARD_PASSWORD"):
         app.middleware("http")(_basic_auth)
-    for module in (teams, h2h, scrims, elo, training):
+    for module in (teams, h2h, brief, scrims, elo, training):
         app.include_router(module.router, prefix="/api")
     # Only serve the frontend when it has been built, so tests and API-only dev work.
     if dist_dir is not None and Path(dist_dir).is_dir():

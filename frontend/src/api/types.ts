@@ -93,6 +93,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/h2h/brief": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** H2H Brief */
+        post: operations["h2h_brief_api_h2h_brief_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/scrims": {
         parameters: {
             query?: never;
@@ -172,6 +189,11 @@ export interface components {
             /** Map Name */
             map_name: string;
             flag: components["schemas"]["Flag"];
+        };
+        /** Brief */
+        Brief: {
+            /** Text */
+            text: string;
         };
         /**
          * Elo
@@ -858,6 +880,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["H2H"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    h2h_brief_api_h2h_brief_post: {
+        parameters: {
+            query: {
+                team: string;
+                opp: string;
+                event?: "all" | "spring" | "summer" | "regionals";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Brief"];
                 };
             };
             /** @description Validation Error */

@@ -10,6 +10,7 @@ import { TeamSelect } from '@/components/TeamSelect'
 import { useApi } from '@/hooks/useApi'
 import { useFilter } from '@/hooks/useFilter'
 import { useScopedTeam } from '@/hooks/useScopedTeam'
+import { BriefCard } from './h2h/BriefCard'
 import { MatchupHeader } from './h2h/MatchupHeader'
 import { ModeTable } from './h2h/ModeTable'
 import { RecentSeries } from './h2h/RecentSeries'
@@ -28,12 +29,18 @@ function Loading() {
   )
 }
 
-function Body({ d, teams, busy }: { d: H2H; teams: TeamInfo[]; busy: boolean }) {
+function Body({ d, teams, busy, event }: { d: H2H; teams: TeamInfo[]; busy: boolean; event: string }) {
   return (
     <>
       <div className={busy ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
         <MatchupHeader d={d} />
       </div>
+      <BriefCard
+        key={`${d.team.abbreviation}|${d.opp.abbreviation}|${event}`}
+        team={d.team.abbreviation}
+        opp={d.opp.abbreviation}
+        event={event}
+      />
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="flex flex-col gap-4">
           {d.modes.map((m) => (
@@ -53,7 +60,7 @@ function Body({ d, teams, busy }: { d: H2H; teams: TeamInfo[]; busy: boolean }) 
 }
 
 export default function H2HPage() {
-  const { params } = useFilter()
+  const { filter, params } = useFilter()
   const scope = useApi<TeamInfo[]>('/api/scope', { ...params })
   const [team, setTeam] = useScopedTeam(scope.data)
   const opponents = useApi<TeamInfo[]>(team ? `/api/teams/${team}/opponents` : null, { ...params })
@@ -78,7 +85,7 @@ export default function H2HPage() {
   // An unchecked URL opponent can fail while the list loads; wait for the checked one.
   else if (h2h.error && !opponents.loading) body = <ErrorCard error={h2h.error} title="Head to head" />
   else if (!h2h.data) body = <Loading />
-  else body = <Body d={h2h.data} teams={scope.data ?? []} busy={h2h.loading} />
+  else body = <Body d={h2h.data} teams={scope.data ?? []} busy={h2h.loading} event={filter.event} />
 
   return (
     <>

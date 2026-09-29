@@ -22,7 +22,7 @@ export interface UseApiOptions {
   required?: string[]
 }
 
-function toQuery(params: ApiParams): string {
+export function toQuery(params: ApiParams): string {
   const q = new URLSearchParams()
   for (const k of Object.keys(params).sort()) {
     const v = params[k]
@@ -32,7 +32,7 @@ function toQuery(params: ApiParams): string {
   return s ? `?${s}` : ''
 }
 
-async function readError(res: Response): Promise<ApiError> {
+export async function readError(res: Response): Promise<ApiError> {
   let message = `${res.status} ${res.statusText}`.trim()
   try {
     const body: unknown = await res.json()

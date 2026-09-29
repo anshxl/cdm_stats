@@ -1,6 +1,7 @@
 __pycache__/
 *.pyc
 .venv/
+.env
 output/
 *.egg-info/
 dist/
@@ -12,3 +13,4 @@ dist/
 docs/
 data/s2/_xx.csv
 # data/s2/ops_kills.csv
+.env*
