@@ -36,6 +36,15 @@ def test_facts_header_elo_series_and_recent():
                                "W 3-0 vs T3", "W 3-1 vs T4"]
 
 
+
+def test_facts_recent_record_is_counted_here_not_by_the_model():
+    h2h = _h2h([])
+    h2h["opp_recent_series"] = [{"result": r, "score": "3-1", "opponent": "X"}
+                                for r in ["L", "W", "W", "L", "W", "L", "L"]]
+    assert brief.brief_facts(h2h, "all")["opp_recent_record"] == "3-2"  # last 5 only
+    h2h["opp_recent_series"] = []
+    assert brief.brief_facts(h2h, "all")["opp_recent_record"] is None
+
 @pytest.mark.parametrize("team_low,opp_low,want", [
     (False, False, False), (True, False, True), (False, True, True)])
 def test_facts_low_confidence_if_either_side(team_low, opp_low, want):

@@ -36,16 +36,22 @@ _calls: dict[str, int] = {}  # UTC day -> model calls
 
 SYSTEM = """You write a short pre-match brief for a Call of Duty League coaching staff. The facts
 come from their stats dashboard. Use only these facts. Do not calculate, estimate, or
-add any number that is not in the facts. Write 3 to 5 plain sentences, with no headings
-and no lists.
+add any number that is not in the facts. Write 3 to 5 short plain sentences (at most 90
+words), with no headings and no lists. "team" is us; "opp" is the opponent.
+Map tags: "pick" = our suggested pick (our biggest edge in that mode); "ban" = our
+suggested ban (their biggest edge over us); "they_ban" = a map the opponent is likely
+to ban.
 - Start with the clearest map edge. Then give the ban risk. Then give the context (Elo,
   the head-to-head record, and the opponent's recent form).
 - Give the sample size with each rate, for example "71% over 7 maps".
 - Use careful words: "suggests", "leans", "has tended to". Never say "will",
   "should win", or "guaranteed".
-- If Elo low_confidence is true, say that the Elo gap is not yet reliable.
+- If Elo low_confidence is true, say that the Elo gap is not yet reliable. Otherwise do
+  not comment on how reliable it is.
+- For the opponent's form, use opp_recent_record; do not count results yourself.
 - For a mode with not_enough_data, say that there is not enough data. For a mode with
   no_clear_edge, say that there is no clear edge. Do not guess.
+- When the facts are thin, write fewer sentences. Do not pad.
 - Never compare margins across modes."""
 
 
@@ -81,6 +87,8 @@ def brief_facts(h2h: dict, event: str) -> dict:
     """The facts Claude may use, from a head_to_head() response. Numbers are preformatted
     text with their sample size, so the model copies them instead of computing."""
     elo = h2h["elo"]
+    recent = h2h["opp_recent_series"][:RECENT_SERIES]
+    wins = sum(s["result"] == "W" for s in recent)
     return {
         "team": f"{h2h['team']['team_name']} ({h2h['team']['abbreviation']})",
         "opp": f"{h2h['opp']['team_name']} ({h2h['opp']['abbreviation']})",
@@ -88,8 +96,8 @@ def brief_facts(h2h: dict, event: str) -> dict:
         "elo": {"team": round(elo["team"]["elo"]), "opp": round(elo["opp"]["elo"]),
                 "low_confidence": elo["team"]["low_confidence"] or elo["opp"]["low_confidence"]},
         "h2h_series": f"{h2h['h2h_series']['wins']}-{h2h['h2h_series']['losses']}",
-        "opp_recent": [f"{s['result']} {s['score']} vs {s['opponent']}"
-                       for s in h2h["opp_recent_series"][:RECENT_SERIES]],
+        "opp_recent": [f"{s['result']} {s['score']} vs {s['opponent']}" for s in recent],
+        "opp_recent_record": f"{wins}-{len(recent) - wins}" if recent else None,
         "modes": [{"mode": m["mode"], "status": _status(m["maps"]),
                    "maps": [_map_facts(r) for r in m["maps"] if r["tags"]]}
                   for m in h2h["modes"]],
