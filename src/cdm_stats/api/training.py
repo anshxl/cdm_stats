@@ -6,7 +6,7 @@ TTL_SECONDS; failures are never cached and surface as 503.
 import json
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -18,7 +18,8 @@ from cdm_stats.api.schemas import Training
 
 router = APIRouter()
 
-TIMEZONE = ZoneInfo("America/New_York")
+# Must match the bot's TIMEZONE on Railway: months roll over at its midnight.
+TIMEZONE = ZoneInfo("Asia/Kolkata")
 TTL_SECONDS = 300
 TIMEOUT_SECONDS = 5
 _cache: dict[str, tuple[float, dict]] = {}
@@ -55,13 +56,13 @@ def fetch_training(month: str) -> dict:
         raise TrainingUnavailable(f"Training bot is unreachable: {e.reason}.") from e
 
 
-def _current_month() -> str:
-    return datetime.now(TIMEZONE).strftime("%Y-%m")
+def default_month(now: datetime | None = None) -> str:
+    return (now or datetime.now(timezone.utc)).astimezone(TIMEZONE).strftime("%Y-%m")
 
 
 @router.get("/training", response_model=Training)
 def training(month: str | None = Query(None, pattern=r"^\d{4}-(0[1-9]|1[0-2])$")):
-    month = month or _current_month()
+    month = month or default_month()
     hit = _cache.get(month)
     if hit and _now() - hit[0] < TTL_SECONDS:
         return hit[1]

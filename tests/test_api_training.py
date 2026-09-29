@@ -63,8 +63,8 @@ def test_pass_through_shape(client, fake):
     assert fake == ["2026-09"]
 
 
-def test_default_month_is_current_month_in_new_york(client, fake):
-    expected = datetime.now(ZoneInfo("America/New_York")).strftime("%Y-%m")
+def test_default_month_is_current_month_in_bot_timezone(client, fake):
+    expected = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%Y-%m")
     assert client.get("/api/training").json()["month"] == expected
     assert fake == [expected]
 
@@ -165,3 +165,10 @@ def test_503_on_invalid_json(client, bot_env, monkeypatch):
     resp = client.get("/api/training?month=2026-09")
     assert resp.status_code == 503
     assert "invalid" in resp.json()["detail"]
+
+
+def test_default_month_rolls_over_at_midnight_ist():
+    """The bot counts in Asia/Kolkata: 20:00 UTC on Sep 30 is already Oct 1 there."""
+    from datetime import timezone
+    assert training.default_month(datetime(2026, 9, 30, 18, 0, tzinfo=timezone.utc)) == "2026-09"
+    assert training.default_month(datetime(2026, 9, 30, 20, 0, tzinfo=timezone.utc)) == "2026-10"

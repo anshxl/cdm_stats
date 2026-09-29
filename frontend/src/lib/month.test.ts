@@ -15,10 +15,9 @@ test('monthLabel is the long month and year', () => {
   assert.equal(monthLabel('2027-01'), 'January 2027')
 })
 
-test('currentMonth uses New York time', () => {
-  // 02:00 UTC on Oct 1 is still Sep 30 in New York.
-  assert.equal(currentMonth(new Date('2026-10-01T02:00:00Z')), '2026-09')
-  assert.equal(currentMonth(new Date('2026-10-01T05:00:00Z')), '2026-10')
+test('currentMonth uses the bot timezone (Asia/Kolkata)', () => {
+  assert.equal(currentMonth(new Date('2026-09-30T18:00:00Z')), '2026-09')
+  assert.equal(currentMonth(new Date('2026-09-30T20:00:00Z')), '2026-10')
 })
 
 test('readMonth accepts only YYYY-MM', () => {

@@ -1,6 +1,7 @@
 /** Month keys are "YYYY-MM". Training months follow the bot's time zone. */
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/
-const TIMEZONE = 'America/New_York'
+// Must match the bot's TIMEZONE on Railway: months roll over at its midnight.
+const TIMEZONE = 'Asia/Kolkata'
 
 export function readMonth(v: string | null): string | null {
   return v && MONTH.test(v) ? v : null
