@@ -71,11 +71,8 @@ export function useFilter() {
   )
 
   const setEvent = useCallback((e: EventKey) => update({ event: e === 'all' ? null : e }), [update])
-  const setStart = useCallback((d: string | null) => update({ start: d }), [update])
-  const setEnd = useCallback((d: string | null) => update({ end: d }), [update])
-  const clearDates = useCallback(() => update({ start: null, end: null }), [update])
 
-  return { filter, params, dateParams, setEvent, setStart, setEnd, clearDates }
+  return { filter, params, dateParams, setEvent }
 }
 
 /** Query keys carried across page switches. */

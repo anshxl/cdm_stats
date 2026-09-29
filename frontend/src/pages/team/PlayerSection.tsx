@@ -151,17 +151,7 @@ export function PlayerSection({ team, params }: { team: string; params: FilterPa
                 label={t.player_name}
                 value={<>{num(t.kd.value, 2)}<span className="ml-1 text-xs font-normal text-muted-foreground">K/D</span></>}
                 flag={t.kd.flag}
-                n={t.kd.n}
-                sub={
-                  <div className="flex flex-col gap-0.5">
-                    <span>
-                      <span className="text-foreground/90">{num(t.op_kills_per_pull.value, 2)}</span> op K/pull
-                      {t.op_kills_per_pull.n > 0 && <span className="text-muted-foreground/70" title="Maps with operator footage"> · n={t.op_kills_per_pull.n}</span>}
-                    </span>
-                    <span>{t.kills}/{t.deaths}/{t.assists} K/D/A</span>
-                    <span>{t.games} maps · {num(t.avg_pos_eng_pct, 1)}% pos eng</span>
-                  </div>
-                }
+                sub={<><span className="text-foreground/90">{num(t.op_kills_per_pull.value, 2)}</span> op K/pull</>}
               />
             ))}
           </div>

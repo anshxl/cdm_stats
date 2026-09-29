@@ -120,8 +120,8 @@ export function ModeTable({ mode, team, opp, busy }: { mode: H2HMode; team: Team
           <table className="w-full table-fixed border-collapse text-sm sm:min-w-[790px]">
             <colgroup>
               <col />
-              <col className="w-[76px] sm:w-[156px]" />
-              <col className="w-[76px] sm:w-[156px]" />
+              <col className="w-[60px] sm:w-[156px]" />
+              <col className="w-[60px] sm:w-[156px]" />
               <col className="w-[64px]" />
               <col className="hidden w-[88px] sm:table-column" />
               <col className="hidden w-[156px] sm:table-column" />
@@ -154,6 +154,7 @@ export function ModeTable({ mode, team, opp, busy }: { mode: H2HMode; team: Team
                       className={cn(
                         'cursor-pointer border-b border-line/70 last:border-b-0 hover:bg-white/[0.025]',
                         expanded && 'bg-white/[0.025]',
+                        r.tags.length > 0 && 'max-sm:border-b-0',
                       )}
                       onClick={() => toggle(r.map_id)}
                     >
@@ -174,7 +175,6 @@ export function ModeTable({ mode, team, opp, busy }: { mode: H2HMode; team: Team
                           <div className="min-w-0">
                             <div className={cn('font-medium text-foreground sm:whitespace-nowrap', dim)}>{r.map_name}</div>
                             {low && <div className="text-[11px] whitespace-nowrap text-muted-foreground">low sample</div>}
-                            <Tags r={r} className="mt-1 sm:hidden" />
                           </div>
                         </div>
                       </td>
@@ -182,8 +182,17 @@ export function ModeTable({ mode, team, opp, busy }: { mode: H2HMode; team: Team
                       <td className={cn('px-2 py-2.5 sm:px-3', dim)}><RateCell rate={r.opp_rate} ours={false} /></td>
                       <td className={cn('px-2 py-2.5 text-right whitespace-nowrap text-foreground/90 max-sm:pr-4 sm:px-3', dim)}>{wl(r.h2h)}</td>
                       <td className={cn('hidden px-3 py-2.5 text-right whitespace-nowrap text-foreground/90 sm:table-cell', dim)}>{count(r.opp_bans)}</td>
-                      <td className="hidden py-2.5 pr-4 pl-3 sm:table-cell"><Tags r={r} className="flex-nowrap" /></td>
+                      <td className="hidden py-2.5 pr-4 pl-3 sm:table-cell"><Tags r={r} /></td>
                     </tr>
+                    {/* Phones: tags get their own full-width line under the map row. */}
+                    {r.tags.length > 0 && (
+                      <tr
+                        className={cn('cursor-pointer border-b border-line/70 last:border-b-0 sm:hidden', expanded && 'bg-white/[0.025]')}
+                        onClick={() => toggle(r.map_id)}
+                      >
+                        <td colSpan={4} className="pr-4 pb-2.5 pl-10"><Tags r={r} /></td>
+                      </tr>
+                    )}
                     {expanded && (
                       <tr className="border-b border-line/70 bg-white/[0.015]">
                         <td colSpan={6} className="px-4 py-3">

@@ -1,8 +1,9 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
-  CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  CartesianGrid, Line, LineChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
   type TooltipContentProps,
 } from 'recharts'
+import { buildBreakAxis } from '@/lib/breakAxis'
 import { shortDate } from '@/lib/format'
 
 /** Default series colors (dark-mode categorical order), used when a series has no color. */
@@ -26,7 +27,10 @@ export interface TrendSeries {
 export interface TrendChartProps {
   series: TrendSeries[]
   height?: number
-  /** Break a line when two consecutive points of a series are more than this many days apart. Default 21. */
+  /**
+   * Break a line when two consecutive points of a series are more than this many days apart. Default 21.
+   * A span this long with no points in any series is cut out of the x-axis and shown as a narrow "No matches" band.
+   */
   gapDays?: number
   referenceLine?: { y: number; label?: string }
   yDomain?: [number | 'auto' | 'dataMin' | 'dataMax', number | 'auto' | 'dataMin' | 'dataMax']
@@ -37,7 +41,14 @@ export interface TrendChartProps {
   ariaLabel?: string
 }
 
-type Row = { t: number } & Record<string, number | null>
+type Row = { t: number; x: number } & Record<string, number | null>
+
+/** The x-axis runs over synthetic units [0, AXIS_W]; toX maps real time into it. */
+const AXIS_W = 1000
+/** Y-axis width + right margin: the part of the chart width that is not plot. */
+const PLOT_INSET = 48 + 12
+const BREAK_PX = 30
+const isoDay = (t: number) => new Date(t).toISOString()
 
 const toTime = (iso: string) => Date.parse(`${iso.slice(0, 10)}T00:00:00Z`)
 
@@ -53,7 +64,7 @@ function buildRows(series: TrendSeries[], gapDays: number) {
   const row = (t: number): Row => {
     let r = rows.get(t)
     if (!r) {
-      r = { t } as Row
+      r = { t, x: 0 } as Row
       rows.set(t, r)
     }
     return r
@@ -84,7 +95,7 @@ function buildRows(series: TrendSeries[], gapDays: number) {
 }
 
 function ChartTooltip({
-  active, payload, label, formatValue, labels, colors,
+  active, payload, formatValue, labels, colors,
 }: TooltipContentProps<number, string> & {
   formatValue: (v: number) => string
   labels: Map<string, string>
@@ -100,7 +111,7 @@ function ChartTooltip({
   if (!items.length) return null
   return (
     <div className="min-w-36 rounded-lg border border-line bg-popover px-3 py-2 text-xs shadow-lg shadow-black/40">
-      <div className="mb-1.5 text-muted-foreground">{shortDate(new Date(Number(label)).toISOString())}</div>
+      <div className="mb-1.5 text-muted-foreground">{shortDate(isoDay((payload[0].payload as Row).t))}</div>
       <ul className="flex flex-col gap-1">
         {items.map((it) => (
           <li key={it.key} className="flex items-center gap-2">
@@ -111,6 +122,18 @@ function ChartTooltip({
         ))}
       </ul>
     </div>
+  )
+}
+
+/** Vertical label centred in a break band. Recharts passes the band's box as `viewBox`. */
+function BreakLabel({ text, viewBox }: { text: string; viewBox?: { x?: number; y?: number; width?: number; height?: number } }) {
+  const { x = 0, y = 0, width = 0, height = 0 } = viewBox ?? {}
+  const cx = x + width / 2
+  const cy = y + height / 2
+  return (
+    <text x={cx} y={cy} transform={`rotate(-90 ${cx} ${cy})`} textAnchor="middle" dy="0.32em" fill="#6b707a" fontSize={10}>
+      {text}
+    </text>
   )
 }
 
@@ -126,6 +149,17 @@ export function TrendChart({
   ariaLabel,
 }: TrendChartProps) {
   const { data, segments } = useMemo(() => buildRows(series, gapDays), [series, gapDays])
+  const [plotW, setPlotW] = useState(0)
+  // A fixed-pixel break band, expressed in axis units.
+  const breakUnits = plotW > 0 ? Math.min(AXIS_W * 0.15, (BREAK_PX / plotW) * AXIS_W) : AXIS_W * 0.03
+  const axis = useMemo(
+    () => buildBreakAxis(data.map((r) => r.t), { gapDays, width: AXIS_W, breakWidth: breakUnits }),
+    [data, gapDays, breakUnits],
+  )
+  const rows = useMemo(() => data.map((r) => ({ ...r, x: axis.toX(r.t) })), [data, axis])
+  const ticks = useMemo(() => axis.ticks(Math.max(2, Math.round((plotW || 600) / 110))), [axis, plotW])
+  const tickDate = useMemo(() => new Map(ticks.map((tk) => [tk.x, tk.t])), [ticks])
+  const narrow = plotW > 0 && plotW < 480
   const labels = useMemo(() => new Map(series.map((s) => [s.key, s.label])), [series])
   const colors = useMemo(() => new Map(segments.map((s) => [s.series.key, s.color])), [segments])
   const showDots = dots ?? series.every((s) => s.points.length <= 20)
@@ -134,15 +168,18 @@ export function TrendChart({
   return (
     <figure className="flex flex-col gap-3" aria-label={ariaLabel}>
       <div style={{ height }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
+        <ResponsiveContainer width="100%" height="100%" onResize={(w) => setPlotW(Math.max(0, w - PLOT_INSET))}>
+          <LineChart data={rows} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
             <CartesianGrid stroke="#23252b" vertical={false} />
             <XAxis
-              dataKey="t"
+              dataKey="x"
               type="number"
-              scale="time"
-              domain={['dataMin', 'dataMax']}
-              tickFormatter={(t: number) => shortDate(new Date(t).toISOString())}
+              domain={[0, AXIS_W]}
+              ticks={ticks.map((tk) => tk.x)}
+              tickFormatter={(x: number) => {
+                const t = tickDate.get(x)
+                return t === undefined ? '' : shortDate(isoDay(t))
+              }}
               tick={axisTick}
               tickLine={false}
               axisLine={{ stroke: '#23252b' }}
@@ -156,6 +193,22 @@ export function TrendChart({
               width={48}
               tickFormatter={(v: number) => formatValue(v)}
             />
+            {axis.breaks.map((b) => (
+              <ReferenceArea
+                key={b.from}
+                x1={b.x0}
+                x2={b.x1}
+                fill="#ffffff"
+                fillOpacity={0.035}
+                stroke="none"
+                ifOverflow="visible"
+                label={
+                  <BreakLabel
+                    text={narrow ? 'No matches' : `No matches · ${shortDate(isoDay(b.from))} – ${shortDate(isoDay(b.to))}`}
+                  />
+                }
+              />
+            ))}
             {referenceLine && (
               <ReferenceLine
                 y={referenceLine.y}

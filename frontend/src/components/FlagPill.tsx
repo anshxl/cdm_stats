@@ -12,9 +12,9 @@ const FLAG_STYLE: Record<Flag['kind'], string> = {
 }
 
 const TAG_STYLE: Record<Tag, { label: string; className: string }> = {
-  pick: { label: 'PICK', className: 'bg-up/14 text-up' },
-  ban: { label: 'BAN', className: 'bg-down/14 text-down' },
-  they_ban: { label: 'THEY BAN', className: 'bg-gold/14 text-gold' },
+  pick: { label: 'SUGGESTED PICK', className: 'bg-up/14 text-up' },
+  ban: { label: 'SUGGESTED BAN', className: 'bg-down/14 text-down' },
+  they_ban: { label: 'THEY LIKELY BAN', className: 'bg-gold/14 text-gold' },
 }
 
 /** Soft pill for an API flag (up / down / low_sample) or an H2H tag (pick / ban / they_ban). */

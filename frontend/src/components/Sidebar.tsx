@@ -28,7 +28,7 @@ export function Sidebar() {
       <div className="flex h-14 items-center justify-center border-b border-line md:justify-start md:px-5">
         <span className="text-[15px] font-bold tracking-tight text-gold">
           <span className="md:hidden">CDM</span>
-          <span className="hidden md:inline">CDM Stats</span>
+          <span className="hidden md:inline">COD:M Stats</span>
         </span>
       </div>
       <ul className="flex flex-col gap-0.5 p-2">

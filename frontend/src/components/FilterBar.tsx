@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { X } from 'lucide-react'
 import { EVENTS, useFilter, type EventKey } from '@/hooks/useFilter'
 import { cn } from '@/lib/utils'
 
@@ -13,16 +12,13 @@ const EVENT_LABEL: Record<EventKey, string> = {
 export interface FilterBarProps {
   /** The page's selects (TeamSelect etc.), placed after the shared filter. */
   children?: ReactNode
-  /** Disables the event control and shows this note (Scrims: "Scrims: dates only"). */
+  /** Disables the event control and shows this note (Scrims). */
   eventDisabledNote?: string
 }
 
-const dateInput =
-  'h-8 w-[8.75rem] rounded-md border border-line bg-surface px-2 text-[13px] text-foreground outline-none hover:bg-raised focus-visible:border-gold focus-visible:outline-none'
-
-/** Shared top bar: event segmented control, date range, then the page's selects. */
+/** Shared top bar: event segmented control, then the page's selects. */
 export function FilterBar({ children, eventDisabledNote }: FilterBarProps) {
-  const { filter, setEvent, setStart, setEnd, clearDates } = useFilter()
+  const { filter, setEvent } = useFilter()
   const eventDisabled = Boolean(eventDisabledNote)
 
   return (
@@ -56,37 +52,6 @@ export function FilterBar({ children, eventDisabledNote }: FilterBarProps) {
             })}
           </div>
           {eventDisabledNote && <span className="text-xs text-muted-foreground">{eventDisabledNote}</span>}
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          <input
-            type="date"
-            aria-label="Start date"
-            className={dateInput}
-            value={filter.start ?? ''}
-            max={filter.end ?? undefined}
-            onChange={(ev) => setStart(ev.target.value || null)}
-          />
-          <span className="text-xs text-muted-foreground" aria-hidden>to</span>
-          <input
-            type="date"
-            aria-label="End date"
-            className={dateInput}
-            value={filter.end ?? ''}
-            min={filter.start ?? undefined}
-            onChange={(ev) => setEnd(ev.target.value || null)}
-          />
-          {(filter.start || filter.end) && (
-            <button
-              type="button"
-              onClick={clearDates}
-              aria-label="Clear dates"
-              title="Clear dates"
-              className="grid size-8 place-items-center rounded-md text-muted-foreground hover:bg-white/[0.05] hover:text-foreground"
-            >
-              <X className="size-4" />
-            </button>
-          )}
         </div>
 
         {children && <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5">{children}</div>}

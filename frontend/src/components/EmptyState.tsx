@@ -9,7 +9,7 @@ export interface EmptyStateProps {
 
 export function EmptyState({
   message = 'No matches in this filter',
-  hint = 'Pick another event or widen the date range.',
+  hint = 'Pick another event.',
   className,
 }: EmptyStateProps) {
   return (

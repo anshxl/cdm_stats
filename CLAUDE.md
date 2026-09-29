@@ -50,6 +50,7 @@ Frontend commands (run in [frontend/](frontend/)):
 npm run dev        # Vite dev server on :5173
 npm run build      # type-check + build to frontend/dist (served by the API when present)
 npm run gen:types  # regenerate src/api/types.ts from the API's OpenAPI schema
+npm test           # node:test on src/**/*.test.ts (Node strips the types; no test deps)
 ```
 
 `npm` and `npx` commands are pre-approved in [.claude/settings.local.json](.claude/settings.local.json). Run `npm run gen:types` after changing [src/cdm_stats/api/schemas.py](src/cdm_stats/api/schemas.py) and commit the regenerated `types.ts`.

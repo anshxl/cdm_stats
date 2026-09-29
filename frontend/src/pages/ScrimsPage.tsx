@@ -65,7 +65,7 @@ export default function ScrimsPage() {
 
   return (
     <>
-      <FilterBar eventDisabledNote="Scrims: dates only">
+      <FilterBar eventDisabledNote="Events do not apply to scrims">
         <ModeToggle value={mode} onChange={(m) => setParam('mode', m)} />
         <MapSelect options={options.data?.maps ?? []} value={map} onChange={(m) => setParam('map', m)} />
         <TeamSelect
@@ -93,7 +93,7 @@ export default function ScrimsPage() {
           </>
         ) : s.overall.total === 0 ? (
           <Card>
-            <EmptyState message="No scrims in this filter" hint="Widen the date range or clear the mode, map and opponent." />
+            <EmptyState message="No scrims in this filter" hint="Clear the mode, map and opponent." />
           </Card>
         ) : (
           <>

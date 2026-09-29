@@ -40,8 +40,8 @@ function Body({ d, teams, busy }: { d: H2H; teams: TeamInfo[]; busy: boolean }) 
             <ModeTable key={m.mode} mode={m} team={d.team} opp={d.opp} busy={busy} />
           ))}
           <p className="px-1 text-xs leading-5 text-muted-foreground">
-            Tags are suggestions from win rates with n ≥ 4: PICK = our biggest edge, BAN = their biggest edge,
-            THEY BAN = their most-banned map (≥30%). Rows marked low sample have n &lt; 4 for at least one team.
+            Tags are suggestions from win rates with n ≥ 4: SUGGESTED PICK = our biggest edge, SUGGESTED BAN = their
+            biggest edge, THEY LIKELY BAN = their most-banned map (≥30%). Rows marked low sample have n &lt; 4 for at least one team.
           </p>
         </div>
         <div className="lg:sticky lg:top-[4.25rem]">
@@ -72,7 +72,7 @@ export default function H2HPage() {
   else if (!opponents.loading && opponents.data?.length === 0)
     body = (
       <Card>
-        <EmptyState message={`${team} played no one in this filter`} hint="Pick another team or event, or widen the date range." />
+        <EmptyState message={`${team} played no one in this filter`} hint="Pick another team or event." />
       </Card>
     )
   // An unchecked URL opponent can fail while the list loads; wait for the checked one.

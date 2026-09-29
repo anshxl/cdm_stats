@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { EloSeries, TeamInfo } from '@/api/models'
 import { TeamBadge } from '@/components/TeamBadge'
+import { buildBreakAxis } from '@/lib/breakAxis'
 import { shortDate } from '@/lib/format'
 import { teamLineColor } from '@/lib/teamColor'
 import { cn } from '@/lib/utils'
@@ -11,6 +12,8 @@ const GAP_DAYS = 21
 /** Same-day matches are spread this far apart so each one gets its own point. */
 const SAME_DAY_STEP = 4 * 3_600_000
 const HOVER_RADIUS = 28
+/** Width of the band that stands in for a cut-out gap on the x-axis. */
+const BREAK_PX = 30
 
 const MUTED = '#41444c'
 const HOVER = '#e7e8ea'
@@ -72,18 +75,6 @@ function niceStep(range: number): number {
   return 200
 }
 
-function monthTicks(x0: number, x1: number): number[] {
-  const out: number[] = []
-  const d = new Date(x0)
-  let t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1)
-  while (t <= x1) {
-    out.push(t)
-    const n = new Date(t)
-    t = Date.UTC(n.getUTCFullYear(), n.getUTCMonth() + 1, 1)
-  }
-  return out
-}
-
 function useWidth<T extends HTMLElement>() {
   const ref = useRef<T>(null)
   const [width, setWidth] = useState(0)
@@ -116,22 +107,25 @@ export function EloTrajectoryChart({ series, seed, focus, onFocus, height: fullH
   const [hoverPt, setHoverPt] = useState<{ key: string; pt: Pt } | null>(null)
 
   const all = lines.flatMap((l) => l.segments.flat())
-  const xs = all.map((p) => p.x)
   const ys = all.map((p) => p.elo).concat(seed)
-  const x0 = Math.min(...xs)
-  const x1 = Math.max(...xs, x0 + DAY)
   const step = niceStep(Math.max(...ys) - Math.min(...ys))
   const y0 = Math.floor((Math.min(...ys) - step / 4) / step) * step
   const y1 = Math.ceil((Math.max(...ys) + step / 4) / step) * step
 
   const innerW = Math.max(0, width - M.left - M.right)
   const innerH = height - M.top - M.bottom
-  const sx = (x: number) => M.left + ((x - x0) / (x1 - x0)) * innerW
+  // Long spans with no matches in any team are cut out and drawn as a narrow band.
+  const axis = useMemo(
+    () => buildBreakAxis(lines.flatMap((l) => l.segments.flat().map((p) => p.x)), { gapDays: GAP_DAYS, width: innerW, breakWidth: BREAK_PX }),
+    [lines, innerW],
+  )
+  const sx = (x: number) => M.left + axis.toX(x)
   const sy = (y: number) => M.top + (1 - (y - y0) / (y1 - y0)) * innerH
 
   const yTicks: number[] = []
   for (let v = y0; v <= y1; v += step) yTicks.push(v)
-  const xTicks = monthTicks(x0, x1)
+  const xTicks = axis.ticks(Math.max(2, Math.round(innerW / 110)))
+  const narrow = innerW < 480
 
   const lit = hoverPt?.key ?? hoverKey
   const byKey = new Map(lines.map((l) => [l.key, l]))
@@ -215,11 +209,23 @@ export function EloTrajectoryChart({ series, seed, focus, onFocus, height: fullH
                 <text x={M.left - 8} y={sy(v)} dy="0.32em" textAnchor="end" fill={AXIS_TEXT} fontSize={11}>{v}</text>
               </g>
             ))}
-            {xTicks.map((t) => (
-              <text key={t} x={sx(t)} y={height - 6} textAnchor="middle" fill={AXIS_TEXT} fontSize={11}>
-                {new Date(t).toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' })}
+            {xTicks.map(({ t, x }) => (
+              <text key={t} x={M.left + x} y={height - 6} textAnchor="middle" fill={AXIS_TEXT} fontSize={11}>
+                {shortDate(new Date(t).toISOString())}
               </text>
             ))}
+            {axis.breaks.map((b) => {
+              const cx = M.left + (b.x0 + b.x1) / 2
+              const cy = M.top + innerH / 2
+              return (
+                <g key={b.from} pointerEvents="none">
+                  <rect x={M.left + b.x0} y={M.top} width={b.x1 - b.x0} height={innerH} fill="#ffffff" fillOpacity={0.035} />
+                  <text x={cx} y={cy} transform={`rotate(-90 ${cx} ${cy})`} textAnchor="middle" dy="0.32em" fill="#6b707a" fontSize={10}>
+                    {narrow ? 'No matches' : `No matches · ${shortDate(new Date(b.from).toISOString())} – ${shortDate(new Date(b.to).toISOString())}`}
+                  </text>
+                </g>
+              )
+            })}
             <line x1={M.left} x2={width - M.right} y1={sy(seed)} y2={sy(seed)} stroke="#5b606a" strokeDasharray="4 4" />
             <text x={width - M.right + 6} y={sy(seed)} dy="0.32em" fill={AXIS_TEXT} fontSize={11}>Seed</text>
 

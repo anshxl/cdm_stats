@@ -90,7 +90,7 @@ export default function EloPage() {
           )}
         </Card>
         <p className="text-xs text-muted-foreground">
-          Ratings count every competition. The event and date filters only choose which teams and matches show.
+          Ratings count every competition. The event filter only chooses which teams and matches show.
         </p>
       </PageBody>
     </>
