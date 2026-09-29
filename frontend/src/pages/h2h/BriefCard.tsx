@@ -34,6 +34,7 @@ export function BriefCard({ team, opp, event }: { team: string; opp: string; eve
     }
   }
 
+  const idle = state.kind === 'idle'
   // The brief is cached, so there is no button once it is written.
   const action = state.kind !== 'done' && (
     <button
@@ -48,11 +49,14 @@ export function BriefCard({ team, opp, event }: { team: string; opp: string; eve
   )
 
   return (
-    <Card title="Pre-match brief" action={action}>
+    // Idle: header only (title + button), so no empty body and no double bottom border.
+    <Card
+      title="Pre-match brief"
+      action={action}
+      className={idle ? '[&>header]:border-b-0' : undefined}
+      bodyClassName={idle ? 'hidden' : undefined}
+    >
       <div aria-live="polite">
-        {state.kind === 'idle' && (
-          <p className="text-sm text-muted-foreground">Claude writes a short brief from the tagged numbers below.</p>
-        )}
         {state.kind === 'loading' && (
           <div className="flex flex-col gap-2">
             <Skeleton className="h-3.5 w-full" />
@@ -60,14 +64,7 @@ export function BriefCard({ team, opp, event }: { team: string; opp: string; eve
             <Skeleton className="h-3.5 w-2/3" />
           </div>
         )}
-        {state.kind === 'done' && (
-          <>
-            <p className="text-sm leading-6 text-foreground">{state.text}</p>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Written by Claude from the numbers on this page. Check them before you act.
-            </p>
-          </>
-        )}
+        {state.kind === 'done' && <p className="text-sm leading-6 text-foreground">{state.text}</p>}
         {state.kind === 'error' && <ErrorCard error={state.error} title="Brief" />}
       </div>
     </Card>
