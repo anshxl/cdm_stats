@@ -10,7 +10,7 @@ def _basic(user: str, password: str) -> dict:
     return {"Authorization": f"Basic {token}"}
 
 
-# --- auth (ports dashboard/auth.py) -------------------------------------------
+# --- auth --------------------------------------------------------------------
 
 def test_auth_disabled_without_password(client):
     assert client.get("/api/scope").status_code == 200

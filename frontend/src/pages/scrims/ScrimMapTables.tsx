@@ -79,8 +79,8 @@ export function ScrimMapTables({ maps }: { maps: ScrimMap[] }) {
               winRate={(r) => ({ value: r.win_pct, n: r.played })}
               columns={[
                 { key: 'wl', header: 'W–L', render: (r) => `${r.wins}–${r.losses}` },
-                { key: 'margin', header: <span title={`Average ${meta.unit} per map`}>Avg {meta.unit}</span>, hideOnMobile: true, render: (r) => signed(r.avg_margin) },
-                { key: 'recent', header: 'Last 5', align: 'left', hideOnMobile: true, render: (r) => <ResultStrip results={r.recent} /> },
+                { key: 'margin', header: <span title={`Average ${meta.unit} per map`}>Avg {meta.unit}</span>, hideOnMobile: true, width: 104, render: (r) => signed(r.avg_margin) },
+                { key: 'recent', header: 'Last 5', align: 'left', hideOnMobile: true, width: 148, render: (r) => <ResultStrip results={r.recent} /> },
               ]}
               renderDetail={(r) => <RecentDetail results={r.recent} />}
             />

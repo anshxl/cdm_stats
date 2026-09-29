@@ -42,7 +42,7 @@ const COLUMNS: MapTableColumn<ProfileMap>[] = [
   { key: 'def', header: 'Defend', render: (m) => wl(m.defend_wins, m.defend_losses), hideOnMobile: true },
   { key: 'ban', header: 'Banned', render: (m) => <RateCell rate={m.banned} />, hideOnMobile: true },
   { key: 'picked', header: 'Picked', render: (m) => <RateCell rate={m.picked} />, hideOnMobile: true },
-  { key: 'oppban', header: 'Opp banned', render: (m) => <RateCell rate={m.opp_banned} />, hideOnMobile: true },
+  { key: 'oppban', header: 'Opp banned', render: (m) => <RateCell rate={m.opp_banned} />, hideOnMobile: true, width: 100 },
 ]
 
 function MapDetail({ m }: { m: ProfileMap }) {

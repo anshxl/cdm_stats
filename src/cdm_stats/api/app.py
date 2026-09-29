@@ -16,7 +16,7 @@ from cdm_stats.api.deps import ROOT, get_conn  # noqa: F401  (get_conn: override
 DEFAULT_DIST = ROOT / "frontend" / "dist"
 
 
-# --- Basic auth: same behavior as src/cdm_stats/dashboard/auth.py -------------
+# --- Basic auth ----------------------------------------------------------------
 # Active only when DASHBOARD_PASSWORD is set; DASHBOARD_USER defaults to "cdm".
 
 def _check(user: str, password: str) -> bool:

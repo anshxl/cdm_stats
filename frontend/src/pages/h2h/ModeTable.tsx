@@ -17,7 +17,7 @@ type WL = H2HMap['h2h']
 function RateCell({ rate, ours }: { rate: Flagged; ours: boolean }) {
   return (
     <div className="flex items-center gap-2">
-      <div className="relative hidden h-1.5 w-16 overflow-hidden rounded-full bg-white/[0.06] sm:block" aria-hidden>
+      <div className="relative hidden h-1.5 w-12 overflow-hidden rounded-full bg-white/[0.06] sm:block" aria-hidden>
         {rate.value != null && (
           <div
             className={cn('absolute inset-y-0 left-0 rounded-full', ours ? 'bg-gold/75' : 'bg-foreground/45')}
@@ -116,10 +116,19 @@ export function ModeTable({ mode, team, opp, busy }: { mode: H2HMode; team: Team
         <p className="px-4 py-6 text-sm text-muted-foreground">No maps played in this mode.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
+          {/* Fixed column widths so the three mode tables line up; the map column takes the rest. */}
+          <table className="w-full table-fixed border-collapse text-sm sm:min-w-[790px]">
+            <colgroup>
+              <col />
+              <col className="w-[76px] sm:w-[156px]" />
+              <col className="w-[76px] sm:w-[156px]" />
+              <col className="w-[64px]" />
+              <col className="hidden w-[88px] sm:table-column" />
+              <col className="hidden w-[156px] sm:table-column" />
+            </colgroup>
             <thead>
               <tr className="border-b border-line">
-                <th scope="col" className={cn(th, 'w-full pl-4 text-left')}>Map</th>
+                <th scope="col" className={cn(th, 'pl-4 text-left')}>Map</th>
                 <th scope="col" className={cn(th, 'text-left')}>
                   <span className="inline-flex items-center gap-1.5"><TeamBadge team={team} size="sm" />{team.abbreviation}</span>
                 </th>

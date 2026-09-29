@@ -1,15 +1,9 @@
-from cdm_stats.dashboard.helpers import get_all_teams, HIDDEN_TEAMS
+from cdm_stats.db.queries_scope import HIDDEN_TEAMS
 from cdm_stats.db.queries import get_team_id_by_abbr, get_team_map_wl, insert_match, insert_map_result
 
 
 def test_hidden_teams_constant():
     assert HIDDEN_TEAMS == {"Felines", "RAG", "i7"}
-
-
-def test_get_all_teams_excludes_hidden(db):
-    abbrs = {a for _, a in get_all_teams(db)}
-    assert "Felines" not in abbrs
-    assert "GL" in abbrs
 
 
 def test_metrics_still_count_hidden_opponents(db):

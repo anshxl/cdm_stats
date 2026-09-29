@@ -13,7 +13,7 @@ from cdm_stats.metrics.insights import MIN_N
 from cdm_stats.team_colors import TEAM_COLORS
 
 ROOT = Path(__file__).resolve().parents[3]
-# Same env handling as the Dash app: DB_PATH overrides the repo's data/cdl.db.
+# DB_PATH overrides the repo's data/cdl.db.
 DB_PATH = Path(os.environ.get("DB_PATH", ROOT / "data" / "cdl.db"))
 # public/ in dev; dist/ holds the same files after a Vite build (Docker).
 _LOGO_DIRS = (ROOT / "frontend" / "public" / "logos", ROOT / "frontend" / "dist" / "logos")

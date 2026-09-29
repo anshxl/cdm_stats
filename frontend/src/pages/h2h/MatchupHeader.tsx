@@ -4,28 +4,15 @@ import { TeamBadge } from '@/components/TeamBadge'
 import { num } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
-/** Series cap of `/api/h2h` opp_recent_series (db.queries_views.recent_series limit). */
-const RECENT_LIMIT = 10
-
-/**
- * Series and map record between the two teams.
- * Maps: exact, summed from the per-map H2H counts.
- * Series: counted from the opponent's recent series (the API has no H2H series
- * total), so it can be partial when that list is full.
- */
-export function h2hRecord(d: H2H) {
-  let mapW = 0
-  let mapL = 0
+/** Map record between the two teams, summed from the per-map H2H counts. */
+function h2hMaps(d: H2H) {
+  let wins = 0
+  let losses = 0
   for (const m of d.modes) for (const r of m.maps) {
-    mapW += r.h2h.wins
-    mapL += r.h2h.losses
+    wins += r.h2h.wins
+    losses += r.h2h.losses
   }
-  const meetings = d.opp_recent_series.filter((s) => s.opponent === d.team.abbreviation)
-  // opp_recent_series is oriented to the opponent: their L is our W.
-  const seriesW = meetings.filter((s) => s.result === 'L').length
-  const seriesL = meetings.length - seriesW
-  const partial = d.opp_recent_series.length >= RECENT_LIMIT
-  return { mapW, mapL, seriesW, seriesL, partial }
+  return { wins, losses }
 }
 
 function Side({ d, side }: { d: H2H; side: 'team' | 'opp' }) {
@@ -51,20 +38,11 @@ function Side({ d, side }: { d: H2H; side: 'team' | 'opp' }) {
   )
 }
 
-/** Face-off strip: both teams with Elo, and the head-to-head record between them.
- * The series record leads when it is complete; when it may be cut off by the
- * recent-series cap, the exact map record leads and the series count is labelled. */
+/** Face-off strip: both teams with Elo, the head-to-head series record, and the map record beneath. */
 export function MatchupHeader({ d }: { d: H2H }) {
-  const r = h2hRecord(d)
-  const series = r.seriesW + r.seriesL
-  const seriesFirst = !r.partial
-  const [w, l] = seriesFirst ? [r.seriesW, r.seriesL] : [r.mapW, r.mapL]
+  const { wins: w, losses: l } = d.h2h_series
+  const maps = h2hMaps(d)
   const share = w + l ? w / (w + l) : 0.5
-  const seriesText = !series
-    ? 'No series'
-    : r.partial
-      ? `Series ${r.seriesW}–${r.seriesL} in ${d.opp.abbreviation}'s last ${RECENT_LIMIT}`
-      : 'Series'
   return (
     <section
       aria-label="Match-up"
@@ -72,7 +50,7 @@ export function MatchupHeader({ d }: { d: H2H }) {
     >
       <Side d={d} side="team" />
       <div className="flex max-w-32 flex-col items-center gap-1.5 px-1 sm:max-w-none">
-        <p className="text-[28px] leading-none font-semibold tracking-tight sm:text-4xl" aria-label={`${seriesFirst ? 'Series' : 'Maps'} ${w} to ${l}`}>
+        <p className="text-[28px] leading-none font-semibold tracking-tight sm:text-4xl" aria-label={`Series ${w} to ${l}`}>
           {w}
           <span className="px-1 text-muted-foreground/60">–</span>
           {l}
@@ -86,11 +64,7 @@ export function MatchupHeader({ d }: { d: H2H }) {
           )}
         </div>
         <p className="text-center text-xs leading-4 text-muted-foreground">
-          {seriesFirst ? (
-            <>{seriesText}<br />Maps {r.mapW}–{r.mapL}</>
-          ) : (
-            <>Maps<br />{seriesText}</>
-          )}
+          {w + l ? 'Series' : 'No series'}<br />Maps {maps.wins}–{maps.losses}
         </p>
       </div>
       <Side d={d} side="opp" />

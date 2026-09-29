@@ -144,6 +144,21 @@ def head_to_head(
     return {"wins": row[0] or 0, "losses": row[1] or 0}
 
 
+def h2h_series(
+    conn: sqlite3.Connection, team_id: int, opp_id: int, f: MatchFilter = MatchFilter()
+) -> dict:
+    """Series W-L between two specific teams, from team_id's side."""
+    fw, fp = f.sql()
+    won, lost = conn.execute(
+        f"""SELECT SUM(m.series_winner_id = ?), SUM(m.series_winner_id = ?)
+            FROM matches m
+            WHERE ((m.team1_id = ? AND m.team2_id = ?)
+                OR (m.team1_id = ? AND m.team2_id = ?)){fw}""",
+        [team_id, opp_id, team_id, opp_id, opp_id, team_id] + fp,
+    ).fetchone()
+    return {"wins": won or 0, "losses": lost or 0}
+
+
 def team_map_wl(
     conn: sqlite3.Connection, team_id: int, map_id: int, f: MatchFilter = MatchFilter()
 ) -> dict:

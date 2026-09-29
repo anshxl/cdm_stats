@@ -238,6 +238,7 @@ export interface components {
             team: components["schemas"]["TeamInfo"];
             opp: components["schemas"]["TeamInfo"];
             elo: components["schemas"]["H2HElo"];
+            h2h_series: components["schemas"]["WL"];
             /** Opp Recent Series */
             opp_recent_series: components["schemas"]["SeriesResult"][];
             /** Modes */

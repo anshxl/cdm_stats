@@ -217,6 +217,7 @@ class H2H(BaseModel):
     team: TeamInfo
     opp: TeamInfo
     elo: H2HElo
+    h2h_series: WL
     opp_recent_series: list[SeriesResult]
     modes: list[H2HMode]
 

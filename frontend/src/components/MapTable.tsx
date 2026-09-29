@@ -1,4 +1,4 @@
-import { Fragment, useState, type ReactNode } from 'react'
+import { Fragment, useState, type CSSProperties, type ReactNode } from 'react'
 import { ChevronRight } from 'lucide-react'
 import type { Flag, Tag } from '@/api/models'
 import { pct } from '@/lib/format'
@@ -8,6 +8,12 @@ import { FlagPill } from './FlagPill'
 /** Samples below this are dimmed and marked "low sample" (project rule: n < 4). */
 export const MIN_N = 4
 
+// Fixed column widths (px), so stacked tables line up column for column.
+// The map column takes the rest; from sm up the table never leaves it less than MAP_MIN.
+const MAP_MIN = 150
+const VALUE_W = 80
+const MARKS_W = 120
+
 export interface MapTableColumn<R> {
   key: string
   header: ReactNode
@@ -15,6 +21,8 @@ export interface MapTableColumn<R> {
   align?: 'left' | 'right'
   /** Hide below the sm breakpoint to keep phones readable. */
   hideOnMobile?: boolean
+  /** Column width in px. Default 80. */
+  width?: number
 }
 
 export interface MapTableProps<R> {
@@ -86,13 +94,27 @@ export function MapTable<R>({
   const hasMarks = Boolean(tags || flag)
   const colCount = 2 + columns.length + (hasMarks ? 1 : 0)
   const th = 'h-9 px-3 text-xs font-medium text-muted-foreground whitespace-nowrap'
+  const width = (c: MapTableColumn<R>) => c.width ?? VALUE_W
+  // 172 = desktop win-rate column.
+  const minWidth = MAP_MIN + columns.reduce((t, c) => t + width(c), 0) + 172 + (hasMarks ? MARKS_W : 0)
 
   return (
     <div className={cn('overflow-x-auto', className)}>
-      <table className="w-full border-collapse text-sm">
+      <table
+        className="w-full table-fixed border-collapse text-sm sm:min-w-(--mt-min)"
+        style={{ '--mt-min': `${minWidth}px` } as CSSProperties}
+      >
+        <colgroup>
+          <col />
+          {columns.map((c) => (
+            <col key={c.key} className={cn(c.hideOnMobile && 'hidden sm:table-column')} style={{ width: width(c) }} />
+          ))}
+          <col className="w-[124px] sm:w-[172px]" />
+          {hasMarks && <col className="hidden sm:table-column" style={{ width: MARKS_W }} />}
+        </colgroup>
         <thead>
           <tr className="border-b border-line">
-            <th scope="col" className={cn(th, 'w-full pl-4 text-left')}>Map</th>
+            <th scope="col" className={cn(th, 'pl-4 text-left')}>Map</th>
             {columns.map((c) => (
               <th
                 key={c.key}

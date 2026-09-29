@@ -37,13 +37,24 @@ uv run python main.py chart elo-all
 uv run python main.py backfill
 ```
 
-Dashboard (Dash + Bootstrap) runs locally on port 8050:
+Dashboard (FastAPI + React) runs locally as two processes — the API on port 8000 and the Vite dev server on port 5173, which proxies `/api` to 8000:
 
 ```
-uv run python -m cdm_stats.dashboard
+uv run uvicorn cdm_stats.api.app:app --reload
+cd frontend && npm run dev
 ```
 
-Production uses gunicorn via the [Procfile](Procfile) — don't invoke gunicorn manually during development.
+Frontend commands (run in [frontend/](frontend/)):
+
+```
+npm run dev        # Vite dev server on :5173
+npm run build      # type-check + build to frontend/dist (served by the API when present)
+npm run gen:types  # regenerate src/api/types.ts from the API's OpenAPI schema
+```
+
+`npm` and `npx` commands are pre-approved in [.claude/settings.local.json](.claude/settings.local.json). Run `npm run gen:types` after changing [src/cdm_stats/api/schemas.py](src/cdm_stats/api/schemas.py) and commit the regenerated `types.ts`.
+
+Production is the two-stage [Dockerfile](Dockerfile) (Node builds `frontend/dist`, then uvicorn serves API + frontend on `$PORT`). Don't build or run it manually during development.
 
 ### Linting and formatting
 
@@ -94,7 +105,7 @@ These aren't blocked by settings but are high-blast-radius — surface the inten
 ## 2. Project at a glance
 
 - **Language / runtime:** Python 3.12, managed with `uv` (see [.python-version](.python-version)).
-- **Framework:** Dash + dash-bootstrap-components for the dashboard; plain `argparse` CLI ([main.py](main.py)) for ingestion and exports.
+- **Framework:** FastAPI ([src/cdm_stats/api/](src/cdm_stats/api/)) + React/Vite/TypeScript/Tailwind/Recharts ([frontend/](frontend/)) for the dashboard; plain `argparse` CLI ([main.py](main.py)) for ingestion and exports.
 - **Storage:** SQLite at [data/cdl.db](data/cdl.db), accessed via raw `sqlite3` + parameterized queries. No ORM.
 - **Layout:**
   - [src/cdm_stats/db/](src/cdm_stats/db/) — schema, migrations, query functions
@@ -102,13 +113,14 @@ These aren't blocked by settings but are high-blast-radius — surface the inten
   - [src/cdm_stats/metrics/](src/cdm_stats/metrics/) — Elo, avoidance/target, margin, map strength
   - [src/cdm_stats/export/](src/cdm_stats/export/) — Excel exports (map matrix, matchup, profile)
   - [src/cdm_stats/charts/](src/cdm_stats/charts/) — matplotlib chart generation
-  - [src/cdm_stats/dashboard/](src/cdm_stats/dashboard/) — Dash app, tabs, components
+  - [src/cdm_stats/api/](src/cdm_stats/api/) — FastAPI app: basic auth, `/api` routes, Pydantic schemas, serves `frontend/dist`
+  - [frontend/](frontend/) — React + Vite dashboard (pages, components, generated API types in `src/api/types.ts`)
   - [tests/](tests/) — pytest, flat layout
   - [docs/superpowers/specs/](docs/superpowers/specs/) — design docs from brainstorming
   - [docs/superpowers/plans/](docs/superpowers/plans/) — implementation plans
   - [scripts/](scripts/) — currently unused; add one-shot scripts here if needed
-- **Install / sync:** `uv sync` (reads [pyproject.toml](pyproject.toml) + [uv.lock](uv.lock))
-- **Dashboard dev server:** `uv run python -m cdm_stats.dashboard` → http://localhost:8050
+- **Install / sync:** `uv sync --extra dev` (reads [pyproject.toml](pyproject.toml) + [uv.lock](uv.lock); pytest lives in the `dev` extra, so a plain `uv sync` removes it); `npm ci` in `frontend/`
+- **Dashboard dev server:** `uv run uvicorn cdm_stats.api.app:app --reload` + `npm run dev` in `frontend/` → http://localhost:5173
 
 ---
 

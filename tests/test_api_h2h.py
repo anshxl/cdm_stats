@@ -62,3 +62,10 @@ def test_h2h_errors(client):
     assert client.get("/api/h2h?team=GL&opp=GL").status_code == 422
     assert client.get("/api/h2h?team=GL").status_code == 422
     assert client.get("/api/h2h?team=GL&opp=DVS&event=x").status_code == 422
+
+
+def test_h2h_series_record(client):
+    assert client.get("/api/h2h?team=GL&opp=DVS").json()["h2h_series"] == {"wins": 6, "losses": 0}
+    assert client.get("/api/h2h?team=DVS&opp=GL").json()["h2h_series"] == {"wins": 0, "losses": 6}
+    assert client.get("/api/h2h?team=GL&opp=DVS&start=2026-07-02").json()["h2h_series"] == {"wins": 1, "losses": 0}
+    assert client.get("/api/h2h?team=GL&opp=DVS&event=regionals").json()["h2h_series"] == {"wins": 0, "losses": 0}

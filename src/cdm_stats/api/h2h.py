@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from cdm_stats.api.deps import get_conn, low_sample_flag, match_filter, team_info, team_or_404
 from cdm_stats.api.schemas import H2H
 from cdm_stats.db.queries import MODES
-from cdm_stats.db.queries_views import matchup_data, recent_series
+from cdm_stats.db.queries_views import h2h_series, matchup_data, recent_series
 from cdm_stats.metrics.elo import get_current_elo, is_low_confidence
 from cdm_stats.metrics.filters import MatchFilter
 from cdm_stats.metrics.insights import h2h_tags
@@ -58,6 +58,7 @@ def head_to_head(team: str, opp: str, f: MatchFilter = Depends(match_filter),
         "team": team_info(you["abbreviation"], you["team_name"]),
         "opp": team_info(them["abbreviation"], them["team_name"]),
         "elo": {"team": _elo(conn, you["team_id"]), "opp": _elo(conn, them["team_id"])},
+        "h2h_series": h2h_series(conn, you["team_id"], them["team_id"], f),
         "opp_recent_series": recent_series(conn, them["team_id"], f),
         "modes": modes,
     }
