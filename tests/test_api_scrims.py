@@ -21,6 +21,15 @@ def test_scrims_shape(client):
     ]
 
 
+def test_scrims_trend_by_mode(client):
+    rows = client.get("/api/scrims").json()["trend_by_mode"]
+    assert [(r["mode"], r["match_date"], r["played"], r["wins"]) for r in rows] == [
+        ("SnD", "2026-02-25", 1, 1), ("SnD", "2026-03-03", 1, 0),
+        ("HP", "2026-02-25", 1, 1), ("Control", "2026-03-03", 1, 1),
+    ]
+    assert {r["mode"] for r in client.get("/api/scrims?mode=HP").json()["trend_by_mode"]} == {"HP"}
+
+
 def test_scrims_mode_map_opponent_filters(client):
     snd = client.get("/api/scrims?mode=SnD").json()
     assert snd["overall"]["total"] == 2 and [m["map_name"] for m in snd["maps"]] == ["Tunisia"]
@@ -31,14 +40,21 @@ def test_scrims_mode_map_opponent_filters(client):
     assert oug["overall"] == {"wins": 1, "losses": 1, "total": 2, "win_pct": 0.5}
 
 
-def test_scrims_kd_trend_per_player_day(client):
-    trend = client.get("/api/scrims").json()["kd_trend"]
-    assert [(p["player_name"], p["match_date"], p["kills"], p["deaths"], p["assists"], p["games"])
-            for p in trend] == [("Alpha", "2026-02-25", 40, 25, 10, 2), ("Alpha", "2026-03-03", 20, 25, 4, 1),
-                                ("Bravo", "2026-03-03", 15, 15, 3, 1)]
-    assert [p["kills"] for p in client.get("/api/scrims?mode=SnD").json()["kd_trend"]] == [10]
-    assert [p["kills"] for p in client.get("/api/scrims?map=Summit").json()["kd_trend"]] == [30]
-    assert len(client.get("/api/scrims?opponent=DVS").json()["kd_trend"]) == 1
+def test_scrims_player_maps(client):
+    rows = client.get("/api/scrims").json()["player_maps"]
+    assert [(r["date"], r["opponent"], r["map_name"], r["player_name"], r["kills"], r["op_kills"], r["op_pulls"])
+            for r in rows] == [
+        ("2026-02-25", "DVS", "Tunisia", "Alpha", 10, None, None),
+        ("2026-02-25", "DVS", "Summit", "Alpha", 30, 6, 4),
+        ("2026-03-03", "OUG", "Raid", "Alpha", 20, None, None),
+        ("2026-03-03", "OUG", "Raid", "Bravo", 15, None, None),
+    ]
+    summit = rows[1]
+    assert (summit["mode"], summit["result"], summit["our_score"], summit["opp_score"]) == ("HP", "W", 250, 200)
+    assert [r["map_name"] for r in client.get("/api/scrims?mode=SnD").json()["player_maps"]] == ["Tunisia"]
+    assert [r["map_name"] for r in client.get("/api/scrims?map=Summit").json()["player_maps"]] == ["Summit"]
+    assert len(client.get("/api/scrims?opponent=OUG").json()["player_maps"]) == 2
+    assert len(client.get("/api/scrims?start=2026-03-01").json()["player_maps"]) == 2
 
 
 def test_scrims_filter_by_date_only(client):

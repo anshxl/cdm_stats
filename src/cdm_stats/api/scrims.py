@@ -8,7 +8,7 @@ from cdm_stats.api.deps import Mode, get_conn, low_sample_flag, match_filter, te
 from cdm_stats.api.schemas import ScrimOptions, Scrims
 from cdm_stats.db.queries import MODE_ORDER, MODES
 from cdm_stats.db.queries_scrim import (
-    player_weekly_trend, scrim_map_breakdown, scrim_map_results_detail, scrim_opponents,
+    player_map_stats, scrim_map_breakdown, scrim_map_results_detail, scrim_opponents,
     scrim_weekly_trend, scrim_win_loss,
 )
 from cdm_stats.db.queries_views import scrim_maps_for_mode
@@ -50,9 +50,11 @@ def scrims(mode: Mode | None = None, map_name: str | None = Query(None, alias="m
                  for d in maps],
         "trend": [_frac(p) for p in scrim_weekly_trend(conn, mode=mode, map_name=map_name,
                                                         f=f, opponent=opponent)],
+        "trend_by_mode": [{"mode": m, **_frac(p)} for m in MODES if mode in (None, m)
+                          for p in scrim_weekly_trend(conn, mode=m, map_name=map_name, f=f,
+                                                      opponent=opponent)],
         # Player stats follow every filter, map included (unlike the map table).
-        "kd_trend": player_weekly_trend(conn, mode=mode, f=f, map_name=map_name,
-                                        opponent=opponent),
+        "player_maps": player_map_stats(conn, mode=mode, map_name=map_name, opponent=opponent, f=f),
     }
 
 

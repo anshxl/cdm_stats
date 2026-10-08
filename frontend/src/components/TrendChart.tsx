@@ -6,6 +6,9 @@ import {
 import { buildBreakAxis } from '@/lib/breakAxis'
 import { shortDate } from '@/lib/format'
 
+/** Opacity of the other lines while one line is highlighted. */
+const DIM = 0.15
+
 /** Default series colors (dark-mode categorical order), used when a series has no color. */
 export const SERIES_COLORS = ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#008300', '#9085e9', '#e66767']
 
@@ -21,6 +24,8 @@ export interface TrendSeries {
   key: string
   label: string
   color?: string
+  /** Draw the line dotted, e.g. an overall line beside its parts. */
+  dashed?: boolean
   points: TrendPoint[]
 }
 
@@ -95,17 +100,19 @@ function buildRows(series: TrendSeries[], gapDays: number) {
 }
 
 function ChartTooltip({
-  active, payload, formatValue, labels, colors,
+  active, payload, formatValue, labels, colors, lit,
 }: TooltipContentProps<number, string> & {
   formatValue: (v: number) => string
   labels: Map<string, string>
   colors: Map<string, string>
+  lit: string | null
 }) {
   if (!active || !payload?.length) return null
   const seen = new Set<string>()
   const items = payload
     .filter((p) => typeof p.value === 'number')
     .map((p) => ({ key: String(p.dataKey).split('~')[0], value: p.value as number }))
+    .filter((p) => !lit || p.key === lit)
     .filter((p) => (seen.has(p.key) ? false : (seen.add(p.key), true)))
     .sort((a, b) => b.value - a.value)
   if (!items.length) return null
@@ -149,6 +156,10 @@ export function TrendChart({
   ariaLabel,
 }: TrendChartProps) {
   const { data, segments } = useMemo(() => buildRows(series, gapDays), [series, gapDays])
+  // Hovering a line or its legend entry dims every other line.
+  const [lit, setLit] = useState<string | null>(null)
+  const canHighlight = series.length > 1
+  const opacity = (key: string) => (lit && lit !== key ? DIM : 1)
   const [plotW, setPlotW] = useState(0)
   // A fixed-pixel break band, expressed in axis units.
   const breakUnits = plotW > 0 ? Math.min(AXIS_W * 0.15, (BREAK_PX / plotW) * AXIS_W) : AXIS_W * 0.03
@@ -229,22 +240,48 @@ export function TrendChart({
                   formatValue={formatValue}
                   labels={labels}
                   colors={colors}
+                  lit={lit}
                 />
               )}
             />
-            {segments.map((s) => (
+            {segments.map((s) => {
+              const o = opacity(s.series.key)
+              return (
+                <Line
+                  key={s.dataKey}
+                  dataKey={s.dataKey}
+                  name={s.series.label}
+                  type="linear"
+                  stroke={s.color}
+                  strokeWidth={2}
+                  strokeOpacity={o}
+                  strokeDasharray={s.series.dashed ? '5 4' : undefined}
+                  dot={showDots || s.count === 1
+                    ? { r: 2.5, fill: s.color, stroke: '#141519', strokeWidth: 1.5, fillOpacity: o, strokeOpacity: o }
+                    : false}
+                  activeDot={o < 1 ? false : { r: 4.5, fill: s.color, stroke: '#141519', strokeWidth: 2 }}
+                  connectNulls
+                  isAnimationActive={false}
+                  legendType="none"
+                />
+              )
+            })}
+            {/* Invisible wide copies on top: a hover target for each thin line. */}
+            {canHighlight && segments.map((s) => (
               <Line
-                key={s.dataKey}
+                key={`${s.dataKey}-hit`}
                 dataKey={s.dataKey}
-                name={s.series.label}
                 type="linear"
-                stroke={s.color}
-                strokeWidth={2}
-                dot={showDots || s.count === 1 ? { r: 2.5, fill: s.color, stroke: '#141519', strokeWidth: 1.5 } : false}
-                activeDot={{ r: 4.5, fill: s.color, stroke: '#141519', strokeWidth: 2 }}
+                stroke="transparent"
+                strokeWidth={14}
+                dot={false}
+                activeDot={false}
+                tooltipType="none"
                 connectNulls
                 isAnimationActive={false}
                 legendType="none"
+                onMouseEnter={() => setLit(s.series.key)}
+                onMouseLeave={() => setLit(null)}
               />
             ))}
           </LineChart>
@@ -252,10 +289,19 @@ export function TrendChart({
       </div>
       {series.length > 1 && (
         <figcaption>
-          <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+          <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted-foreground" onMouseLeave={() => setLit(null)}>
             {series.map((s) => (
-              <li key={s.key} className="flex items-center gap-1.5">
-                <span className="h-0.5 w-3.5 rounded-full" style={{ background: colors.get(s.key) }} aria-hidden />
+              <li
+                key={s.key}
+                className="flex cursor-default items-center gap-1.5 transition-opacity"
+                style={{ opacity: opacity(s.key) === 1 ? 1 : 0.4 }}
+                onMouseEnter={() => setLit(s.key)}
+              >
+                <span
+                  className="w-3.5"
+                  style={{ borderTop: `2px ${s.dashed ? 'dashed' : 'solid'} ${colors.get(s.key)}` }}
+                  aria-hidden
+                />
                 {s.label}
               </li>
             ))}

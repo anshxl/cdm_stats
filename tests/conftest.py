@@ -130,6 +130,10 @@ def _build_api_data(conn):
 
     ingest_scrims_team(conn, io.StringIO(API_SCRIM_CSV))
     ingest_scrims_players(conn, io.StringIO(API_SCRIM_PLAYERS_CSV))
+    conn.execute(
+        """INSERT INTO scrim_ops_stats (scrim_map_id, player_name, op_kills, op_pulls, op_time_sec, footage_min)
+           SELECT scrim_map_id, 'Alpha', 6, 4, 40.0, 10.5 FROM scrim_maps WHERE map_name = 'Summit'"""
+    )
     conn.commit()
     recalculate_all_elo(conn)
     conn.commit()

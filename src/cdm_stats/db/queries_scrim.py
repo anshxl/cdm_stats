@@ -250,8 +250,6 @@ def player_weekly_trend(
     player: str | None = None,
     mode: str | None = None,
     f: MatchFilter = MatchFilter(),
-    map_name: str | None = None,
-    opponent: str | None = None,
 ) -> list[dict]:
     """Return per-scrim-day K/D per player for the trend chart (keyed by match_date)."""
     fw, fp = f.date_sql("sm.scrim_date")
@@ -264,19 +262,13 @@ def player_weekly_trend(
     if mode:
         conditions.append("sm.mode = ?")
         params.append(mode)
-    if map_name:
-        conditions.append("sm.map_name = ?")
-        params.append(map_name)
-    _opponent_condition(conditions, params, opponent)
 
     where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
 
     rows = conn.execute(
         f"""SELECT sp.player_name, sm.scrim_date,
                    SUM(sp.kills) as kills,
-                   SUM(sp.deaths) as deaths,
-                   SUM(sp.assists) as assists,
-                   COUNT(*) as games
+                   SUM(sp.deaths) as deaths
             FROM scrim_player_stats sp
             JOIN scrim_maps sm ON sp.scrim_map_id = sm.scrim_map_id
             {where}
@@ -288,10 +280,49 @@ def player_weekly_trend(
     return [
         {
             "player_name": r[0], "match_date": r[1],
-            "kills": r[2], "deaths": r[3], "assists": r[4], "games": r[5],
+            "kills": r[2], "deaths": r[3],
             "kd": round(r[2] / r[3], 2) if r[3] > 0 else 0.0,
         }
         for r in rows
     ]
 
 
+
+
+def player_map_stats(
+    conn: sqlite3.Connection,
+    mode: str | None = None,
+    map_name: str | None = None,
+    opponent: str | None = None,
+    f: MatchFilter = MatchFilter(),
+) -> list[dict]:
+    """One row per player per scrim map: K/D/A plus operator kills/pulls (None
+    where there is no footage, e.g. SnD), with the map's result. Rows come from
+    the K/D/A table, so footage without a scoreboard row is left out."""
+    fw, fp = f.date_sql("sm.scrim_date")
+    conditions = ["1=1" + fw]
+    params: list = list(fp)
+    if mode:
+        conditions.append("sm.mode = ?")
+        params.append(mode)
+    if map_name:
+        conditions.append("sm.map_name = ?")
+        params.append(map_name)
+    _opponent_condition(conditions, params, opponent)
+
+    rows = conn.execute(
+        f"""SELECT sm.scrim_map_id, sm.scrim_date, t.abbreviation, sm.map_name, sm.mode,
+                   sm.result, sm.our_score, sm.opponent_score,
+                   sp.player_name, sp.kills, sp.deaths, sp.assists, o.op_kills, o.op_pulls
+            FROM scrim_player_stats sp
+            JOIN scrim_maps sm ON sp.scrim_map_id = sm.scrim_map_id
+            JOIN teams t ON sm.opponent_id = t.team_id
+            LEFT JOIN scrim_ops_stats o
+                   ON o.scrim_map_id = sp.scrim_map_id AND o.player_name = sp.player_name
+            WHERE {" AND ".join(conditions)}
+            ORDER BY sm.scrim_date, sm.scrim_map_id, sp.player_name""",
+        params,
+    ).fetchall()
+    keys = ("scrim_map_id", "date", "opponent", "map_name", "mode", "result", "our_score",
+            "opp_score", "player_name", "kills", "deaths", "assists", "op_kills", "op_pulls")
+    return [dict(zip(keys, r)) for r in rows]

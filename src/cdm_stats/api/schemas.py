@@ -267,9 +267,25 @@ class ScrimTrendPoint(BaseModel):
     win_pct: float
 
 
-class ScrimKdPoint(KdPoint):
+class ScrimModeTrendPoint(ScrimTrendPoint):
+    mode: str
+
+
+class ScrimPlayerMap(BaseModel):
+    scrim_map_id: int
+    date: str
+    opponent: str
+    map_name: str
+    mode: str
+    result: Literal["W", "L"]
+    our_score: int
+    opp_score: int
+    player_name: str
+    kills: int
+    deaths: int
     assists: int
-    games: int
+    op_kills: int | None
+    op_pulls: int | None
 
 
 class Scrims(BaseModel):
@@ -277,8 +293,9 @@ class Scrims(BaseModel):
     by_mode: list[ScrimModeWL]
     maps: list[ScrimMap]
     trend: list[ScrimTrendPoint]
-    # Per player per scrim day; the page sums these for the tiles and the chart.
-    kd_trend: list[ScrimKdPoint]
+    trend_by_mode: list[ScrimModeTrendPoint]
+    # Per player per scrim map; the page sums these for the tiles, charts and map list.
+    player_maps: list[ScrimPlayerMap]
 
 
 class ScrimOptions(BaseModel):

@@ -9,7 +9,7 @@ import { MIN_N } from '@/components/MapTable'
 import { Skeleton } from '@/components/Skeleton'
 import { StatTile } from '@/components/StatTile'
 import { TeamSelect } from '@/components/TeamSelect'
-import { TrendChart } from '@/components/TrendChart'
+import { SERIES_COLORS, TrendChart, type TrendSeries } from '@/components/TrendChart'
 import { useApi } from '@/hooks/useApi'
 import { pct } from '@/lib/format'
 import { CHAMPS_START, MapSelect, MODES, ModeToggle, PeriodToggle, type Mode, type Period } from './scrims/ScrimFilters'
@@ -67,6 +67,17 @@ export default function ScrimsPage() {
 
   const error = options.error ?? scrims.error
   const scope = [mode && MODE_NAME[mode], map, opponent && `vs ${opponent}`].filter(Boolean).join(', ')
+  const toPoints = (trend: Scrims['trend']) =>
+    daily ? trend.map((t) => ({ date: t.match_date, value: t.win_pct })) : weekly(trend)
+  // Overall dotted, plus one line per mode unless the page is already on one mode.
+  const winSeries: TrendSeries[] = s
+    ? [
+        { key: 'overall', label: 'Overall', color: '#e7e8ea', dashed: true, points: toPoints(s.trend) },
+        ...(mode ? [] : MODES.map((m, i) => ({
+          key: m, label: m, color: SERIES_COLORS[i], points: toPoints(s.trend_by_mode.filter((t) => t.mode === m)),
+        })).filter((x) => x.points.length > 0)),
+      ]
+    : []
   const periodToggle = <PeriodToggle value={period} onChange={(p) => setParam('period', p === 'since' ? null : p)} />
 
   return (
@@ -136,17 +147,12 @@ export default function ScrimsPage() {
               busy={scrims.loading}
             >
               <TrendChart
-                series={[{
-                  key: 'win',
-                  label: 'Win rate',
-                  color: '#e7e8ea',
-                  points: daily ? s.trend.map((t) => ({ date: t.match_date, value: t.win_pct })) : weekly(s.trend),
-                }]}
+                series={winSeries}
                 height={260}
                 yDomain={[0, 1]}
                 referenceLine={{ y: 0.5, label: '50%' }}
                 formatValue={(v) => pct(v)}
-                ariaLabel={daily ? 'Scrim win rate by day' : 'Scrim win rate by week'}
+                ariaLabel={daily ? 'Scrim win rate by day, overall and per mode' : 'Scrim win rate by week, overall and per mode'}
               />
               {/* pl-12 = the chart's 48px y-axis, so the toggle starts where the x-axis does. */}
               <div className="pl-12">{periodToggle}</div>
@@ -161,7 +167,7 @@ export default function ScrimsPage() {
               {s.maps.length ? <ScrimMapTables maps={s.maps} /> : <EmptyState message="No maps in this filter" hint="" />}
             </Card>
 
-            <ScrimPlayers trend={s.kd_trend} daily={daily} busy={scrims.loading} />
+            <ScrimPlayers rows={s.player_maps} daily={daily} busy={scrims.loading} />
           </>
         )}
       </PageBody>

@@ -490,23 +490,6 @@ export interface components {
             /** Map Losses */
             map_losses: number;
         };
-        /** ScrimKdPoint */
-        ScrimKdPoint: {
-            /** Player Name */
-            player_name: string;
-            /** Match Date */
-            match_date: string;
-            /** Kills */
-            kills: number;
-            /** Deaths */
-            deaths: number;
-            /** Kd */
-            kd: number;
-            /** Assists */
-            assists: number;
-            /** Games */
-            games: number;
-        };
         /** ScrimMap */
         ScrimMap: {
             /** Map Name */
@@ -527,6 +510,19 @@ export interface components {
             /** Recent */
             recent: components["schemas"]["ScrimResult"][];
         };
+        /** ScrimModeTrendPoint */
+        ScrimModeTrendPoint: {
+            /** Match Date */
+            match_date: string;
+            /** Played */
+            played: number;
+            /** Wins */
+            wins: number;
+            /** Win Pct */
+            win_pct: number;
+            /** Mode */
+            mode: string;
+        };
         /** ScrimModeWL */
         ScrimModeWL: {
             /** Wins */
@@ -546,6 +542,40 @@ export interface components {
             maps: string[];
             /** Opponents */
             opponents: components["schemas"]["TeamInfo"][];
+        };
+        /** ScrimPlayerMap */
+        ScrimPlayerMap: {
+            /** Scrim Map Id */
+            scrim_map_id: number;
+            /** Date */
+            date: string;
+            /** Opponent */
+            opponent: string;
+            /** Map Name */
+            map_name: string;
+            /** Mode */
+            mode: string;
+            /**
+             * Result
+             * @enum {string}
+             */
+            result: "W" | "L";
+            /** Our Score */
+            our_score: number;
+            /** Opp Score */
+            opp_score: number;
+            /** Player Name */
+            player_name: string;
+            /** Kills */
+            kills: number;
+            /** Deaths */
+            deaths: number;
+            /** Assists */
+            assists: number;
+            /** Op Kills */
+            op_kills: number | null;
+            /** Op Pulls */
+            op_pulls: number | null;
         };
         /** ScrimResult */
         ScrimResult: {
@@ -596,8 +626,10 @@ export interface components {
             maps: components["schemas"]["ScrimMap"][];
             /** Trend */
             trend: components["schemas"]["ScrimTrendPoint"][];
-            /** Kd Trend */
-            kd_trend: components["schemas"]["ScrimKdPoint"][];
+            /** Trend By Mode */
+            trend_by_mode: components["schemas"]["ScrimModeTrendPoint"][];
+            /** Player Maps */
+            player_maps: components["schemas"]["ScrimPlayerMap"][];
         };
         /** SeriesMap */
         SeriesMap: {
