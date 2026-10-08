@@ -1,1 +1,186 @@
 Date,Opponent,Map,Player,Kills,Deaths,Assists
+2026-10-05,OUG,Summit,Abhiz,29,39,15
+2026-10-05,OUG,Summit,Flirt,26,45,10
+2026-10-05,OUG,Summit,Skullguy,30,36,15
+2026-10-05,OUG,Summit,Viper,26,43,14
+2026-10-05,OUG,Summit,Warden,30,38,12
+2026-10-05,OUG,Combine,Abhiz,35,29,17
+2026-10-05,OUG,Combine,Flirt,40,39,16
+2026-10-05,OUG,Combine,Skullguy,40,35,16
+2026-10-05,OUG,Combine,Viper,48,39,15
+2026-10-05,OUG,Combine,Warden,24,40,16
+2026-10-05,OUG,Raid,Abhiz,21,26,3
+2026-10-05,OUG,Raid,Flirt,28,29,7
+2026-10-05,OUG,Raid,Skullguy,31,17,3
+2026-10-05,OUG,Raid,Viper,22,27,10
+2026-10-05,OUG,Raid,Warden,33,27,4
+2026-10-05,OUG,Standoff,Abhiz,16,21,3
+2026-10-05,OUG,Standoff,Flirt,14,27,6
+2026-10-05,OUG,Standoff,Skullguy,20,17,5
+2026-10-05,OUG,Standoff,Viper,24,21,5
+2026-10-05,OUG,Standoff,Warden,21,21,5
+2026-10-05,OUG,Tunisia,Abhiz,12,11,4
+2026-10-05,OUG,Tunisia,Flirt,9,10,5
+2026-10-05,OUG,Tunisia,Skullguy,15,12,6
+2026-10-05,OUG,Tunisia,Viper,15,10,5
+2026-10-05,OUG,Tunisia,Warden,15,8,2
+2026-10-05,ELV,Summit,Abhiz,64,38,14
+2026-10-05,ELV,Summit,Flirt,49,39,11
+2026-10-05,ELV,Summit,Skullguy,39,44,18
+2026-10-05,ELV,Summit,Viper,45,45,15
+2026-10-05,ELV,Summit,Warden,44,40,15
+2026-10-05,ELV,Hacienda,Abhiz,48,39,23
+2026-10-05,ELV,Hacienda,Flirt,41,43,22
+2026-10-05,ELV,Hacienda,Skullguy,44,40,23
+2026-10-05,ELV,Hacienda,Viper,49,41,15
+2026-10-05,ELV,Hacienda,Warden,48,40,12
+2026-10-05,ELV,Standoff,Abhiz,26,28,7
+2026-10-05,ELV,Standoff,Flirt,28,31,6
+2026-10-05,ELV,Standoff,Skullguy,25,26,2
+2026-10-05,ELV,Standoff,Viper,28,28,7
+2026-10-05,ELV,Standoff,Warden,26,25,7
+2026-10-05,ELV,Raid,Abhiz,17,10,2
+2026-10-05,ELV,Raid,Flirt,14,18,3
+2026-10-05,ELV,Raid,Skullguy,13,14,5
+2026-10-05,ELV,Raid,Viper,23,13,4
+2026-10-05,ELV,Raid,Warden,15,12,3
+2026-10-05,ELV,Coastal,Abhiz,10,5,0
+2026-10-05,ELV,Coastal,Flirt,6,1,1
+2026-10-05,ELV,Coastal,Skullguy,6,5,2
+2026-10-05,ELV,Coastal,Viper,10,4,2
+2026-10-05,ELV,Coastal,Warden,12,4,1
+2026-10-05,ELV,Slums,Abhiz,11,7,1
+2026-10-05,ELV,Slums,Flirt,7,9,6
+2026-10-05,ELV,Slums,Skullguy,9,8,11
+2026-10-05,ELV,Slums,Viper,12,7,5
+2026-10-05,ELV,Slums,Warden,19,6,1
+2026-10-06,Q9,Meltdown,Abhiz,11,11,2
+2026-10-06,Q9,Meltdown,Flirt,15,12,3
+2026-10-06,Q9,Meltdown,Skullguy,14,13,4
+2026-10-06,Q9,Meltdown,Viper,14,13,3
+2026-10-06,Q9,Meltdown,Warden,12,13,3
+2026-10-06,Q9,Standoff,Abhiz,23,19,3
+2026-10-06,Q9,Standoff,Flirt,19,25,6
+2026-10-06,Q9,Standoff,Skullguy,22,18,5
+2026-10-06,Q9,Standoff,Viper,27,15,4
+2026-10-06,Q9,Standoff,Warden,21,19,7
+2026-10-06,Q9,Raid,Abhiz,10,16,1
+2026-10-06,Q9,Raid,Flirt,27,23,4
+2026-10-06,Q9,Raid,Skullguy,26,13,8
+2026-10-06,Q9,Raid,Viper,27,19,3
+2026-10-06,Q9,Raid,Warden,22,17,9
+2026-10-06,Q9,Crossroads Strike,Abhiz,26,15,2
+2026-10-06,Q9,Crossroads Strike,Flirt,26,31,13
+2026-10-06,Q9,Crossroads Strike,Skullguy,18,20,4
+2026-10-06,Q9,Crossroads Strike,Viper,24,22,12
+2026-10-06,Q9,Crossroads Strike,Warden,31,23,8
+2026-10-06,Q9,Hacienda,Abhiz,41,32,15
+2026-10-06,Q9,Hacienda,Flirt,42,39,14
+2026-10-06,Q9,Hacienda,Skullguy,53,28,19
+2026-10-06,Q9,Hacienda,Viper,38,39,15
+2026-10-06,Q9,Hacienda,Warden,50,43,18
+2026-10-06,Q9,Summit,Abhiz,37,37,20
+2026-10-06,Q9,Summit,Flirt,41,43,13
+2026-10-06,Q9,Summit,Skullguy,48,33,11
+2026-10-06,Q9,Summit,Viper,38,39,15
+2026-10-06,Q9,Summit,Warden,36,39,16
+2026-10-06,ELV,Slums,Abhiz,12,13,3
+2026-10-06,ELV,Slums,Flirt,14,14,2
+2026-10-06,ELV,Slums,Skullguy,11,13,3
+2026-10-06,ELV,Slums,Viper,13,13,2
+2026-10-06,ELV,Slums,Warden,12,12,1
+2026-10-06,ELV,Crossroads Strike,Abhiz,13,12,0
+2026-10-06,ELV,Crossroads Strike,Flirt,11,12,7
+2026-10-06,ELV,Crossroads Strike,Skullguy,19,12,3
+2026-10-06,ELV,Crossroads Strike,Viper,25,10,4
+2026-10-06,ELV,Crossroads Strike,Warden,22,10,5
+2026-10-06,ELV,Standoff,Abhiz,30,24,0
+2026-10-06,ELV,Standoff,Flirt,24,35,10
+2026-10-06,ELV,Standoff,Skullguy,24,28,9
+2026-10-06,ELV,Standoff,Viper,27,30,9
+2026-10-06,ELV,Standoff,Warden,26,22,7
+2026-10-06,ELV,Summit,Abhiz,33,36,17
+2026-10-06,ELV,Summit,Flirt,37,41,6
+2026-10-06,ELV,Summit,Skullguy,51,34,21
+2026-10-06,ELV,Summit,Viper,36,45,19
+2026-10-06,ELV,Summit,Warden,44,44,14
+2026-10-06,ELV,Hacienda,Abhiz,48,34,17
+2026-10-06,ELV,Hacienda,Flirt,43,45,15
+2026-10-06,ELV,Hacienda,Skullguy,53,35,12
+2026-10-06,ELV,Hacienda,Viper,43,42,20
+2026-10-06,ELV,Hacienda,Warden,43,47,17
+2026-10-06,ELV,Takeoff,Abhiz,39,39,22
+2026-10-06,ELV,Takeoff,Flirt,54,46,21
+2026-10-06,ELV,Takeoff,Skullguy,58,35,20
+2026-10-06,ELV,Takeoff,Viper,40,49,24
+2026-10-06,ELV,Takeoff,Warden,52,36,22
+2026-10-07,ALU,Combine,Abhiz,34,36,27
+2026-10-07,ALU,Combine,Flirt,44,42,13
+2026-10-07,ALU,Combine,Skullguy,48,34,17
+2026-10-07,ALU,Combine,Viper,44,42,15
+2026-10-07,ALU,Combine,Warden,37,42,8
+2026-10-07,ALU,Summit,Abhiz,44,41,16
+2026-10-07,ALU,Summit,Flirt,52,41,19
+2026-10-07,ALU,Summit,Skullguy,49,35,14
+2026-10-07,ALU,Summit,Viper,41,43,20
+2026-10-07,ALU,Summit,Warden,50,45,11
+2026-10-07,ALU,Crossroads Strike,Abhiz,18,27,2
+2026-10-07,ALU,Crossroads Strike,Flirt,25,30,9
+2026-10-07,ALU,Crossroads Strike,Skullguy,26,26,7
+2026-10-07,ALU,Crossroads Strike,Viper,28,24,10
+2026-10-07,ALU,Crossroads Strike,Warden,29,25,3
+2026-10-07,ALU,Standoff,Abhiz,19,22,1
+2026-10-07,ALU,Standoff,Flirt,17,23,4
+2026-10-07,ALU,Standoff,Skullguy,27,16,4
+2026-10-07,ALU,Standoff,Viper,28,21,6
+2026-10-07,ALU,Standoff,Warden,13,23,7
+2026-10-07,ALU,Coastal,Abhiz,15,12,0
+2026-10-07,ALU,Coastal,Flirt,9,14,2
+2026-10-07,ALU,Coastal,Skullguy,7,12,7
+2026-10-07,ALU,Coastal,Viper,18,10,3
+2026-10-07,ALU,Coastal,Warden,12,14,1
+2026-10-07,ALU,Firing Range,Abhiz,13,6,0
+2026-10-07,ALU,Firing Range,Flirt,10,6,4
+2026-10-07,ALU,Firing Range,Skullguy,7,9,3
+2026-10-07,ALU,Firing Range,Viper,9,9,5
+2026-10-07,ALU,Firing Range,Warden,14,9,1
+2026-10-07,ALU,Takeoff,Abhiz,40,42,15
+2026-10-07,ALU,Takeoff,Flirt,45,53,15
+2026-10-07,ALU,Takeoff,Skullguy,42,47,9
+2026-10-07,ALU,Takeoff,Viper,54,43,21
+2026-10-07,ALU,Takeoff,Warden,55,46,14
+2026-10-07,ALU,Arsenal,Abhiz,31,30,23
+2026-10-07,ALU,Arsenal,Flirt,46,38,9
+2026-10-07,ALU,Arsenal,Skullguy,35,28,8
+2026-10-07,ALU,Arsenal,Viper,35,37,14
+2026-10-07,ALU,Arsenal,Warden,58,34,15
+2026-10-08,ALU,Coastal,Abhiz,16,10,0
+2026-10-08,ALU,Coastal,Flirt,7,13,2
+2026-10-08,ALU,Coastal,Skullguy,11,11,2
+2026-10-08,ALU,Coastal,Viper,14,10,6
+2026-10-08,ALU,Coastal,Warden,11,10,1
+2026-10-08,ALU,Raid,Abhiz,22,22,2
+2026-10-08,ALU,Raid,Flirt,26,31,14
+2026-10-08,ALU,Raid,Skullguy,25,21,3
+2026-10-08,ALU,Raid,Viper,22,32,3
+2026-10-08,ALU,Raid,Warden,26,20,3
+2026-10-08,ALU,Standoff,Abhiz,8,24,4
+2026-10-08,ALU,Standoff,Flirt,13,16,3
+2026-10-08,ALU,Standoff,Skullguy,15,16,2
+2026-10-08,ALU,Standoff,Viper,17,15,3
+2026-10-08,ALU,Standoff,Warden,16,19,0
+2026-10-08,ALU,Summit,Abhiz,39,38,18
+2026-10-08,ALU,Summit,Flirt,40,47,21
+2026-10-08,ALU,Summit,Skullguy,49,36,13
+2026-10-08,ALU,Summit,Viper,54,43,20
+2026-10-08,ALU,Summit,Warden,46,45,6
+2026-10-08,ALU,Combine,Abhiz,37,42,18
+2026-10-08,ALU,Combine,Flirt,35,54,16
+2026-10-08,ALU,Combine,Skullguy,52,43,18
+2026-10-08,ALU,Combine,Viper,54,45,21
+2026-10-08,ALU,Combine,Warden,44,49,21
+2026-10-08,ALU,Takeoff,Abhiz,45,40,20
+2026-10-08,ALU,Takeoff,Flirt,32,56,8
+2026-10-08,ALU,Takeoff,Skullguy,38,42,16
+2026-10-08,ALU,Takeoff,Viper,49,52,15
+2026-10-08,ALU,Takeoff,Warden,50,45,10
