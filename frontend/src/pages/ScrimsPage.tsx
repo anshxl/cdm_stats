@@ -11,10 +11,10 @@ import { StatTile } from '@/components/StatTile'
 import { TeamSelect } from '@/components/TeamSelect'
 import { TrendChart } from '@/components/TrendChart'
 import { useApi } from '@/hooks/useApi'
-import { useFilter } from '@/hooks/useFilter'
 import { pct } from '@/lib/format'
-import { MapSelect, MODES, ModeToggle, type Mode } from './scrims/ScrimFilters'
+import { CHAMPS_START, MapSelect, MODES, ModeToggle, PeriodToggle, type Mode, type Period } from './scrims/ScrimFilters'
 import { ScrimMapTables } from './scrims/ScrimMapTables'
+import { mondayOf, ScrimPlayers } from './scrims/ScrimPlayers'
 
 const MODE_NAME: Record<Mode, string> = { SnD: 'Search & Destroy', HP: 'Hardpoint', Control: 'Control' }
 
@@ -22,9 +22,7 @@ const MODE_NAME: Record<Mode, string> = { SnD: 'Search & Destroy', HP: 'Hardpoin
 function weekly(trend: Scrims['trend']) {
   const weeks = new Map<string, { wins: number; played: number }>()
   for (const t of trend) {
-    const d = new Date(`${t.match_date.slice(0, 10)}T00:00:00Z`)
-    d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7))
-    const key = d.toISOString().slice(0, 10)
+    const key = mondayOf(t.match_date)
     const w = weeks.get(key) ?? { wins: 0, played: 0 }
     w.wins += t.wins
     w.played += t.played
@@ -35,10 +33,17 @@ function weekly(trend: Scrims['trend']) {
 
 const lowSample = (n: number): Flag | null => (n < MIN_N ? { kind: 'low_sample', label: 'low sample' } : null)
 
-// Scrims have no event family: dates only.
+/** The day before the cutoff, so 'before' ends where 'since' starts. */
+const BEFORE_END = new Date(Date.parse(`${CHAMPS_START}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10)
+
+// Scrims have no event family: dates only, picked by the period toggle.
 export default function ScrimsPage() {
-  const { dateParams } = useFilter()
   const [searchParams, setSearchParams] = useSearchParams()
+
+  const period: Period = searchParams.get('period') === 'before' ? 'before' : 'since'
+  const dateParams = period === 'since' ? { start: CHAMPS_START } : { end: BEFORE_END }
+  // The champs block is short, so weeks would collapse it to a point or two.
+  const daily = period === 'since'
 
   const modeParam = searchParams.get('mode')
   const mode = (MODES as readonly string[]).includes(modeParam ?? '') ? (modeParam as Mode) : null
@@ -62,6 +67,7 @@ export default function ScrimsPage() {
 
   const error = options.error ?? scrims.error
   const scope = [mode && MODE_NAME[mode], map, opponent && `vs ${opponent}`].filter(Boolean).join(', ')
+  const periodToggle = <PeriodToggle value={period} onChange={(p) => setParam('period', p === 'since' ? null : p)} />
 
   return (
     <>
@@ -79,7 +85,9 @@ export default function ScrimsPage() {
       <PageBody>
         <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
           <h1 className="text-xl font-semibold tracking-tight text-foreground">Scrims</h1>
-          <p className="text-[13px] text-muted-foreground">{scope || 'All modes, maps and opponents'}</p>
+          <p className="text-[13px] text-muted-foreground">
+            {period === 'since' ? 'Since Oct 5' : 'Before Oct 5'} · {scope || 'All modes, maps and opponents'}
+          </p>
         </header>
 
         {error ? (
@@ -93,7 +101,8 @@ export default function ScrimsPage() {
           </>
         ) : s.overall.total === 0 ? (
           <Card>
-            <EmptyState message="No scrims in this filter" hint="Clear the mode, map and opponent." />
+            <EmptyState message="No scrims in this filter" hint="Clear the mode, map and opponent, or switch the period." />
+            <div className="flex justify-center pb-4">{periodToggle}</div>
           </Card>
         ) : (
           <>
@@ -122,18 +131,25 @@ export default function ScrimsPage() {
             </div>
 
             <Card
-              title="Weekly win rate"
-              action={<span className="hidden text-xs text-muted-foreground sm:inline">{s.trend.length} scrim days, grouped by week</span>}
+              title={daily ? 'Daily win rate' : 'Weekly win rate'}
+              action={<span className="hidden text-xs text-muted-foreground sm:inline">{s.trend.length} scrim days{daily ? '' : ', grouped by week'}</span>}
               busy={scrims.loading}
             >
               <TrendChart
-                series={[{ key: 'win', label: 'Win rate', color: '#e7e8ea', points: weekly(s.trend) }]}
+                series={[{
+                  key: 'win',
+                  label: 'Win rate',
+                  color: '#e7e8ea',
+                  points: daily ? s.trend.map((t) => ({ date: t.match_date, value: t.win_pct })) : weekly(s.trend),
+                }]}
                 height={260}
                 yDomain={[0, 1]}
                 referenceLine={{ y: 0.5, label: '50%' }}
                 formatValue={(v) => pct(v)}
-                ariaLabel="Scrim win rate by week"
+                ariaLabel={daily ? 'Scrim win rate by day' : 'Scrim win rate by week'}
               />
+              {/* pl-12 = the chart's 48px y-axis, so the toggle starts where the x-axis does. */}
+              <div className="pl-12">{periodToggle}</div>
             </Card>
 
             <Card
@@ -144,6 +160,8 @@ export default function ScrimsPage() {
             >
               {s.maps.length ? <ScrimMapTables maps={s.maps} /> : <EmptyState message="No maps in this filter" hint="" />}
             </Card>
+
+            <ScrimPlayers trend={s.kd_trend} daily={daily} busy={scrims.loading} />
           </>
         )}
       </PageBody>

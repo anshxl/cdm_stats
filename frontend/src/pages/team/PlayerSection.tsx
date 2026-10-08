@@ -23,12 +23,12 @@ const MODE_OPTIONS: SelectOption[] = [
 ]
 
 /** Color follows the player (roster order), never the rank or the selection. */
-function playerColor(roster: string[], name: string): string {
+export function playerColor(roster: string[], name: string): string {
   const i = roster.indexOf(name)
   return SERIES_COLORS[(i < 0 ? roster.length : i) % SERIES_COLORS.length]
 }
 
-function toSeries<P extends { player_name: string; match_date: string }>(
+export function toSeries<P extends { player_name: string; match_date: string }>(
   points: P[], roster: string[], value: (p: P) => number | null,
 ): TrendSeries[] {
   const byPlayer = new Map<string, P[]>()

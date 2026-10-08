@@ -31,6 +31,16 @@ def test_scrims_mode_map_opponent_filters(client):
     assert oug["overall"] == {"wins": 1, "losses": 1, "total": 2, "win_pct": 0.5}
 
 
+def test_scrims_kd_trend_per_player_day(client):
+    trend = client.get("/api/scrims").json()["kd_trend"]
+    assert [(p["player_name"], p["match_date"], p["kills"], p["deaths"], p["assists"], p["games"])
+            for p in trend] == [("Alpha", "2026-02-25", 40, 25, 10, 2), ("Alpha", "2026-03-03", 20, 25, 4, 1),
+                                ("Bravo", "2026-03-03", 15, 15, 3, 1)]
+    assert [p["kills"] for p in client.get("/api/scrims?mode=SnD").json()["kd_trend"]] == [10]
+    assert [p["kills"] for p in client.get("/api/scrims?map=Summit").json()["kd_trend"]] == [30]
+    assert len(client.get("/api/scrims?opponent=DVS").json()["kd_trend"]) == 1
+
+
 def test_scrims_filter_by_date_only(client):
     late = client.get("/api/scrims?start=2026-03-01").json()
     assert late["overall"]["total"] == 2

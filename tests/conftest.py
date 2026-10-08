@@ -70,6 +70,12 @@ API_SCRIM_CSV = """Date,Opponent,Map,Score
 2026-03-03,OUG,Raid,3-1
 2026-03-03,OUG,Tunisia,2-6"""
 
+API_SCRIM_PLAYERS_CSV = """Date,Opponent,Map,Player,Kills,Deaths,Assists
+2026-02-25,DVS,Tunisia,Alpha,10,5,2
+2026-02-25,DVS,Summit,Alpha,30,20,8
+2026-03-03,OUG,Raid,Alpha,20,25,4
+2026-03-03,OUG,Raid,Bravo,15,15,3"""
+
 
 def _build_api_data(conn):
     """GL plays 12 Bo5s (8 spring, 4 summer) alternating DVS/OUG, winning
@@ -79,7 +85,7 @@ def _build_api_data(conn):
     from cdm_stats.db.queries import (
         get_team_id_by_abbr, insert_match, insert_map_result, insert_map_ban, get_map_id,
     )
-    from cdm_stats.ingestion.scrim_loader import ingest_scrims_team
+    from cdm_stats.ingestion.scrim_loader import ingest_scrims_players, ingest_scrims_team
     from cdm_stats.metrics.elo import recalculate_all_elo
 
     t = {a: get_team_id_by_abbr(conn, a) for a in
@@ -123,6 +129,7 @@ def _build_api_data(conn):
     insert_map_result(conn, mid, 1, mp["Summit"], t["ELV"], t["ELV"], 250, 100, 0, 0, "Opener")
 
     ingest_scrims_team(conn, io.StringIO(API_SCRIM_CSV))
+    ingest_scrims_players(conn, io.StringIO(API_SCRIM_PLAYERS_CSV))
     conn.commit()
     recalculate_all_elo(conn)
     conn.commit()

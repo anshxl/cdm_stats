@@ -490,6 +490,23 @@ export interface components {
             /** Map Losses */
             map_losses: number;
         };
+        /** ScrimKdPoint */
+        ScrimKdPoint: {
+            /** Player Name */
+            player_name: string;
+            /** Match Date */
+            match_date: string;
+            /** Kills */
+            kills: number;
+            /** Deaths */
+            deaths: number;
+            /** Kd */
+            kd: number;
+            /** Assists */
+            assists: number;
+            /** Games */
+            games: number;
+        };
         /** ScrimMap */
         ScrimMap: {
             /** Map Name */
@@ -579,6 +596,8 @@ export interface components {
             maps: components["schemas"]["ScrimMap"][];
             /** Trend */
             trend: components["schemas"]["ScrimTrendPoint"][];
+            /** Kd Trend */
+            kd_trend: components["schemas"]["ScrimKdPoint"][];
         };
         /** SeriesMap */
         SeriesMap: {

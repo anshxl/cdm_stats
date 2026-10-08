@@ -250,6 +250,8 @@ def player_weekly_trend(
     player: str | None = None,
     mode: str | None = None,
     f: MatchFilter = MatchFilter(),
+    map_name: str | None = None,
+    opponent: str | None = None,
 ) -> list[dict]:
     """Return per-scrim-day K/D per player for the trend chart (keyed by match_date)."""
     fw, fp = f.date_sql("sm.scrim_date")
@@ -262,13 +264,19 @@ def player_weekly_trend(
     if mode:
         conditions.append("sm.mode = ?")
         params.append(mode)
+    if map_name:
+        conditions.append("sm.map_name = ?")
+        params.append(map_name)
+    _opponent_condition(conditions, params, opponent)
 
     where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
 
     rows = conn.execute(
         f"""SELECT sp.player_name, sm.scrim_date,
                    SUM(sp.kills) as kills,
-                   SUM(sp.deaths) as deaths
+                   SUM(sp.deaths) as deaths,
+                   SUM(sp.assists) as assists,
+                   COUNT(*) as games
             FROM scrim_player_stats sp
             JOIN scrim_maps sm ON sp.scrim_map_id = sm.scrim_map_id
             {where}
@@ -280,7 +288,7 @@ def player_weekly_trend(
     return [
         {
             "player_name": r[0], "match_date": r[1],
-            "kills": r[2], "deaths": r[3],
+            "kills": r[2], "deaths": r[3], "assists": r[4], "games": r[5],
             "kd": round(r[2] / r[3], 2) if r[3] > 0 else 0.0,
         }
         for r in rows

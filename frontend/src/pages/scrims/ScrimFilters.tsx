@@ -58,3 +58,37 @@ export function MapSelect({ options, value, onChange }: { options: string[]; val
     </label>
   )
 }
+
+// ponytail: one fixed cutoff (champs scrims start). Turn it into a list if more blocks come.
+export const CHAMPS_START = '2026-10-05'
+export type Period = 'since' | 'before'
+
+/** Before / Since the champs cutoff. Sits at the left end of the weekly chart's x-axis. */
+export function PeriodToggle({ value, onChange }: { value: Period; onChange: (p: Period) => void }) {
+  const items: { key: Period; label: string }[] = [
+    { key: 'before', label: '← Before Oct 5' },
+    { key: 'since', label: 'Since Oct 5' },
+  ]
+  return (
+    <div role="radiogroup" aria-label="Period" className="inline-flex h-6 rounded-md border border-line bg-surface p-0.5">
+      {items.map((it) => {
+        const selected = value === it.key
+        return (
+          <button
+            key={it.key}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            onClick={() => onChange(it.key)}
+            className={cn(
+              'rounded-[4px] px-2 text-[11px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-gold',
+              selected ? 'bg-gold text-page' : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {it.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
