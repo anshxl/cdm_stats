@@ -1,6 +1,6 @@
 import sqlite3
 
-SCHEMA_VERSION = 11
+SCHEMA_VERSION = 12
 
 TABLES = [
     """
@@ -131,6 +131,18 @@ TABLES = [
         op_pulls     INTEGER NOT NULL,
         footage_min  REAL NOT NULL,
         UNIQUE(result_id, player_name)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS scrim_ops_stats (
+        stat_id      INTEGER PRIMARY KEY,
+        scrim_map_id INTEGER NOT NULL REFERENCES scrim_maps(scrim_map_id),
+        player_name  TEXT NOT NULL,
+        op_kills     INTEGER NOT NULL,
+        op_pulls     INTEGER NOT NULL,
+        op_time_sec  REAL NOT NULL,
+        footage_min  REAL NOT NULL,
+        UNIQUE(scrim_map_id, player_name)
     )
     """,
 ]
@@ -334,6 +346,20 @@ def migrate(conn: sqlite3.Connection) -> None:
                 "UPDATE scrim_maps SET scrim_date = ?, week = ? WHERE scrim_map_id = ?",
                 (d.isoformat(), infer_week(d, season), scrim_map_id),
             )
+
+    if version < 12:
+        # Operator kills/pulls per player per scrim map, from the VOD-review
+        # tool's JSON export (SnD has no operators, so only HP/Control rows).
+        conn.execute("""CREATE TABLE IF NOT EXISTS scrim_ops_stats (
+            stat_id      INTEGER PRIMARY KEY,
+            scrim_map_id INTEGER NOT NULL REFERENCES scrim_maps(scrim_map_id),
+            player_name  TEXT NOT NULL,
+            op_kills     INTEGER NOT NULL,
+            op_pulls     INTEGER NOT NULL,
+            op_time_sec  REAL NOT NULL,
+            footage_min  REAL NOT NULL,
+            UNIQUE(scrim_map_id, player_name)
+        )""")
 
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()

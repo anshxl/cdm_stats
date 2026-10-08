@@ -60,7 +60,7 @@ def test_create_tables_creates_all_tables(db):
     assert tables == [
         "map_bans", "map_results", "maps", "matches",
         "ops_player_stats",
-        "scrim_maps", "scrim_player_stats",
+        "scrim_maps", "scrim_ops_stats", "scrim_player_stats",
         "team_elo", "team_map_notes", "teams",
         "tournament_player_stats",
     ]
@@ -76,7 +76,7 @@ def test_create_tables_is_idempotent(db):
     assert tables == [
         "map_bans", "map_results", "maps", "matches",
         "ops_player_stats",
-        "scrim_maps", "scrim_player_stats",
+        "scrim_maps", "scrim_ops_stats", "scrim_player_stats",
         "team_elo", "team_map_notes", "teams",
         "tournament_player_stats",
     ]
@@ -178,15 +178,15 @@ def test_tournament_player_stats_table_exists():
     conn.close()
 
 
-def test_schema_version_is_11():
+def test_schema_version_is_12():
     import sqlite3
     from cdm_stats.db.schema import create_tables, SCHEMA_VERSION
 
-    assert SCHEMA_VERSION == 11
+    assert SCHEMA_VERSION == 12
     conn = sqlite3.connect(":memory:")
     create_tables(conn)
     version = conn.execute("PRAGMA user_version").fetchone()[0]
-    assert version == 11
+    assert version == 12
     conn.close()
 
 

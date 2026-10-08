@@ -201,6 +201,12 @@ def cmd_ingest_ops(args: argparse.Namespace) -> None:
     run_ingest(ingest_ops_kills, args.csv_file, key="row")
 
 
+def cmd_ingest_scrim_ops(args: argparse.Namespace) -> None:
+    from cdm_stats.ingestion.scrim_ops_loader import ingest_scrim_ops
+
+    run_ingest(ingest_scrim_ops, args.json_file, key="row", season=args.season)
+
+
 def cmd_ingest_s2_matches(args: argparse.Namespace) -> None:
     from cdm_stats.ingestion.s2_loader import ingest_s2_matches
 
@@ -273,6 +279,10 @@ def main() -> None:
     p_ops = sub.add_parser("ingest-ops", help="Ingest operator kills/pulls CSV (footage-derived)")
     p_ops.add_argument("csv_file", help="Path to ops kills CSV file")
 
+    p_scrim_ops = sub.add_parser("ingest-scrim-ops", help="Ingest scrim operator JSON from the VOD-review tool")
+    p_scrim_ops.add_argument("json_file", help="Path to operator_data JSON file")
+    p_scrim_ops.add_argument("--season", type=int, default=1, help="Season number (default 1)")
+
     p_s2m = sub.add_parser("ingest-s2-matches", help="Ingest Season 2 match data (one row per map)")
     p_s2m.add_argument("csv_file", help="Path to S2 matches CSV file")
 
@@ -293,6 +303,7 @@ def main() -> None:
         "ingest-scrims-players": cmd_ingest_scrims_players,
         "ingest-tournament-players": cmd_ingest_tournament_players,
         "ingest-ops": cmd_ingest_ops,
+        "ingest-scrim-ops": cmd_ingest_scrim_ops,
         "ingest-s2-matches": cmd_ingest_s2_matches,
         "ingest-s2-bans": cmd_ingest_s2_bans,
         "backfill": cmd_backfill,
