@@ -1,0 +1,5030 @@
+{
+  "type": "godlike-operator-data",
+  "version": 1,
+  "team": {
+    "name": "Godlike",
+    "players": [
+      {
+        "number": 1,
+        "name": "Flirt",
+        "operatorKey": "Flirt",
+        "aliases": [
+          "[4uDk1wHg7M8"
+        ]
+      },
+      {
+        "number": 2,
+        "name": "Viper",
+        "operatorKey": "Viper",
+        "aliases": [
+          "[cIWa5+4NVuX"
+        ]
+      },
+      {
+        "number": 3,
+        "name": "Abhiz",
+        "operatorKey": "Abhiz",
+        "aliases": [
+          "[1mEKA9KYmth"
+        ]
+      },
+      {
+        "number": 4,
+        "name": "Warden",
+        "operatorKey": "Warden",
+        "aliases": [
+          "[2A3ZJ6xhiuo"
+        ]
+      },
+      {
+        "number": 5,
+        "name": "SkullGuy",
+        "operatorKey": "SkullG",
+        "aliases": [
+          "HaklaGuy"
+        ]
+      }
+    ]
+  },
+  "reference": {
+    "mapsByMode": {
+      "HP": [
+        "Combine",
+        "Takeoff",
+        "Hacienda",
+        "Summit",
+        "Arsenal"
+      ],
+      "SND": [
+        "Slums",
+        "Firing Range",
+        "Tunisia",
+        "Coastal",
+        "Meltdown"
+      ],
+      "Control": [
+        "Crossroads",
+        "Raid",
+        "Standoff"
+      ]
+    }
+  },
+  "scrims": [
+    {
+      "id": "bbee5157-8676-4c29-8462-8d7e332f7d55",
+      "name": "Elevate 5 October",
+      "date": "",
+      "sourceFile": "Elevate_5_October_vod_review.txt",
+      "vod": "https://www.youtube.com/live/g5UIfV84l9Q",
+      "importedFromTxt": true,
+      "matches": [
+        {
+          "number": 1,
+          "map": "Summit",
+          "side": "Blue",
+          "label": "",
+          "vodStart": "10:00",
+          "vodEnd": "20:38",
+          "players": {
+            "Flirt": {
+              "kills": 8,
+              "pulls": 5,
+              "operatingTime": 65.1,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "10:05.6",
+                  "end": "10:11.1",
+                  "kills": 0,
+                  "duration": 5.5
+                },
+                {
+                  "number": 2,
+                  "start": "12:24.2",
+                  "end": "12:34.9",
+                  "kills": 3,
+                  "duration": 10.7
+                },
+                {
+                  "number": 3,
+                  "start": "14:10.5",
+                  "end": "14:33.3",
+                  "kills": 1,
+                  "duration": 22.8
+                },
+                {
+                  "number": 4,
+                  "start": "15:42.3",
+                  "end": "15:59.1",
+                  "kills": 3,
+                  "duration": 16.8
+                },
+                {
+                  "number": 5,
+                  "start": "18:38.1",
+                  "end": "18:47.4",
+                  "kills": 1,
+                  "duration": 9.3
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 4,
+              "pulls": 6,
+              "operatingTime": 37.8,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "10:54.9",
+                  "end": "11:10.9",
+                  "kills": 1,
+                  "duration": 16
+                },
+                {
+                  "number": 2,
+                  "start": "13:41.6",
+                  "end": "13:44.1",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 3,
+                  "start": "14:00.4",
+                  "end": "14:12.1",
+                  "kills": 1,
+                  "duration": 11.7
+                },
+                {
+                  "number": 4,
+                  "start": "16:16.5",
+                  "end": "16:19.0",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 5,
+                  "start": "18:36.3",
+                  "end": "18:38.8",
+                  "kills": 2,
+                  "duration": 2.5
+                },
+                {
+                  "number": 6,
+                  "start": "20:27.2",
+                  "end": "20:29.8",
+                  "kills": 0,
+                  "duration": 2.6
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 12,
+              "pulls": 6,
+              "operatingTime": 65.2,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "11:38.7",
+                  "end": "11:41.2",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 2,
+                  "start": "12:42.9",
+                  "end": "12:58.8",
+                  "kills": 3,
+                  "duration": 15.9
+                },
+                {
+                  "number": 3,
+                  "start": "14:38.4",
+                  "end": "14:39.4",
+                  "kills": 0,
+                  "duration": 1
+                },
+                {
+                  "number": 4,
+                  "start": "15:18.2",
+                  "end": "15:37.8",
+                  "kills": 5,
+                  "duration": 19.6
+                },
+                {
+                  "number": 5,
+                  "start": "18:00.2",
+                  "end": "18:18.7",
+                  "kills": 4,
+                  "duration": 18.5
+                },
+                {
+                  "number": 6,
+                  "start": "20:26.1",
+                  "end": "20:33.8",
+                  "kills": 0,
+                  "duration": 7.7
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 7,
+              "pulls": 4,
+              "operatingTime": 29.4,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "11:12.7",
+                  "end": "11:17.5",
+                  "kills": 2,
+                  "duration": 4.8
+                },
+                {
+                  "number": 2,
+                  "start": "14:10.3",
+                  "end": "14:14.1",
+                  "kills": 0,
+                  "duration": 3.8
+                },
+                {
+                  "number": 3,
+                  "start": "17:03.6",
+                  "end": "17:07.5",
+                  "kills": 1,
+                  "duration": 3.9
+                },
+                {
+                  "number": 4,
+                  "start": "19:54.9",
+                  "end": "20:11.8",
+                  "kills": 4,
+                  "duration": 16.9
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 4,
+              "pulls": 4,
+              "operatingTime": 37.7,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "10:35.1",
+                  "end": "10:42.1",
+                  "kills": 2,
+                  "duration": 7
+                },
+                {
+                  "number": 2,
+                  "start": "14:06.3",
+                  "end": "14:25.5",
+                  "kills": 1,
+                  "duration": 19.2
+                },
+                {
+                  "number": 3,
+                  "start": "17:41.0",
+                  "end": "17:48.5",
+                  "kills": 0,
+                  "duration": 7.5
+                },
+                {
+                  "number": 4,
+                  "start": "19:36.3",
+                  "end": "19:40.3",
+                  "kills": 1,
+                  "duration": 4
+                }
+              ]
+            }
+          }
+        },
+        {
+          "number": 2,
+          "map": "Hacienda",
+          "side": "Blue",
+          "label": "",
+          "vodStart": "26:20",
+          "vodEnd": "38:15",
+          "players": {
+            "Flirt": {
+              "kills": 8,
+              "pulls": 4,
+              "operatingTime": 39.8,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "28:16.4",
+                  "end": "28:28.2",
+                  "kills": 4,
+                  "duration": 11.8
+                },
+                {
+                  "number": 2,
+                  "start": "30:34.0",
+                  "end": "30:52.0",
+                  "kills": 3,
+                  "duration": 18
+                },
+                {
+                  "number": 3,
+                  "start": "32:44.8",
+                  "end": "32:49.2",
+                  "kills": 0,
+                  "duration": 4.4
+                },
+                {
+                  "number": 4,
+                  "start": "35:49.0",
+                  "end": "35:54.6",
+                  "kills": 1,
+                  "duration": 5.6
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 6,
+              "pulls": 5,
+              "operatingTime": 29,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "26:25.1",
+                  "end": "26:33.0",
+                  "kills": 2,
+                  "duration": 7.9
+                },
+                {
+                  "number": 2,
+                  "start": "29:10.5",
+                  "end": "29:15.9",
+                  "kills": 1,
+                  "duration": 5.4
+                },
+                {
+                  "number": 3,
+                  "start": "31:52.6",
+                  "end": "32:03.3",
+                  "kills": 1,
+                  "duration": 10.7
+                },
+                {
+                  "number": 4,
+                  "start": "33:53.0",
+                  "end": "33:55.4",
+                  "kills": 2,
+                  "duration": 2.4
+                },
+                {
+                  "number": 5,
+                  "start": "36:43.0",
+                  "end": "36:45.6",
+                  "kills": 0,
+                  "duration": 2.6
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 9,
+              "pulls": 4,
+              "operatingTime": 37.8,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "26:48.0",
+                  "end": "27:02.4",
+                  "kills": 4,
+                  "duration": 14.4
+                },
+                {
+                  "number": 2,
+                  "start": "29:39.9",
+                  "end": "29:45.4",
+                  "kills": 2,
+                  "duration": 5.5
+                },
+                {
+                  "number": 3,
+                  "start": "33:02.7",
+                  "end": "33:16.4",
+                  "kills": 3,
+                  "duration": 13.7
+                },
+                {
+                  "number": 4,
+                  "start": "36:32.9",
+                  "end": "36:37.1",
+                  "kills": 0,
+                  "duration": 4.2
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 9,
+              "pulls": 4,
+              "operatingTime": 59.6,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "27:18.2",
+                  "end": "27:38.2",
+                  "kills": 3,
+                  "duration": 20
+                },
+                {
+                  "number": 2,
+                  "start": "30:42.6",
+                  "end": "30:52.8",
+                  "kills": 2,
+                  "duration": 10.2
+                },
+                {
+                  "number": 3,
+                  "start": "34:04.2",
+                  "end": "34:17.2",
+                  "kills": 2,
+                  "duration": 13
+                },
+                {
+                  "number": 4,
+                  "start": "37:17.0",
+                  "end": "37:33.4",
+                  "kills": 2,
+                  "duration": 16.4
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 8,
+              "pulls": 5,
+              "operatingTime": 51,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "26:46.8",
+                  "end": "27:03.3",
+                  "kills": 1,
+                  "duration": 16.5
+                },
+                {
+                  "number": 2,
+                  "start": "29:46.9",
+                  "end": "29:58.0",
+                  "kills": 2,
+                  "duration": 11.1
+                },
+                {
+                  "number": 3,
+                  "start": "32:09.7",
+                  "end": "32:16.2",
+                  "kills": 1,
+                  "duration": 6.5
+                },
+                {
+                  "number": 4,
+                  "start": "35:10.7",
+                  "end": "35:23.7",
+                  "kills": 2,
+                  "duration": 13
+                },
+                {
+                  "number": 5,
+                  "start": "38:05.9",
+                  "end": "38:09.8",
+                  "kills": 2,
+                  "duration": 3.9
+                }
+              ]
+            }
+          }
+        },
+        {
+          "number": 3,
+          "map": "Standoff",
+          "side": "Yellow",
+          "label": "",
+          "vodStart": "42:30",
+          "vodEnd": "52:50",
+          "players": {
+            "Flirt": {
+              "kills": 5,
+              "pulls": 3,
+              "operatingTime": 31.7,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "43:14.8",
+                  "end": "43:20.1",
+                  "kills": 2,
+                  "duration": 5.3
+                },
+                {
+                  "number": 2,
+                  "start": "46:37.6",
+                  "end": "46:57.6",
+                  "kills": 3,
+                  "duration": 20
+                },
+                {
+                  "number": 3,
+                  "start": "50:18.2",
+                  "end": "50:24.6",
+                  "kills": 0,
+                  "duration": 6.4
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 3,
+              "pulls": 4,
+              "operatingTime": 24.6,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "42:39.8",
+                  "end": "42:42.3",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 2,
+                  "start": "45:51.5",
+                  "end": "45:56.5",
+                  "kills": 0,
+                  "duration": 5
+                },
+                {
+                  "number": 3,
+                  "start": "48:09.4",
+                  "end": "48:12.7",
+                  "kills": 1,
+                  "duration": 3.3
+                },
+                {
+                  "number": 4,
+                  "start": "52:21.3",
+                  "end": "52:35.1",
+                  "kills": 2,
+                  "duration": 13.8
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 4,
+              "pulls": 3,
+              "operatingTime": 54,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "43:34.7",
+                  "end": "43:57.7",
+                  "kills": 2,
+                  "duration": 23
+                },
+                {
+                  "number": 2,
+                  "start": "46:43.3",
+                  "end": "47:05.9",
+                  "kills": 1,
+                  "duration": 22.6
+                },
+                {
+                  "number": 3,
+                  "start": "50:33.2",
+                  "end": "50:41.6",
+                  "kills": 1,
+                  "duration": 8.4
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 4,
+              "pulls": 3,
+              "operatingTime": 34.1,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "43:46.2",
+                  "end": "44:02.8",
+                  "kills": 2,
+                  "duration": 16.6
+                },
+                {
+                  "number": 2,
+                  "start": "48:33.5",
+                  "end": "48:45.3",
+                  "kills": 2,
+                  "duration": 11.8
+                },
+                {
+                  "number": 3,
+                  "start": "52:42.5",
+                  "end": "52:48.2",
+                  "kills": 1,
+                  "duration": 5.7
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 3,
+              "pulls": 2,
+              "operatingTime": 18.4,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "44:23.9",
+                  "end": "44:29.9",
+                  "kills": 0,
+                  "duration": 6
+                },
+                {
+                  "number": 2,
+                  "start": "48:27.8",
+                  "end": "48:40.2",
+                  "kills": 3,
+                  "duration": 12.4
+                }
+              ]
+            }
+          }
+        },
+        {
+          "number": 4,
+          "map": "Raid",
+          "side": "Yellow",
+          "label": "",
+          "vodStart": "58:15",
+          "vodEnd": "1:02:40",
+          "players": {
+            "Flirt": {
+              "kills": 2,
+              "pulls": 1,
+              "operatingTime": 20,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "58:33.1",
+                  "end": "58:53.1",
+                  "kills": 2,
+                  "duration": 20
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 4,
+              "pulls": 2,
+              "operatingTime": 24.4,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "58:24.5",
+                  "end": "58:38.3",
+                  "kills": 2,
+                  "duration": 13.8
+                },
+                {
+                  "number": 2,
+                  "start": "01:00:42.0",
+                  "end": "01:00:52.6",
+                  "kills": 2,
+                  "duration": 10.6
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 2,
+              "pulls": 3,
+              "operatingTime": 32.3,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "58:19.6",
+                  "end": "58:30.6",
+                  "kills": 1,
+                  "duration": 11
+                },
+                {
+                  "number": 2,
+                  "start": "01:01:44.6",
+                  "end": "01:01:47.4",
+                  "kills": 0,
+                  "duration": 2.8
+                },
+                {
+                  "number": 3,
+                  "start": "01:02:14.5",
+                  "end": "01:02:33.0",
+                  "kills": 1,
+                  "duration": 18.5
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 1,
+              "pulls": 2,
+              "operatingTime": 18.1,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "58:24.3",
+                  "end": "58:28.5",
+                  "kills": 0,
+                  "duration": 4.2
+                },
+                {
+                  "number": 2,
+                  "start": "01:01:57.2",
+                  "end": "01:02:11.1",
+                  "kills": 1,
+                  "duration": 13.9
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 2,
+              "pulls": 2,
+              "operatingTime": 35.1,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "58:55.5",
+                  "end": "59:06.6",
+                  "kills": 1,
+                  "duration": 11.1
+                },
+                {
+                  "number": 2,
+                  "start": "01:02:12.2",
+                  "end": "01:02:36.2",
+                  "kills": 1,
+                  "duration": 24
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "55feb556-1124-4cc2-b809-b4946d1a84aa",
+      "name": "OUG 5 October",
+      "date": "",
+      "sourceFile": "OUG_5_October_vod_review.txt",
+      "vod": "https://www.youtube.com/live/2BeQWQd3aiA",
+      "importedFromTxt": true,
+      "matches": [
+        {
+          "number": 1,
+          "map": "Summit",
+          "side": "Blue",
+          "label": "",
+          "vodStart": "10:05",
+          "vodEnd": "18:15",
+          "players": {
+            "Flirt": {
+              "kills": 4,
+              "pulls": 3,
+              "operatingTime": 21.3,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "10:22.7",
+                  "end": "10:26.2",
+                  "kills": 0,
+                  "duration": 3.5
+                },
+                {
+                  "number": 2,
+                  "start": "13:08.2",
+                  "end": "13:23.5",
+                  "kills": 4,
+                  "duration": 15.3
+                },
+                {
+                  "number": 3,
+                  "start": "16:07.0",
+                  "end": "16:09.5",
+                  "kills": 0,
+                  "duration": 2.5
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 1,
+              "pulls": 4,
+              "operatingTime": 10.9,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "10:09.7",
+                  "end": "10:12.2",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 2,
+                  "start": "12:23.3",
+                  "end": "12:26.7",
+                  "kills": 1,
+                  "duration": 3.4
+                },
+                {
+                  "number": 3,
+                  "start": "15:36.7",
+                  "end": "15:39.2",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 4,
+                  "start": "18:06.1",
+                  "end": "18:08.6",
+                  "kills": 0,
+                  "duration": 2.5
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 2,
+              "pulls": 3,
+              "operatingTime": 21,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "10:35.3",
+                  "end": "10:40.7",
+                  "kills": 0,
+                  "duration": 5.4
+                },
+                {
+                  "number": 2,
+                  "start": "13:33.8",
+                  "end": "13:44.2",
+                  "kills": 1,
+                  "duration": 10.4
+                },
+                {
+                  "number": 3,
+                  "start": "16:53.4",
+                  "end": "16:58.6",
+                  "kills": 1,
+                  "duration": 5.2
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 4,
+              "pulls": 3,
+              "operatingTime": 39.3,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "10:36.6",
+                  "end": "10:39.1",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 2,
+                  "start": "13:24.5",
+                  "end": "13:44.1",
+                  "kills": 1,
+                  "duration": 19.6
+                },
+                {
+                  "number": 3,
+                  "start": "17:06.3",
+                  "end": "17:23.5",
+                  "kills": 3,
+                  "duration": 17.2
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 9,
+              "pulls": 3,
+              "operatingTime": 22.6,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "10:48.5",
+                  "end": "11:01.0",
+                  "kills": 8,
+                  "duration": 12.5
+                },
+                {
+                  "number": 2,
+                  "start": "14:03.1",
+                  "end": "14:05.6",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 3,
+                  "start": "16:42.2",
+                  "end": "16:49.8",
+                  "kills": 1,
+                  "duration": 7.6
+                }
+              ]
+            }
+          }
+        },
+        {
+          "number": 2,
+          "map": "Combine",
+          "side": "Blue",
+          "label": "",
+          "vodStart": "22:20",
+          "vodEnd": "32:08",
+          "players": {
+            "Flirt": {
+              "kills": 6,
+              "pulls": 5,
+              "operatingTime": 58.9,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "22:26.0",
+                  "end": "22:50.5",
+                  "kills": 2,
+                  "duration": 24.5
+                },
+                {
+                  "number": 2,
+                  "start": "25:03.8",
+                  "end": "25:08.9",
+                  "kills": 0,
+                  "duration": 5.1
+                },
+                {
+                  "number": 3,
+                  "start": "27:09.0",
+                  "end": "27:13.5",
+                  "kills": 2,
+                  "duration": 4.5
+                },
+                {
+                  "number": 4,
+                  "start": "29:27.3",
+                  "end": "29:45.9",
+                  "kills": 1,
+                  "duration": 18.6
+                },
+                {
+                  "number": 5,
+                  "start": "31:58.5",
+                  "end": "32:04.7",
+                  "kills": 1,
+                  "duration": 6.2
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 10,
+              "pulls": 5,
+              "operatingTime": 15.6,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "23:21.5",
+                  "end": "23:24.0",
+                  "kills": 2,
+                  "duration": 2.5
+                },
+                {
+                  "number": 2,
+                  "start": "25:18.4",
+                  "end": "25:23.2",
+                  "kills": 2,
+                  "duration": 4.8
+                },
+                {
+                  "number": 3,
+                  "start": "27:26.7",
+                  "end": "27:30.0",
+                  "kills": 2,
+                  "duration": 3.3
+                },
+                {
+                  "number": 4,
+                  "start": "29:39.1",
+                  "end": "29:41.6",
+                  "kills": 3,
+                  "duration": 2.5
+                },
+                {
+                  "number": 5,
+                  "start": "31:28.0",
+                  "end": "31:30.5",
+                  "kills": 1,
+                  "duration": 2.5
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 7,
+              "pulls": 3,
+              "operatingTime": 40,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "23:18.5",
+                  "end": "23:28.0",
+                  "kills": 3,
+                  "duration": 9.5
+                },
+                {
+                  "number": 2,
+                  "start": "26:37.4",
+                  "end": "26:48.5",
+                  "kills": 2,
+                  "duration": 11.1
+                },
+                {
+                  "number": 3,
+                  "start": "29:29.1",
+                  "end": "29:48.5",
+                  "kills": 2,
+                  "duration": 19.4
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 3,
+              "pulls": 3,
+              "operatingTime": 32.5,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "23:39.1",
+                  "end": "23:50.4",
+                  "kills": 1,
+                  "duration": 11.3
+                },
+                {
+                  "number": 2,
+                  "start": "26:47.8",
+                  "end": "26:52.8",
+                  "kills": 0,
+                  "duration": 5
+                },
+                {
+                  "number": 3,
+                  "start": "30:56.4",
+                  "end": "31:12.6",
+                  "kills": 2,
+                  "duration": 16.2
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 9,
+              "pulls": 4,
+              "operatingTime": 35.2,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "23:39.0",
+                  "end": "23:41.5",
+                  "kills": 1,
+                  "duration": 2.5
+                },
+                {
+                  "number": 2,
+                  "start": "26:45.8",
+                  "end": "27:04.1",
+                  "kills": 4,
+                  "duration": 18.3
+                },
+                {
+                  "number": 3,
+                  "start": "29:23.7",
+                  "end": "29:29.5",
+                  "kills": 3,
+                  "duration": 5.8
+                },
+                {
+                  "number": 4,
+                  "start": "31:40.6",
+                  "end": "31:49.2",
+                  "kills": 1,
+                  "duration": 8.6
+                }
+              ]
+            }
+          }
+        },
+        {
+          "number": 3,
+          "map": "Raid",
+          "side": "Blue",
+          "label": "",
+          "vodStart": "37:48",
+          "vodEnd": "49:25",
+          "players": {
+            "Flirt": {
+              "kills": 1,
+              "pulls": 4,
+              "operatingTime": 28.1,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "37:51.7",
+                  "end": "37:56.4",
+                  "kills": 0,
+                  "duration": 4.7
+                },
+                {
+                  "number": 2,
+                  "start": "41:38.7",
+                  "end": "41:40.5",
+                  "kills": 0,
+                  "duration": 1.8
+                },
+                {
+                  "number": 3,
+                  "start": "45:41.5",
+                  "end": "45:44.0",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 4,
+                  "start": "47:22.6",
+                  "end": "47:41.7",
+                  "kills": 1,
+                  "duration": 19.1
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 2,
+              "pulls": 4,
+              "operatingTime": 22.9,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "38:24.1",
+                  "end": "38:30.1",
+                  "kills": 0,
+                  "duration": 6
+                },
+                {
+                  "number": 2,
+                  "start": "41:32.0",
+                  "end": "41:35.3",
+                  "kills": 1,
+                  "duration": 3.3
+                },
+                {
+                  "number": 3,
+                  "start": "45:28.2",
+                  "end": "45:37.9",
+                  "kills": 1,
+                  "duration": 9.7
+                },
+                {
+                  "number": 4,
+                  "start": "49:10.6",
+                  "end": "49:14.5",
+                  "kills": 0,
+                  "duration": 3.9
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 4,
+              "pulls": 3,
+              "operatingTime": 40,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "38:32.0",
+                  "end": "38:48.7",
+                  "kills": 2,
+                  "duration": 16.7
+                },
+                {
+                  "number": 2,
+                  "start": "42:00.2",
+                  "end": "42:14.2",
+                  "kills": 1,
+                  "duration": 14
+                },
+                {
+                  "number": 3,
+                  "start": "46:40.3",
+                  "end": "46:49.6",
+                  "kills": 1,
+                  "duration": 9.3
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 4,
+              "pulls": 3,
+              "operatingTime": 36.3,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "39:03.8",
+                  "end": "39:23.7",
+                  "kills": 2,
+                  "duration": 19.9
+                },
+                {
+                  "number": 2,
+                  "start": "44:00.2",
+                  "end": "44:07.3",
+                  "kills": 1,
+                  "duration": 7.1
+                },
+                {
+                  "number": 3,
+                  "start": "47:48.3",
+                  "end": "47:57.6",
+                  "kills": 1,
+                  "duration": 9.3
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 5,
+              "pulls": 3,
+              "operatingTime": 75.7,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "38:27.6",
+                  "end": "38:58.6",
+                  "kills": 2,
+                  "duration": 31
+                },
+                {
+                  "number": 2,
+                  "start": "41:54.9",
+                  "end": "42:23.9",
+                  "kills": 2,
+                  "duration": 29
+                },
+                {
+                  "number": 3,
+                  "start": "47:28.2",
+                  "end": "47:43.9",
+                  "kills": 1,
+                  "duration": 15.7
+                }
+              ]
+            }
+          }
+        },
+        {
+          "number": 4,
+          "map": "Standoff",
+          "side": "Blue",
+          "label": "",
+          "vodStart": "55:38",
+          "vodEnd": "1:02:00",
+          "players": {
+            "Flirt": {
+              "kills": 0,
+              "pulls": 2,
+              "operatingTime": 5,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "55:52.0",
+                  "end": "55:54.5",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 2,
+                  "start": "01:01:30.5",
+                  "end": "01:01:33.0",
+                  "kills": 0,
+                  "duration": 2.5
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 2,
+              "pulls": 3,
+              "operatingTime": 13.5,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "55:42.3",
+                  "end": "55:46.0",
+                  "kills": 1,
+                  "duration": 3.7
+                },
+                {
+                  "number": 2,
+                  "start": "58:33.7",
+                  "end": "58:37.6",
+                  "kills": 0,
+                  "duration": 3.9
+                },
+                {
+                  "number": 3,
+                  "start": "01:01:12.0",
+                  "end": "01:01:17.9",
+                  "kills": 1,
+                  "duration": 5.9
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 1,
+              "pulls": 3,
+              "operatingTime": 20.9,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "56:25.3",
+                  "end": "56:33.8",
+                  "kills": 1,
+                  "duration": 8.5
+                },
+                {
+                  "number": 2,
+                  "start": "59:32.0",
+                  "end": "59:34.5",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 3,
+                  "start": "01:00:16.5",
+                  "end": "01:00:26.4",
+                  "kills": 0,
+                  "duration": 9.9
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 4,
+              "pulls": 2,
+              "operatingTime": 33.8,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "55:45.0",
+                  "end": "56:05.1",
+                  "kills": 2,
+                  "duration": 20.1
+                },
+                {
+                  "number": 2,
+                  "start": "01:00:36.0",
+                  "end": "01:00:49.7",
+                  "kills": 2,
+                  "duration": 13.7
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 0,
+              "pulls": 2,
+              "operatingTime": 39.2,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "55:47.1",
+                  "end": "56:18.1",
+                  "kills": 0,
+                  "duration": 31
+                },
+                {
+                  "number": 2,
+                  "start": "01:00:45.1",
+                  "end": "01:00:53.3",
+                  "kills": 0,
+                  "duration": 8.2
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "3038dfdd-46a8-4f04-99b4-ec893068f32e",
+      "name": "Q9 6 October",
+      "date": "",
+      "sourceFile": "Q9_6_October_vod_review.txt",
+      "vod": "https://www.youtube.com/live/rMQpx2uu6D8",
+      "importedFromTxt": true,
+      "matches": [
+        {
+          "number": 1,
+          "map": "Summit",
+          "side": "Blue",
+          "label": "",
+          "vodStart": "6:00",
+          "vodEnd": "16:05",
+          "players": {
+            "Flirt": {
+              "kills": 5,
+              "pulls": 5,
+              "operatingTime": 53.8,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "06:49.3",
+                  "end": "06:59.1",
+                  "kills": 1,
+                  "duration": 9.8
+                },
+                {
+                  "number": 2,
+                  "start": "09:01.8",
+                  "end": "09:12.6",
+                  "kills": 2,
+                  "duration": 10.8
+                },
+                {
+                  "number": 3,
+                  "start": "11:20.1",
+                  "end": "11:28.5",
+                  "kills": 1,
+                  "duration": 8.4
+                },
+                {
+                  "number": 4,
+                  "start": "14:00.5",
+                  "end": "14:16.8",
+                  "kills": 0,
+                  "duration": 16.3
+                },
+                {
+                  "number": 5,
+                  "start": "15:53.4",
+                  "end": "16:01.9",
+                  "kills": 1,
+                  "duration": 8.5
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 5,
+              "pulls": 5,
+              "operatingTime": 21.5,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "06:07.4",
+                  "end": "06:10.0",
+                  "kills": 1,
+                  "duration": 2.6
+                },
+                {
+                  "number": 2,
+                  "start": "08:20.6",
+                  "end": "08:23.1",
+                  "kills": 1,
+                  "duration": 2.5
+                },
+                {
+                  "number": 3,
+                  "start": "10:27.8",
+                  "end": "10:37.6",
+                  "kills": 2,
+                  "duration": 9.8
+                },
+                {
+                  "number": 4,
+                  "start": "12:52.9",
+                  "end": "12:57.0",
+                  "kills": 1,
+                  "duration": 4.1
+                },
+                {
+                  "number": 5,
+                  "start": "14:48.7",
+                  "end": "14:51.2",
+                  "kills": 0,
+                  "duration": 2.5
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 6,
+              "pulls": 4,
+              "operatingTime": 33.5,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "07:15.8",
+                  "end": "07:18.3",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 2,
+                  "start": "09:18.2",
+                  "end": "09:20.7",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 3,
+                  "start": "11:35.2",
+                  "end": "11:47.4",
+                  "kills": 4,
+                  "duration": 12.2
+                },
+                {
+                  "number": 4,
+                  "start": "14:52.1",
+                  "end": "15:08.4",
+                  "kills": 2,
+                  "duration": 16.3
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 5,
+              "pulls": 4,
+              "operatingTime": 33.6,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "06:23.8",
+                  "end": "06:42.1",
+                  "kills": 2,
+                  "duration": 18.3
+                },
+                {
+                  "number": 2,
+                  "start": "09:34.5",
+                  "end": "09:39.1",
+                  "kills": 0,
+                  "duration": 4.6
+                },
+                {
+                  "number": 3,
+                  "start": "12:53.9",
+                  "end": "12:57.7",
+                  "kills": 0,
+                  "duration": 3.8
+                },
+                {
+                  "number": 4,
+                  "start": "15:55.0",
+                  "end": "16:01.9",
+                  "kills": 3,
+                  "duration": 6.9
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 3,
+              "pulls": 5,
+              "operatingTime": 37.9,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "06:54.4",
+                  "end": "07:15.2",
+                  "kills": 1,
+                  "duration": 20.8
+                },
+                {
+                  "number": 2,
+                  "start": "09:21.6",
+                  "end": "09:24.1",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 3,
+                  "start": "09:51.5",
+                  "end": "09:58.9",
+                  "kills": 2,
+                  "duration": 7.4
+                },
+                {
+                  "number": 4,
+                  "start": "12:33.3",
+                  "end": "12:38.0",
+                  "kills": 0,
+                  "duration": 4.7
+                },
+                {
+                  "number": 5,
+                  "start": "14:47.3",
+                  "end": "14:49.8",
+                  "kills": 0,
+                  "duration": 2.5
+                }
+              ]
+            }
+          }
+        },
+        {
+          "number": 2,
+          "map": "Hacienda",
+          "side": "Blue",
+          "label": "",
+          "vodStart": "20:45",
+          "vodEnd": "31:45",
+          "players": {
+            "Flirt": {
+              "kills": 4,
+              "pulls": 5,
+              "operatingTime": 45.2,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "21:09.5",
+                  "end": "21:14.1",
+                  "kills": 0,
+                  "duration": 4.6
+                },
+                {
+                  "number": 2,
+                  "start": "23:01.3",
+                  "end": "23:12.4",
+                  "kills": 1,
+                  "duration": 11.1
+                },
+                {
+                  "number": 3,
+                  "start": "24:54.5",
+                  "end": "25:03.5",
+                  "kills": 0,
+                  "duration": 9
+                },
+                {
+                  "number": 4,
+                  "start": "27:43.4",
+                  "end": "27:54.6",
+                  "kills": 2,
+                  "duration": 11.2
+                },
+                {
+                  "number": 5,
+                  "start": "30:35.0",
+                  "end": "30:44.3",
+                  "kills": 1,
+                  "duration": 9.3
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 3,
+              "pulls": 5,
+              "operatingTime": 17.5,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "21:32.7",
+                  "end": "21:35.2",
+                  "kills": 1,
+                  "duration": 2.5
+                },
+                {
+                  "number": 2,
+                  "start": "23:56.8",
+                  "end": "23:59.3",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 3,
+                  "start": "26:24.3",
+                  "end": "26:28.7",
+                  "kills": 1,
+                  "duration": 4.4
+                },
+                {
+                  "number": 4,
+                  "start": "28:39.9",
+                  "end": "28:44.3",
+                  "kills": 0,
+                  "duration": 4.4
+                },
+                {
+                  "number": 5,
+                  "start": "31:03.3",
+                  "end": "31:07.0",
+                  "kills": 1,
+                  "duration": 3.7
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 4,
+              "pulls": 4,
+              "operatingTime": 21,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "21:50.5",
+                  "end": "21:52.9",
+                  "kills": 0,
+                  "duration": 2.4
+                },
+                {
+                  "number": 2,
+                  "start": "24:45.3",
+                  "end": "24:53.2",
+                  "kills": 3,
+                  "duration": 7.9
+                },
+                {
+                  "number": 3,
+                  "start": "27:05.4",
+                  "end": "27:08.1",
+                  "kills": 0,
+                  "duration": 2.7
+                },
+                {
+                  "number": 4,
+                  "start": "29:43.6",
+                  "end": "29:51.6",
+                  "kills": 1,
+                  "duration": 8
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 11,
+              "pulls": 4,
+              "operatingTime": 49.2,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "21:43.9",
+                  "end": "21:51.4",
+                  "kills": 2,
+                  "duration": 7.5
+                },
+                {
+                  "number": 2,
+                  "start": "24:59.0",
+                  "end": "25:08.0",
+                  "kills": 1,
+                  "duration": 9
+                },
+                {
+                  "number": 3,
+                  "start": "27:32.3",
+                  "end": "27:54.0",
+                  "kills": 6,
+                  "duration": 21.7
+                },
+                {
+                  "number": 4,
+                  "start": "30:24.8",
+                  "end": "30:35.8",
+                  "kills": 2,
+                  "duration": 11
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 10,
+              "pulls": 5,
+              "operatingTime": 69.3,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "20:49.2",
+                  "end": "21:11.2",
+                  "kills": 2,
+                  "duration": 22
+                },
+                {
+                  "number": 2,
+                  "start": "23:27.5",
+                  "end": "23:48.5",
+                  "kills": 2,
+                  "duration": 21
+                },
+                {
+                  "number": 3,
+                  "start": "25:53.2",
+                  "end": "26:07.6",
+                  "kills": 2,
+                  "duration": 14.4
+                },
+                {
+                  "number": 4,
+                  "start": "28:31.6",
+                  "end": "28:41.0",
+                  "kills": 3,
+                  "duration": 9.4
+                },
+                {
+                  "number": 5,
+                  "start": "30:58.5",
+                  "end": "31:01.0",
+                  "kills": 1,
+                  "duration": 2.5
+                }
+              ]
+            }
+          }
+        },
+        {
+          "number": 3,
+          "map": "Crossroads",
+          "side": "Blue",
+          "label": "",
+          "vodStart": "38:45",
+          "vodEnd": "47:00",
+          "players": {
+            "Flirt": {
+              "kills": 5,
+              "pulls": 3,
+              "operatingTime": 18.2,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "39:50.5",
+                  "end": "39:55.7",
+                  "kills": 1,
+                  "duration": 5.2
+                },
+                {
+                  "number": 2,
+                  "start": "43:14.8",
+                  "end": "43:18.7",
+                  "kills": 1,
+                  "duration": 3.9
+                },
+                {
+                  "number": 3,
+                  "start": "46:42.1",
+                  "end": "46:51.2",
+                  "kills": 3,
+                  "duration": 9.1
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 1,
+              "pulls": 3,
+              "operatingTime": 16.3,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "39:03.7",
+                  "end": "39:09.3",
+                  "kills": 0,
+                  "duration": 5.6
+                },
+                {
+                  "number": 2,
+                  "start": "42:22.8",
+                  "end": "42:29.7",
+                  "kills": 1,
+                  "duration": 6.9
+                },
+                {
+                  "number": 3,
+                  "start": "45:19.8",
+                  "end": "45:23.6",
+                  "kills": 0,
+                  "duration": 3.8
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 0,
+              "pulls": 4,
+              "operatingTime": 21.6,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "38:49.0",
+                  "end": "38:54.8",
+                  "kills": 0,
+                  "duration": 5.8
+                },
+                {
+                  "number": 2,
+                  "start": "41:31.9",
+                  "end": "41:35.8",
+                  "kills": 0,
+                  "duration": 3.9
+                },
+                {
+                  "number": 3,
+                  "start": "44:10.6",
+                  "end": "44:20.0",
+                  "kills": 0,
+                  "duration": 9.4
+                },
+                {
+                  "number": 4,
+                  "start": "46:50.4",
+                  "end": "46:52.9",
+                  "kills": 0,
+                  "duration": 2.5
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 7,
+              "pulls": 3,
+              "operatingTime": 29.9,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "39:13.0",
+                  "end": "39:21.9",
+                  "kills": 1,
+                  "duration": 8.9
+                },
+                {
+                  "number": 2,
+                  "start": "42:39.8",
+                  "end": "42:44.5",
+                  "kills": 2,
+                  "duration": 4.7
+                },
+                {
+                  "number": 3,
+                  "start": "46:09.6",
+                  "end": "46:25.9",
+                  "kills": 4,
+                  "duration": 16.3
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 1,
+              "pulls": 3,
+              "operatingTime": 31,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "39:00.5",
+                  "end": "39:03.0",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 2,
+                  "start": "39:27.4",
+                  "end": "39:46.3",
+                  "kills": 0,
+                  "duration": 18.9
+                },
+                {
+                  "number": 3,
+                  "start": "45:36.6",
+                  "end": "45:46.2",
+                  "kills": 1,
+                  "duration": 9.6
+                }
+              ]
+            }
+          }
+        },
+        {
+          "number": 4,
+          "map": "Raid",
+          "side": "Blue",
+          "label": "",
+          "vodStart": "51:25",
+          "vodEnd": "59:30",
+          "players": {
+            "Flirt": {
+              "kills": 4,
+              "pulls": 2,
+              "operatingTime": 16.5,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "53:22.1",
+                  "end": "53:24.6",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 2,
+                  "start": "57:17.0",
+                  "end": "57:31.0",
+                  "kills": 4,
+                  "duration": 14
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 3,
+              "pulls": 3,
+              "operatingTime": 12.9,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "51:31.0",
+                  "end": "51:33.4",
+                  "kills": 0,
+                  "duration": 2.4
+                },
+                {
+                  "number": 2,
+                  "start": "54:40.1",
+                  "end": "54:47.1",
+                  "kills": 2,
+                  "duration": 7
+                },
+                {
+                  "number": 3,
+                  "start": "57:14.7",
+                  "end": "57:18.2",
+                  "kills": 1,
+                  "duration": 3.5
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 0,
+              "pulls": 2,
+              "operatingTime": 34.3,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "52:42.6",
+                  "end": "52:50.8",
+                  "kills": 0,
+                  "duration": 8.2
+                },
+                {
+                  "number": 2,
+                  "start": "56:05.7",
+                  "end": "56:31.8",
+                  "kills": 0,
+                  "duration": 26.1
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 3,
+              "pulls": 2,
+              "operatingTime": 36.6,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "52:07.2",
+                  "end": "52:23.8",
+                  "kills": 1,
+                  "duration": 16.6
+                },
+                {
+                  "number": 2,
+                  "start": "57:26.0",
+                  "end": "57:46.0",
+                  "kills": 2,
+                  "duration": 20
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 6,
+              "pulls": 2,
+              "operatingTime": 42.9,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "52:10.3",
+                  "end": "52:22.7",
+                  "kills": 2,
+                  "duration": 12.4
+                },
+                {
+                  "number": 2,
+                  "start": "56:08.1",
+                  "end": "56:38.6",
+                  "kills": 4,
+                  "duration": 30.5
+                }
+              ]
+            }
+          }
+        },
+        {
+          "number": 5,
+          "map": "Standoff",
+          "side": "Yellow",
+          "label": "",
+          "vodStart": "1:09:00",
+          "vodEnd": "1:18:10",
+          "players": {
+            "Flirt": {
+              "kills": 1,
+              "pulls": 2,
+              "operatingTime": 24.5,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:11:11.8",
+                  "end": "01:11:30.7",
+                  "kills": 0,
+                  "duration": 18.9
+                },
+                {
+                  "number": 2,
+                  "start": "01:16:21.3",
+                  "end": "01:16:26.9",
+                  "kills": 1,
+                  "duration": 5.6
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 1,
+              "pulls": 3,
+              "operatingTime": 19.3,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:09:03.2",
+                  "end": "01:09:09.0",
+                  "kills": 0,
+                  "duration": 5.8
+                },
+                {
+                  "number": 2,
+                  "start": "01:12:45.4",
+                  "end": "01:12:55.0",
+                  "kills": 1,
+                  "duration": 9.6
+                },
+                {
+                  "number": 3,
+                  "start": "01:15:25.3",
+                  "end": "01:15:29.2",
+                  "kills": 0,
+                  "duration": 3.9
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 6,
+              "pulls": 3,
+              "operatingTime": 36,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:11:08.2",
+                  "end": "01:11:29.4",
+                  "kills": 3,
+                  "duration": 21.2
+                },
+                {
+                  "number": 2,
+                  "start": "01:13:55.9",
+                  "end": "01:14:05.4",
+                  "kills": 3,
+                  "duration": 9.5
+                },
+                {
+                  "number": 3,
+                  "start": "01:16:19.5",
+                  "end": "01:16:24.8",
+                  "kills": 0,
+                  "duration": 5.3
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 5,
+              "pulls": 2,
+              "operatingTime": 29.1,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:11:31.9",
+                  "end": "01:11:52.0",
+                  "kills": 3,
+                  "duration": 20.1
+                },
+                {
+                  "number": 2,
+                  "start": "01:16:55.0",
+                  "end": "01:17:04.0",
+                  "kills": 2,
+                  "duration": 9
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 2,
+              "pulls": 2,
+              "operatingTime": 32.2,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:11:13.6",
+                  "end": "01:11:33.5",
+                  "kills": 1,
+                  "duration": 19.9
+                },
+                {
+                  "number": 2,
+                  "start": "01:14:58.4",
+                  "end": "01:15:10.7",
+                  "kills": 1,
+                  "duration": 12.3
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "db82760a-506e-47c8-aa17-dda62a0f75c1",
+      "name": "Elevate 6 October",
+      "date": "",
+      "sourceFile": "Elevate_6_October_vod_review.txt",
+      "vod": "https://www.youtube.com/live/wX6qJC2cuss",
+      "importedFromTxt": true,
+      "matches": [
+        {
+          "number": 1,
+          "map": "Takeoff",
+          "side": "Blue",
+          "label": "",
+          "vodStart": "11:25",
+          "vodEnd": "21:55",
+          "players": {
+            "Flirt": {
+              "kills": 8,
+              "pulls": 5,
+              "operatingTime": 32.6,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "11:31.1",
+                  "end": "11:40.6",
+                  "kills": 2,
+                  "duration": 9.5
+                },
+                {
+                  "number": 2,
+                  "start": "13:38.3",
+                  "end": "13:43.0",
+                  "kills": 1,
+                  "duration": 4.7
+                },
+                {
+                  "number": 3,
+                  "start": "15:53.6",
+                  "end": "16:03.5",
+                  "kills": 3,
+                  "duration": 9.9
+                },
+                {
+                  "number": 4,
+                  "start": "17:39.9",
+                  "end": "17:42.4",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 5,
+                  "start": "21:16.4",
+                  "end": "21:22.4",
+                  "kills": 2,
+                  "duration": 6
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 5,
+              "pulls": 4,
+              "operatingTime": 19.5,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "12:32.1",
+                  "end": "12:35.5",
+                  "kills": 1,
+                  "duration": 3.4
+                },
+                {
+                  "number": 2,
+                  "start": "15:06.8",
+                  "end": "15:10.6",
+                  "kills": 1,
+                  "duration": 3.8
+                },
+                {
+                  "number": 3,
+                  "start": "17:44.5",
+                  "end": "17:47.0",
+                  "kills": 1,
+                  "duration": 2.5
+                },
+                {
+                  "number": 4,
+                  "start": "20:03.4",
+                  "end": "20:13.2",
+                  "kills": 2,
+                  "duration": 9.8
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 5,
+              "pulls": 4,
+              "operatingTime": 39.5,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "12:34.0",
+                  "end": "12:54.0",
+                  "kills": 2,
+                  "duration": 20
+                },
+                {
+                  "number": 2,
+                  "start": "16:08.1",
+                  "end": "16:17.8",
+                  "kills": 2,
+                  "duration": 9.7
+                },
+                {
+                  "number": 3,
+                  "start": "18:30.7",
+                  "end": "18:33.2",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 4,
+                  "start": "21:29.0",
+                  "end": "21:36.3",
+                  "kills": 1,
+                  "duration": 7.3
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 9,
+              "pulls": 4,
+              "operatingTime": 41.5,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "12:29.8",
+                  "end": "12:44.9",
+                  "kills": 3,
+                  "duration": 15.1
+                },
+                {
+                  "number": 2,
+                  "start": "15:52.1",
+                  "end": "15:54.6",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 3,
+                  "start": "18:02.0",
+                  "end": "18:05.9",
+                  "kills": 1,
+                  "duration": 3.9
+                },
+                {
+                  "number": 4,
+                  "start": "20:02.6",
+                  "end": "20:22.6",
+                  "kills": 5,
+                  "duration": 20
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 8,
+              "pulls": 5,
+              "operatingTime": 48.2,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "11:40.7",
+                  "end": "11:55.5",
+                  "kills": 2,
+                  "duration": 14.8
+                },
+                {
+                  "number": 2,
+                  "start": "14:40.5",
+                  "end": "14:55.8",
+                  "kills": 3,
+                  "duration": 15.3
+                },
+                {
+                  "number": 3,
+                  "start": "16:55.0",
+                  "end": "17:03.7",
+                  "kills": 1,
+                  "duration": 8.7
+                },
+                {
+                  "number": 4,
+                  "start": "18:42.2",
+                  "end": "18:44.7",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 5,
+                  "start": "20:35.0",
+                  "end": "20:41.9",
+                  "kills": 2,
+                  "duration": 6.9
+                }
+              ]
+            }
+          }
+        },
+        {
+          "number": 2,
+          "map": "Hacienda",
+          "side": "Blue",
+          "label": "",
+          "vodStart": "27:02",
+          "vodEnd": "38:05",
+          "players": {
+            "Flirt": {
+              "kills": 7,
+              "pulls": 5,
+              "operatingTime": 42.7,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "27:58.7",
+                  "end": "28:01.2",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 2,
+                  "start": "30:48.1",
+                  "end": "30:54.5",
+                  "kills": 0,
+                  "duration": 6.4
+                },
+                {
+                  "number": 3,
+                  "start": "32:41.4",
+                  "end": "32:49.1",
+                  "kills": 2,
+                  "duration": 7.7
+                },
+                {
+                  "number": 4,
+                  "start": "35:40.9",
+                  "end": "35:56.2",
+                  "kills": 2,
+                  "duration": 15.3
+                },
+                {
+                  "number": 5,
+                  "start": "37:30.4",
+                  "end": "37:41.2",
+                  "kills": 3,
+                  "duration": 10.8
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 4,
+              "pulls": 5,
+              "operatingTime": 23.2,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "27:12.4",
+                  "end": "27:17.1",
+                  "kills": 1,
+                  "duration": 4.7
+                },
+                {
+                  "number": 2,
+                  "start": "29:50.9",
+                  "end": "29:53.4",
+                  "kills": 1,
+                  "duration": 2.5
+                },
+                {
+                  "number": 3,
+                  "start": "32:42.7",
+                  "end": "32:45.1",
+                  "kills": 0,
+                  "duration": 2.4
+                },
+                {
+                  "number": 4,
+                  "start": "35:17.3",
+                  "end": "35:27.9",
+                  "kills": 2,
+                  "duration": 10.6
+                },
+                {
+                  "number": 5,
+                  "start": "37:28.5",
+                  "end": "37:31.5",
+                  "kills": 0,
+                  "duration": 3
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 7,
+              "pulls": 4,
+              "operatingTime": 42.9,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "28:03.2",
+                  "end": "28:20.2",
+                  "kills": 2,
+                  "duration": 17
+                },
+                {
+                  "number": 2,
+                  "start": "30:39.4",
+                  "end": "30:46.1",
+                  "kills": 1,
+                  "duration": 6.7
+                },
+                {
+                  "number": 3,
+                  "start": "33:51.6",
+                  "end": "33:56.1",
+                  "kills": 0,
+                  "duration": 4.5
+                },
+                {
+                  "number": 4,
+                  "start": "36:11.6",
+                  "end": "36:26.3",
+                  "kills": 4,
+                  "duration": 14.7
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 9,
+              "pulls": 4,
+              "operatingTime": 57.1,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "28:25.1",
+                  "end": "28:45.0",
+                  "kills": 2,
+                  "duration": 19.9
+                },
+                {
+                  "number": 2,
+                  "start": "31:39.1",
+                  "end": "31:50.8",
+                  "kills": 3,
+                  "duration": 11.7
+                },
+                {
+                  "number": 3,
+                  "start": "34:58.4",
+                  "end": "35:14.2",
+                  "kills": 3,
+                  "duration": 15.8
+                },
+                {
+                  "number": 4,
+                  "start": "37:28.5",
+                  "end": "37:38.2",
+                  "kills": 1,
+                  "duration": 9.7
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 3,
+              "pulls": 5,
+              "operatingTime": 47.5,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "27:23.2",
+                  "end": "27:34.0",
+                  "kills": 0,
+                  "duration": 10.8
+                },
+                {
+                  "number": 2,
+                  "start": "29:32.8",
+                  "end": "29:36.9",
+                  "kills": 1,
+                  "duration": 4.1
+                },
+                {
+                  "number": 3,
+                  "start": "31:49.0",
+                  "end": "32:04.9",
+                  "kills": 0,
+                  "duration": 15.9
+                },
+                {
+                  "number": 4,
+                  "start": "34:07.6",
+                  "end": "34:10.1",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 5,
+                  "start": "37:32.9",
+                  "end": "37:47.1",
+                  "kills": 2,
+                  "duration": 14.2
+                }
+              ]
+            }
+          }
+        },
+        {
+          "number": 3,
+          "map": "Summit",
+          "side": "Blue",
+          "label": "",
+          "vodStart": "44:00",
+          "vodEnd": "53:35",
+          "players": {
+            "Flirt": {
+              "kills": 4,
+              "pulls": 5,
+              "operatingTime": 36.1,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "45:02.0",
+                  "end": "45:08.5",
+                  "kills": 0,
+                  "duration": 6.5
+                },
+                {
+                  "number": 2,
+                  "start": "47:20.4",
+                  "end": "47:27.4",
+                  "kills": 1,
+                  "duration": 7
+                },
+                {
+                  "number": 3,
+                  "start": "49:24.9",
+                  "end": "49:27.1",
+                  "kills": 0,
+                  "duration": 2.2
+                },
+                {
+                  "number": 4,
+                  "start": "51:32.9",
+                  "end": "51:47.3",
+                  "kills": 2,
+                  "duration": 14.4
+                },
+                {
+                  "number": 5,
+                  "start": "53:26.4",
+                  "end": "53:32.4",
+                  "kills": 1,
+                  "duration": 6
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 3,
+              "pulls": 4,
+              "operatingTime": 14.8,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "45:19.6",
+                  "end": "45:23.1",
+                  "kills": 2,
+                  "duration": 3.5
+                },
+                {
+                  "number": 2,
+                  "start": "47:10.7",
+                  "end": "47:14.8",
+                  "kills": 0,
+                  "duration": 4.1
+                },
+                {
+                  "number": 3,
+                  "start": "49:36.1",
+                  "end": "49:40.8",
+                  "kills": 1,
+                  "duration": 4.7
+                },
+                {
+                  "number": 4,
+                  "start": "51:10.3",
+                  "end": "51:12.8",
+                  "kills": 0,
+                  "duration": 2.5
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 6,
+              "pulls": 3,
+              "operatingTime": 28,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "45:32.9",
+                  "end": "45:35.0",
+                  "kills": 0,
+                  "duration": 2.1
+                },
+                {
+                  "number": 2,
+                  "start": "48:14.1",
+                  "end": "48:33.7",
+                  "kills": 4,
+                  "duration": 19.6
+                },
+                {
+                  "number": 3,
+                  "start": "51:12.1",
+                  "end": "51:18.4",
+                  "kills": 2,
+                  "duration": 6.3
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 6,
+              "pulls": 3,
+              "operatingTime": 20.7,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "45:18.2",
+                  "end": "45:21.1",
+                  "kills": 0,
+                  "duration": 2.9
+                },
+                {
+                  "number": 2,
+                  "start": "47:56.7",
+                  "end": "48:12.3",
+                  "kills": 6,
+                  "duration": 15.6
+                },
+                {
+                  "number": 3,
+                  "start": "51:17.2",
+                  "end": "51:19.4",
+                  "kills": 0,
+                  "duration": 2.2
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 4,
+              "pulls": 4,
+              "operatingTime": 31.3,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "44:08.5",
+                  "end": "44:18.4",
+                  "kills": 2,
+                  "duration": 9.9
+                },
+                {
+                  "number": 2,
+                  "start": "47:23.1",
+                  "end": "47:33.2",
+                  "kills": 2,
+                  "duration": 10.1
+                },
+                {
+                  "number": 3,
+                  "start": "49:46.5",
+                  "end": "49:55.3",
+                  "kills": 0,
+                  "duration": 8.8
+                },
+                {
+                  "number": 4,
+                  "start": "52:06.0",
+                  "end": "52:08.5",
+                  "kills": 0,
+                  "duration": 2.5
+                }
+              ]
+            }
+          }
+        },
+        {
+          "number": 4,
+          "map": "Standoff",
+          "side": "Yellow",
+          "label": "",
+          "vodStart": "59:15",
+          "vodEnd": "1:08:00",
+          "players": {
+            "Flirt": {
+              "kills": 1,
+              "pulls": 3,
+              "operatingTime": 11.4,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "59:40.8",
+                  "end": "59:43.3",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 2,
+                  "start": "01:01:24.5",
+                  "end": "01:01:26.6",
+                  "kills": 0,
+                  "duration": 2.1
+                },
+                {
+                  "number": 3,
+                  "start": "01:06:18.0",
+                  "end": "01:06:24.8",
+                  "kills": 1,
+                  "duration": 6.8
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 4,
+              "pulls": 3,
+              "operatingTime": 30.7,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:00:10.1",
+                  "end": "01:00:26.1",
+                  "kills": 2,
+                  "duration": 16
+                },
+                {
+                  "number": 2,
+                  "start": "01:03:43.6",
+                  "end": "01:03:54.1",
+                  "kills": 1,
+                  "duration": 10.5
+                },
+                {
+                  "number": 3,
+                  "start": "01:06:30.7",
+                  "end": "01:06:34.9",
+                  "kills": 1,
+                  "duration": 4.2
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 3,
+              "pulls": 4,
+              "operatingTime": 20.3,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "59:22.0",
+                  "end": "59:30.5",
+                  "kills": 1,
+                  "duration": 8.5
+                },
+                {
+                  "number": 2,
+                  "start": "01:02:23.4",
+                  "end": "01:02:29.3",
+                  "kills": 1,
+                  "duration": 5.9
+                },
+                {
+                  "number": 3,
+                  "start": "01:04:36.2",
+                  "end": "01:04:39.6",
+                  "kills": 0,
+                  "duration": 3.4
+                },
+                {
+                  "number": 4,
+                  "start": "01:05:54.7",
+                  "end": "01:05:57.2",
+                  "kills": 1,
+                  "duration": 2.5
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 4,
+              "pulls": 2,
+              "operatingTime": 29.2,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:00:13.2",
+                  "end": "01:00:20.6",
+                  "kills": 1,
+                  "duration": 7.4
+                },
+                {
+                  "number": 2,
+                  "start": "01:04:14.9",
+                  "end": "01:04:36.7",
+                  "kills": 3,
+                  "duration": 21.8
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 4,
+              "pulls": 2,
+              "operatingTime": 51.8,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:00:18.0",
+                  "end": "01:00:49.0",
+                  "kills": 2,
+                  "duration": 31
+                },
+                {
+                  "number": 2,
+                  "start": "01:05:02.8",
+                  "end": "01:05:23.6",
+                  "kills": 2,
+                  "duration": 20.8
+                }
+              ]
+            }
+          }
+        },
+        {
+          "number": 5,
+          "map": "Crossroads",
+          "side": "Yellow",
+          "label": "",
+          "vodStart": "1:11:40",
+          "vodEnd": "1:15:40",
+          "players": {
+            "Flirt": {
+              "kills": 2,
+              "pulls": 1,
+              "operatingTime": 5.9,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:12:49.1",
+                  "end": "01:12:55.0",
+                  "kills": 2,
+                  "duration": 5.9
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 0,
+              "pulls": 0,
+              "operatingTime": 17.2,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:11:49.1",
+                  "end": "01:11:56.8",
+                  "kills": 1,
+                  "duration": 7.7
+                },
+                {
+                  "number": 2,
+                  "start": "01:14:43.3",
+                  "end": "01:14:52.8",
+                  "kills": 0,
+                  "duration": 9.5
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 1,
+              "pulls": 1,
+              "operatingTime": 9.8,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:12:38.5",
+                  "end": "01:12:48.3",
+                  "kills": 1,
+                  "duration": 9.8
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 3,
+              "pulls": 2,
+              "operatingTime": 22.5,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:12:26.8",
+                  "end": "01:12:46.8",
+                  "kills": 2,
+                  "duration": 20
+                },
+                {
+                  "number": 2,
+                  "start": "01:15:27.5",
+                  "end": "01:15:30.0",
+                  "kills": 1,
+                  "duration": 2.5
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 1,
+              "pulls": 1,
+              "operatingTime": 10.9,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:14:22.1",
+                  "end": "01:14:33.0",
+                  "kills": 1,
+                  "duration": 10.9
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "d9a2951c-db37-4111-b027-c9bc6ed373fa",
+      "name": "AlUla 7 October",
+      "date": "",
+      "sourceFile": "AlUla_7_October_vod_review.txt",
+      "vod": "https://www.youtube.com/live/g6Za3vdw38c",
+      "importedFromTxt": true,
+      "matches": [
+        {
+          "number": 1,
+          "map": "Summit",
+          "side": "Blue",
+          "label": "",
+          "vodStart": "12:30",
+          "vodEnd": "23:30",
+          "players": {
+            "Flirt": {
+              "kills": 8,
+              "pulls": 6,
+              "operatingTime": 59.1,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "12:43.5",
+                  "end": "12:54.5",
+                  "kills": 3,
+                  "duration": 11
+                },
+                {
+                  "number": 2,
+                  "start": "14:50.8",
+                  "end": "15:05.6",
+                  "kills": 2,
+                  "duration": 14.8
+                },
+                {
+                  "number": 3,
+                  "start": "16:44.4",
+                  "end": "16:54.7",
+                  "kills": 0,
+                  "duration": 10.3
+                },
+                {
+                  "number": 4,
+                  "start": "18:48.8",
+                  "end": "18:54.6",
+                  "kills": 0,
+                  "duration": 5.8
+                },
+                {
+                  "number": 5,
+                  "start": "21:10.5",
+                  "end": "21:14.9",
+                  "kills": 1,
+                  "duration": 4.4
+                },
+                {
+                  "number": 6,
+                  "start": "23:13.2",
+                  "end": "23:26.0",
+                  "kills": 2,
+                  "duration": 12.8
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 3,
+              "pulls": 5,
+              "operatingTime": 20.8,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "13:54.2",
+                  "end": "13:57.9",
+                  "kills": 0,
+                  "duration": 3.7
+                },
+                {
+                  "number": 2,
+                  "start": "16:22.0",
+                  "end": "16:28.5",
+                  "kills": 0,
+                  "duration": 6.5
+                },
+                {
+                  "number": 3,
+                  "start": "18:27.6",
+                  "end": "18:30.4",
+                  "kills": 1,
+                  "duration": 2.8
+                },
+                {
+                  "number": 4,
+                  "start": "21:16.7",
+                  "end": "21:22.0",
+                  "kills": 1,
+                  "duration": 5.3
+                },
+                {
+                  "number": 5,
+                  "start": "23:21.6",
+                  "end": "23:24.1",
+                  "kills": 1,
+                  "duration": 2.5
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 8,
+              "pulls": 4,
+              "operatingTime": 50.2,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "15:00.7",
+                  "end": "15:15.3",
+                  "kills": 2,
+                  "duration": 14.6
+                },
+                {
+                  "number": 2,
+                  "start": "17:44.2",
+                  "end": "17:58.6",
+                  "kills": 2,
+                  "duration": 14.4
+                },
+                {
+                  "number": 3,
+                  "start": "20:39.2",
+                  "end": "20:46.4",
+                  "kills": 2,
+                  "duration": 7.2
+                },
+                {
+                  "number": 4,
+                  "start": "23:05.5",
+                  "end": "23:19.5",
+                  "kills": 2,
+                  "duration": 14
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 7,
+              "pulls": 4,
+              "operatingTime": 39.1,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "14:19.8",
+                  "end": "14:36.3",
+                  "kills": 5,
+                  "duration": 16.5
+                },
+                {
+                  "number": 2,
+                  "start": "17:05.2",
+                  "end": "17:08.3",
+                  "kills": 0,
+                  "duration": 3.1
+                },
+                {
+                  "number": 3,
+                  "start": "20:21.4",
+                  "end": "20:38.4",
+                  "kills": 2,
+                  "duration": 17
+                },
+                {
+                  "number": 4,
+                  "start": "22:55.7",
+                  "end": "22:58.2",
+                  "kills": 0,
+                  "duration": 2.5
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 8,
+              "pulls": 5,
+              "operatingTime": 52.7,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "13:18.2",
+                  "end": "13:31.6",
+                  "kills": 1,
+                  "duration": 13.4
+                },
+                {
+                  "number": 2,
+                  "start": "16:18.0",
+                  "end": "16:26.8",
+                  "kills": 2,
+                  "duration": 8.8
+                },
+                {
+                  "number": 3,
+                  "start": "18:30.5",
+                  "end": "18:51.2",
+                  "kills": 4,
+                  "duration": 20.7
+                },
+                {
+                  "number": 5,
+                  "start": "21:51.9",
+                  "end": "21:54.4",
+                  "kills": 1,
+                  "duration": 2.5
+                },
+                {
+                  "number": 6,
+                  "start": "23:18.7",
+                  "end": "23:26.0",
+                  "kills": 0,
+                  "duration": 7.3
+                }
+              ]
+            }
+          }
+        },
+        {
+          "number": 2,
+          "map": "Combine",
+          "side": "Blue",
+          "label": "",
+          "vodStart": "28:40",
+          "vodEnd": "38:45",
+          "players": {
+            "Flirt": {
+              "kills": 8,
+              "pulls": 5,
+              "operatingTime": 52,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "28:49.7",
+                  "end": "28:59.1",
+                  "kills": 1,
+                  "duration": 9.4
+                },
+                {
+                  "number": 2,
+                  "start": "31:11.1",
+                  "end": "31:13.6",
+                  "kills": 1,
+                  "duration": 2.5
+                },
+                {
+                  "number": 3,
+                  "start": "33:13.3",
+                  "end": "33:21.1",
+                  "kills": 1,
+                  "duration": 7.8
+                },
+                {
+                  "number": 4,
+                  "start": "35:13.3",
+                  "end": "35:39.4",
+                  "kills": 3,
+                  "duration": 26.1
+                },
+                {
+                  "number": 5,
+                  "start": "38:10.0",
+                  "end": "38:16.2",
+                  "kills": 2,
+                  "duration": 6.2
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 5,
+              "pulls": 5,
+              "operatingTime": 25.4,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "28:49.4",
+                  "end": "28:52.6",
+                  "kills": 0,
+                  "duration": 3.2
+                },
+                {
+                  "number": 2,
+                  "start": "31:01.1",
+                  "end": "31:04.1",
+                  "kills": 2,
+                  "duration": 3
+                },
+                {
+                  "number": 3,
+                  "start": "33:10.3",
+                  "end": "33:12.9",
+                  "kills": 0,
+                  "duration": 2.6
+                },
+                {
+                  "number": 4,
+                  "start": "35:28.7",
+                  "end": "35:42.8",
+                  "kills": 2,
+                  "duration": 14.1
+                },
+                {
+                  "number": 5,
+                  "start": "37:46.6",
+                  "end": "37:49.1",
+                  "kills": 1,
+                  "duration": 2.5
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 4,
+              "pulls": 3,
+              "operatingTime": 34.7,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "29:36.8",
+                  "end": "29:52.4",
+                  "kills": 1,
+                  "duration": 15.6
+                },
+                {
+                  "number": 2,
+                  "start": "32:45.5",
+                  "end": "32:55.3",
+                  "kills": 1,
+                  "duration": 9.8
+                },
+                {
+                  "number": 3,
+                  "start": "35:34.7",
+                  "end": "35:44.0",
+                  "kills": 2,
+                  "duration": 9.3
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 3,
+              "pulls": 5,
+              "operatingTime": 19.8,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "29:28.9",
+                  "end": "29:31.2",
+                  "kills": 0,
+                  "duration": 2.3
+                },
+                {
+                  "number": 2,
+                  "start": "29:53.4",
+                  "end": "30:00.4",
+                  "kills": 1,
+                  "duration": 7
+                },
+                {
+                  "number": 3,
+                  "start": "32:59.3",
+                  "end": "33:02.6",
+                  "kills": 1,
+                  "duration": 3.3
+                },
+                {
+                  "number": 4,
+                  "start": "35:14.7",
+                  "end": "35:17.9",
+                  "kills": 1,
+                  "duration": 3.2
+                },
+                {
+                  "number": 5,
+                  "start": "38:02.0",
+                  "end": "38:06.0",
+                  "kills": 0,
+                  "duration": 4
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 4,
+              "pulls": 4,
+              "operatingTime": 37.1,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "29:38.0",
+                  "end": "29:42.9",
+                  "kills": 0,
+                  "duration": 4.9
+                },
+                {
+                  "number": 2,
+                  "start": "32:52.3",
+                  "end": "32:57.0",
+                  "kills": 1,
+                  "duration": 4.7
+                },
+                {
+                  "number": 3,
+                  "start": "35:10.8",
+                  "end": "35:32.0",
+                  "kills": 2,
+                  "duration": 21.2
+                },
+                {
+                  "number": 4,
+                  "start": "37:53.5",
+                  "end": "37:59.8",
+                  "kills": 1,
+                  "duration": 6.3
+                }
+              ]
+            }
+          }
+        },
+        {
+          "number": 3,
+          "map": "Crossroads",
+          "side": "Blue",
+          "label": "",
+          "vodStart": "43:40",
+          "vodEnd": "51:45",
+          "players": {
+            "Flirt": {
+              "kills": 3,
+              "pulls": 3,
+              "operatingTime": 20.4,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "45:01.6",
+                  "end": "45:03.6",
+                  "kills": 0,
+                  "duration": 2
+                },
+                {
+                  "number": 2,
+                  "start": "47:59.6",
+                  "end": "48:04.9",
+                  "kills": 1,
+                  "duration": 5.3
+                },
+                {
+                  "number": 3,
+                  "start": "51:22.3",
+                  "end": "51:35.4",
+                  "kills": 2,
+                  "duration": 13.1
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 2,
+              "pulls": 3,
+              "operatingTime": 21.4,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "43:49.2",
+                  "end": "43:59.9",
+                  "kills": 0,
+                  "duration": 10.7
+                },
+                {
+                  "number": 2,
+                  "start": "46:48.8",
+                  "end": "46:52.8",
+                  "kills": 1,
+                  "duration": 4
+                },
+                {
+                  "number": 3,
+                  "start": "49:39.5",
+                  "end": "49:46.2",
+                  "kills": 1,
+                  "duration": 6.7
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 1,
+              "pulls": 4,
+              "operatingTime": 16.6,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "44:01.5",
+                  "end": "44:07.6",
+                  "kills": 1,
+                  "duration": 6.1
+                },
+                {
+                  "number": 2,
+                  "start": "46:43.6",
+                  "end": "46:45.6",
+                  "kills": 0,
+                  "duration": 2
+                },
+                {
+                  "number": 3,
+                  "start": "48:12.4",
+                  "end": "48:17.2",
+                  "kills": 0,
+                  "duration": 4.8
+                },
+                {
+                  "number": 4,
+                  "start": "51:21.8",
+                  "end": "51:25.5",
+                  "kills": 0,
+                  "duration": 3.7
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 6,
+              "pulls": 2,
+              "operatingTime": 22.5,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "46:06.1",
+                  "end": "46:26.1",
+                  "kills": 5,
+                  "duration": 20
+                },
+                {
+                  "number": 2,
+                  "start": "50:01.8",
+                  "end": "50:04.3",
+                  "kills": 1,
+                  "duration": 2.5
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 1,
+              "pulls": 2,
+              "operatingTime": 19.9,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "44:21.6",
+                  "end": "44:38.6",
+                  "kills": 1,
+                  "duration": 17
+                },
+                {
+                  "number": 2,
+                  "start": "49:53.9",
+                  "end": "49:56.8",
+                  "kills": 0,
+                  "duration": 2.9
+                }
+              ]
+            }
+          }
+        },
+        {
+          "number": 4,
+          "map": "Standoff",
+          "side": "Blue",
+          "label": "",
+          "vodStart": "56:55",
+          "vodEnd": "1:04:25",
+          "players": {
+            "Flirt": {
+              "kills": 1,
+              "pulls": 2,
+              "operatingTime": 23.9,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "57:55.3",
+                  "end": "58:15.3",
+                  "kills": 1,
+                  "duration": 20
+                },
+                {
+                  "number": 2,
+                  "start": "01:02:33.8",
+                  "end": "01:02:37.7",
+                  "kills": 0,
+                  "duration": 3.9
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 4,
+              "pulls": 3,
+              "operatingTime": 22.3,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "57:16.4",
+                  "end": "57:18.9",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 2,
+                  "start": "01:00:08.6",
+                  "end": "01:00:21.8",
+                  "kills": 3,
+                  "duration": 13.2
+                },
+                {
+                  "number": 3,
+                  "start": "01:03:31.2",
+                  "end": "01:03:37.8",
+                  "kills": 1,
+                  "duration": 6.6
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 2,
+              "pulls": 3,
+              "operatingTime": 18.5,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "57:01.8",
+                  "end": "57:12.1",
+                  "kills": 1,
+                  "duration": 10.3
+                },
+                {
+                  "number": 2,
+                  "start": "01:00:04.8",
+                  "end": "01:00:08.8",
+                  "kills": 0,
+                  "duration": 4
+                },
+                {
+                  "number": 3,
+                  "start": "01:03:55.7",
+                  "end": "01:03:59.9",
+                  "kills": 1,
+                  "duration": 4.2
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 1,
+              "pulls": 2,
+              "operatingTime": 7.3,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "57:36.9",
+                  "end": "57:39.4",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 2,
+                  "start": "01:03:02.6",
+                  "end": "01:03:07.4",
+                  "kills": 1,
+                  "duration": 4.8
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 8,
+              "pulls": 2,
+              "operatingTime": 51.9,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "57:59.3",
+                  "end": "58:26.1",
+                  "kills": 4,
+                  "duration": 26.8
+                },
+                {
+                  "number": 2,
+                  "start": "01:02:31.7",
+                  "end": "01:02:56.8",
+                  "kills": 4,
+                  "duration": 25.1
+                }
+              ]
+            }
+          }
+        },
+        {
+          "number": 5,
+          "map": "Takeoff",
+          "side": "Blue",
+          "label": "",
+          "vodStart": "1:49:45",
+          "vodEnd": "2:01:05",
+          "players": {
+            "Flirt": {
+              "kills": 4,
+              "pulls": 6,
+              "operatingTime": 38.5,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:49:52.2",
+                  "end": "01:50:00.0",
+                  "kills": 0,
+                  "duration": 7.8
+                },
+                {
+                  "number": 2,
+                  "start": "01:51:57.1",
+                  "end": "01:52:00.4",
+                  "kills": 0,
+                  "duration": 3.3
+                },
+                {
+                  "number": 3,
+                  "start": "01:53:10.2",
+                  "end": "01:53:15.7",
+                  "kills": 1,
+                  "duration": 5.5
+                },
+                {
+                  "number": 4,
+                  "start": "01:55:28.1",
+                  "end": "01:55:31.0",
+                  "kills": 0,
+                  "duration": 2.9
+                },
+                {
+                  "number": 5,
+                  "start": "01:57:38.3",
+                  "end": "01:57:50.1",
+                  "kills": 2,
+                  "duration": 11.8
+                },
+                {
+                  "number": 6,
+                  "start": "01:59:41.2",
+                  "end": "01:59:48.4",
+                  "kills": 1,
+                  "duration": 7.2
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 8,
+              "pulls": 5,
+              "operatingTime": 17.3,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:50:16.9",
+                  "end": "01:50:21.3",
+                  "kills": 1,
+                  "duration": 4.4
+                },
+                {
+                  "number": 2,
+                  "start": "01:52:30.9",
+                  "end": "01:52:33.0",
+                  "kills": 2,
+                  "duration": 2.1
+                },
+                {
+                  "number": 3,
+                  "start": "01:55:16.6",
+                  "end": "01:55:22.0",
+                  "kills": 2,
+                  "duration": 5.4
+                },
+                {
+                  "number": 4,
+                  "start": "01:57:08.7",
+                  "end": "01:57:11.6",
+                  "kills": 0,
+                  "duration": 2.9
+                },
+                {
+                  "number": 5,
+                  "start": "01:59:23.9",
+                  "end": "01:59:26.4",
+                  "kills": 3,
+                  "duration": 2.5
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 5,
+              "pulls": 4,
+              "operatingTime": 28.1,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:50:35.9",
+                  "end": "01:50:38.5",
+                  "kills": 1,
+                  "duration": 2.6
+                },
+                {
+                  "number": 2,
+                  "start": "01:53:23.4",
+                  "end": "01:53:29.6",
+                  "kills": 1,
+                  "duration": 6.2
+                },
+                {
+                  "number": 3,
+                  "start": "01:56:15.8",
+                  "end": "01:56:32.7",
+                  "kills": 2,
+                  "duration": 16.9
+                },
+                {
+                  "number": 4,
+                  "start": "01:58:36.9",
+                  "end": "01:58:39.3",
+                  "kills": 1,
+                  "duration": 2.4
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 9,
+              "pulls": 4,
+              "operatingTime": 51.4,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:50:39.8",
+                  "end": "01:50:59.6",
+                  "kills": 3,
+                  "duration": 19.8
+                },
+                {
+                  "number": 2,
+                  "start": "01:53:43.3",
+                  "end": "01:53:45.8",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 3,
+                  "start": "01:56:24.9",
+                  "end": "01:56:43.8",
+                  "kills": 4,
+                  "duration": 18.9
+                },
+                {
+                  "number": 4,
+                  "start": "01:59:11.2",
+                  "end": "01:59:21.4",
+                  "kills": 2,
+                  "duration": 10.2
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 4,
+              "pulls": 4,
+              "operatingTime": 36.2,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:51:53.2",
+                  "end": "01:52:13.6",
+                  "kills": 2,
+                  "duration": 20.4
+                },
+                {
+                  "number": 2,
+                  "start": "01:54:46.6",
+                  "end": "01:54:49.7",
+                  "kills": 1,
+                  "duration": 3.1
+                },
+                {
+                  "number": 3,
+                  "start": "01:56:58.5",
+                  "end": "01:57:07.5",
+                  "kills": 1,
+                  "duration": 9
+                },
+                {
+                  "number": 4,
+                  "start": "01:59:46.2",
+                  "end": "01:59:49.9",
+                  "kills": 0,
+                  "duration": 3.7
+                }
+              ]
+            }
+          }
+        },
+        {
+          "number": 6,
+          "map": "Arsenal",
+          "side": "Blue",
+          "label": "",
+          "vodStart": "2:05:15",
+          "vodEnd": "2:15:20",
+          "players": {
+            "Flirt": {
+              "kills": 10,
+              "pulls": 6,
+              "operatingTime": 59.6,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "02:05:20.1",
+                  "end": "02:05:30.0",
+                  "kills": 1,
+                  "duration": 9.9
+                },
+                {
+                  "number": 2,
+                  "start": "02:07:47.8",
+                  "end": "02:08:04.4",
+                  "kills": 3,
+                  "duration": 16.6
+                },
+                {
+                  "number": 3,
+                  "start": "02:09:50.2",
+                  "end": "02:10:04.9",
+                  "kills": 3,
+                  "duration": 14.7
+                },
+                {
+                  "number": 4,
+                  "start": "02:11:55.6",
+                  "end": "02:11:58.1",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 5,
+                  "start": "02:12:50.4",
+                  "end": "02:12:54.9",
+                  "kills": 0,
+                  "duration": 4.5
+                },
+                {
+                  "number": 6,
+                  "start": "02:15:07.6",
+                  "end": "02:15:19.0",
+                  "kills": 3,
+                  "duration": 11.4
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 2,
+              "pulls": 4,
+              "operatingTime": 14.9,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "02:06:11.5",
+                  "end": "02:06:14.0",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 2,
+                  "start": "02:08:25.3",
+                  "end": "02:08:28.2",
+                  "kills": 0,
+                  "duration": 2.9
+                },
+                {
+                  "number": 3,
+                  "start": "02:11:10.8",
+                  "end": "02:11:17.4",
+                  "kills": 1,
+                  "duration": 6.6
+                },
+                {
+                  "number": 4,
+                  "start": "02:14:06.2",
+                  "end": "02:14:09.1",
+                  "kills": 1,
+                  "duration": 2.9
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 5,
+              "pulls": 4,
+              "operatingTime": 51.4,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "02:06:08.4",
+                  "end": "02:06:28.2",
+                  "kills": 1,
+                  "duration": 19.8
+                },
+                {
+                  "number": 2,
+                  "start": "02:09:27.6",
+                  "end": "02:09:45.0",
+                  "kills": 1,
+                  "duration": 17.4
+                },
+                {
+                  "number": 3,
+                  "start": "02:12:48.2",
+                  "end": "02:12:51.4",
+                  "kills": 2,
+                  "duration": 3.2
+                },
+                {
+                  "number": 4,
+                  "start": "02:15:08.0",
+                  "end": "02:15:19.0",
+                  "kills": 1,
+                  "duration": 11
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 8,
+              "pulls": 4,
+              "operatingTime": 48.4,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "02:06:25.1",
+                  "end": "02:06:28.9",
+                  "kills": 2,
+                  "duration": 3.8
+                },
+                {
+                  "number": 2,
+                  "start": "02:08:23.3",
+                  "end": "02:08:33.8",
+                  "kills": 3,
+                  "duration": 10.5
+                },
+                {
+                  "number": 3,
+                  "start": "02:11:17.1",
+                  "end": "02:11:35.6",
+                  "kills": 1,
+                  "duration": 18.5
+                },
+                {
+                  "number": 4,
+                  "start": "02:13:49.7",
+                  "end": "02:14:05.3",
+                  "kills": 2,
+                  "duration": 15.6
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 5,
+              "pulls": 4,
+              "operatingTime": 60.4,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "02:05:39.1",
+                  "end": "02:05:59.7",
+                  "kills": 2,
+                  "duration": 20.6
+                },
+                {
+                  "number": 2,
+                  "start": "02:08:43.5",
+                  "end": "02:09:00.0",
+                  "kills": 1,
+                  "duration": 16.5
+                },
+                {
+                  "number": 3,
+                  "start": "02:12:11.5",
+                  "end": "02:12:16.0",
+                  "kills": 0,
+                  "duration": 4.5
+                },
+                {
+                  "number": 4,
+                  "start": "02:14:36.0",
+                  "end": "02:14:54.8",
+                  "kills": 2,
+                  "duration": 18.8
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "c9fa1b61-c328-4c4d-b963-03737b8463d2",
+      "name": "AlUla 8 October",
+      "date": "",
+      "sourceFile": "AlUla_8_October_vod_review.txt",
+      "vod": "https://www.youtube.com/live/mXgGaHywAhQ",
+      "importedFromTxt": true,
+      "matches": [
+        {
+          "number": 1,
+          "map": "Takeoff",
+          "side": "Yellow",
+          "label": "",
+          "vodStart": "15:40",
+          "vodEnd": "26:50",
+          "players": {
+            "Flirt": {
+              "kills": 5,
+              "pulls": 4,
+              "operatingTime": 50.7,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "17:15.7",
+                  "end": "17:20.7",
+                  "kills": 2,
+                  "duration": 5
+                },
+                {
+                  "number": 2,
+                  "start": "19:41.5",
+                  "end": "20:07.7",
+                  "kills": 2,
+                  "duration": 26.2
+                },
+                {
+                  "number": 3,
+                  "start": "22:22.6",
+                  "end": "22:28.5",
+                  "kills": 0,
+                  "duration": 5.9
+                },
+                {
+                  "number": 4,
+                  "start": "24:13.0",
+                  "end": "24:26.6",
+                  "kills": 1,
+                  "duration": 13.6
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 7,
+              "pulls": 6,
+              "operatingTime": 34.1,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "15:47.0",
+                  "end": "15:51.2",
+                  "kills": 3,
+                  "duration": 4.2
+                },
+                {
+                  "number": 2,
+                  "start": "17:47.8",
+                  "end": "17:50.4",
+                  "kills": 0,
+                  "duration": 2.6
+                },
+                {
+                  "number": 3,
+                  "start": "19:53.9",
+                  "end": "20:05.3",
+                  "kills": 1,
+                  "duration": 11.4
+                },
+                {
+                  "number": 4,
+                  "start": "23:12.6",
+                  "end": "23:21.3",
+                  "kills": 2,
+                  "duration": 8.7
+                },
+                {
+                  "number": 5,
+                  "start": "25:37.3",
+                  "end": "25:39.8",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 6,
+                  "start": "26:04.6",
+                  "end": "26:09.3",
+                  "kills": 1,
+                  "duration": 4.7
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 6,
+              "pulls": 4,
+              "operatingTime": 49.7,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "16:44.7",
+                  "end": "16:55.3",
+                  "kills": 2,
+                  "duration": 10.6
+                },
+                {
+                  "number": 2,
+                  "start": "19:52.5",
+                  "end": "20:11.9",
+                  "kills": 2,
+                  "duration": 19.4
+                },
+                {
+                  "number": 3,
+                  "start": "22:26.7",
+                  "end": "22:31.4",
+                  "kills": 1,
+                  "duration": 4.7
+                },
+                {
+                  "number": 4,
+                  "start": "25:31.1",
+                  "end": "25:46.1",
+                  "kills": 1,
+                  "duration": 15
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 7,
+              "pulls": 4,
+              "operatingTime": 47.7,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "16:21.1",
+                  "end": "16:23.6",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 2,
+                  "start": "19:37.4",
+                  "end": "19:57.4",
+                  "kills": 4,
+                  "duration": 20
+                },
+                {
+                  "number": 3,
+                  "start": "23:41.3",
+                  "end": "24:01.3",
+                  "kills": 3,
+                  "duration": 20
+                },
+                {
+                  "number": 4,
+                  "start": "26:37.9",
+                  "end": "26:43.1",
+                  "kills": 0,
+                  "duration": 5.2
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 4,
+              "pulls": 4,
+              "operatingTime": 30,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "16:40.2",
+                  "end": "16:43.4",
+                  "kills": 0,
+                  "duration": 3.2
+                },
+                {
+                  "number": 2,
+                  "start": "19:47.1",
+                  "end": "20:06.2",
+                  "kills": 3,
+                  "duration": 19.1
+                },
+                {
+                  "number": 3,
+                  "start": "22:50.2",
+                  "end": "22:52.7",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 4,
+                  "start": "24:27.1",
+                  "end": "24:32.3",
+                  "kills": 1,
+                  "duration": 5.2
+                }
+              ]
+            }
+          }
+        },
+        {
+          "number": 2,
+          "map": "Combine",
+          "side": "Yellow",
+          "label": "",
+          "vodStart": "32:30",
+          "vodEnd": "44:20",
+          "players": {
+            "Flirt": {
+              "kills": 4,
+              "pulls": 6,
+              "operatingTime": 31,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "32:45.3",
+                  "end": "32:47.8",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 2,
+                  "start": "33:03.0",
+                  "end": "33:07.1",
+                  "kills": 2,
+                  "duration": 4.1
+                },
+                {
+                  "number": 3,
+                  "start": "35:59.4",
+                  "end": "36:16.0",
+                  "kills": 1,
+                  "duration": 16.6
+                },
+                {
+                  "number": 4,
+                  "start": "39:36.1",
+                  "end": "39:38.9",
+                  "kills": 1,
+                  "duration": 2.8
+                },
+                {
+                  "number": 5,
+                  "start": "41:50.3",
+                  "end": "41:52.8",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 6,
+                  "start": "43:57.8",
+                  "end": "44:00.3",
+                  "kills": 0,
+                  "duration": 2.5
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 5,
+              "pulls": 5,
+              "operatingTime": 31.1,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "33:40.7",
+                  "end": "33:46.8",
+                  "kills": 0,
+                  "duration": 6.1
+                },
+                {
+                  "number": 2,
+                  "start": "36:09.2",
+                  "end": "36:17.0",
+                  "kills": 4,
+                  "duration": 7.8
+                },
+                {
+                  "number": 3,
+                  "start": "38:41.7",
+                  "end": "38:50.7",
+                  "kills": 1,
+                  "duration": 9
+                },
+                {
+                  "number": 4,
+                  "start": "40:54.3",
+                  "end": "40:59.2",
+                  "kills": 0,
+                  "duration": 4.9
+                },
+                {
+                  "number": 5,
+                  "start": "42:46.7",
+                  "end": "42:50.0",
+                  "kills": 0,
+                  "duration": 3.3
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 3,
+              "pulls": 4,
+              "operatingTime": 28.2,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "33:50.4",
+                  "end": "33:52.9",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 2,
+                  "start": "37:04.7",
+                  "end": "37:10.0",
+                  "kills": 0,
+                  "duration": 5.3
+                },
+                {
+                  "number": 3,
+                  "start": "39:45.4",
+                  "end": "39:50.0",
+                  "kills": 0,
+                  "duration": 4.6
+                },
+                {
+                  "number": 4,
+                  "start": "42:30.8",
+                  "end": "42:46.6",
+                  "kills": 3,
+                  "duration": 15.8
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 5,
+              "pulls": 4,
+              "operatingTime": 41.4,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "34:08.3",
+                  "end": "34:21.8",
+                  "kills": 3,
+                  "duration": 13.5
+                },
+                {
+                  "number": 2,
+                  "start": "37:14.1",
+                  "end": "37:16.8",
+                  "kills": 1,
+                  "duration": 2.7
+                },
+                {
+                  "number": 3,
+                  "start": "39:54.3",
+                  "end": "39:56.8",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 4,
+                  "start": "42:24.3",
+                  "end": "42:47.0",
+                  "kills": 1,
+                  "duration": 22.7
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 7,
+              "pulls": 5,
+              "operatingTime": 49.2,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "33:08.5",
+                  "end": "33:13.9",
+                  "kills": 0,
+                  "duration": 5.4
+                },
+                {
+                  "number": 2,
+                  "start": "36:57.9",
+                  "end": "37:08.6",
+                  "kills": 3,
+                  "duration": 10.7
+                },
+                {
+                  "number": 3,
+                  "start": "39:23.9",
+                  "end": "39:41.4",
+                  "kills": 1,
+                  "duration": 17.5
+                },
+                {
+                  "number": 4,
+                  "start": "42:14.7",
+                  "end": "42:27.8",
+                  "kills": 3,
+                  "duration": 13.1
+                },
+                {
+                  "number": 5,
+                  "start": "44:06.7",
+                  "end": "44:09.2",
+                  "kills": 0,
+                  "duration": 2.5
+                }
+              ]
+            }
+          }
+        },
+        {
+          "number": 3,
+          "map": "Summit",
+          "side": "Yellow",
+          "label": "",
+          "vodStart": "49:50",
+          "vodEnd": "1:00:12",
+          "players": {
+            "Flirt": {
+              "kills": 4,
+              "pulls": 4,
+              "operatingTime": 39,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "49:57.5",
+                  "end": "50:07.3",
+                  "kills": 1,
+                  "duration": 9.8
+                },
+                {
+                  "number": 2,
+                  "start": "52:37.0",
+                  "end": "52:43.0",
+                  "kills": 1,
+                  "duration": 6
+                },
+                {
+                  "number": 3,
+                  "start": "55:00.7",
+                  "end": "55:15.2",
+                  "kills": 2,
+                  "duration": 14.5
+                },
+                {
+                  "number": 4,
+                  "start": "57:37.8",
+                  "end": "57:46.5",
+                  "kills": 0,
+                  "duration": 8.7
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 7,
+              "pulls": 6,
+              "operatingTime": 30.1,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "50:11.2",
+                  "end": "50:22.8",
+                  "kills": 2,
+                  "duration": 11.6
+                },
+                {
+                  "number": 2,
+                  "start": "52:14.6",
+                  "end": "52:17.1",
+                  "kills": 1,
+                  "duration": 2.5
+                },
+                {
+                  "number": 3,
+                  "start": "54:17.5",
+                  "end": "54:20.4",
+                  "kills": 1,
+                  "duration": 2.9
+                },
+                {
+                  "number": 4,
+                  "start": "56:25.8",
+                  "end": "56:28.3",
+                  "kills": 1,
+                  "duration": 2.5
+                },
+                {
+                  "number": 5,
+                  "start": "58:15.3",
+                  "end": "58:17.8",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 6,
+                  "start": "58:41.4",
+                  "end": "58:49.5",
+                  "kills": 2,
+                  "duration": 8.1
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 7,
+              "pulls": 4,
+              "operatingTime": 48.1,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "50:35.0",
+                  "end": "50:55.0",
+                  "kills": 1,
+                  "duration": 20
+                },
+                {
+                  "number": 2,
+                  "start": "53:39.5",
+                  "end": "53:53.6",
+                  "kills": 4,
+                  "duration": 14.1
+                },
+                {
+                  "number": 3,
+                  "start": "56:41.9",
+                  "end": "56:44.4",
+                  "kills": 0,
+                  "duration": 2.5
+                },
+                {
+                  "number": 4,
+                  "start": "59:36.8",
+                  "end": "59:48.3",
+                  "kills": 2,
+                  "duration": 11.5
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 6,
+              "pulls": 3,
+              "operatingTime": 34.9,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "50:42.7",
+                  "end": "50:53.4",
+                  "kills": 1,
+                  "duration": 10.7
+                },
+                {
+                  "number": 2,
+                  "start": "53:54.7",
+                  "end": "54:06.6",
+                  "kills": 2,
+                  "duration": 11.9
+                },
+                {
+                  "number": 3,
+                  "start": "57:03.5",
+                  "end": "57:15.8",
+                  "kills": 3,
+                  "duration": 12.3
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 4,
+              "pulls": 4,
+              "operatingTime": 50.4,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "50:24.8",
+                  "end": "50:46.7",
+                  "kills": 1,
+                  "duration": 21.9
+                },
+                {
+                  "number": 2,
+                  "start": "53:08.3",
+                  "end": "53:10.7",
+                  "kills": 0,
+                  "duration": 2.4
+                },
+                {
+                  "number": 3,
+                  "start": "56:02.4",
+                  "end": "56:18.6",
+                  "kills": 1,
+                  "duration": 16.2
+                },
+                {
+                  "number": 4,
+                  "start": "58:25.6",
+                  "end": "58:35.5",
+                  "kills": 2,
+                  "duration": 9.9
+                }
+              ]
+            }
+          }
+        },
+        {
+          "number": 4,
+          "map": "Standoff",
+          "side": "Yellow",
+          "label": "",
+          "vodStart": "1:07:20",
+          "vodEnd": "1:11:40",
+          "players": {
+            "Flirt": {
+              "kills": 3,
+              "pulls": 2,
+              "operatingTime": 23.1,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:07:46.2",
+                  "end": "01:08:01.8",
+                  "kills": 2,
+                  "duration": 15.6
+                },
+                {
+                  "number": 2,
+                  "start": "01:11:12.1",
+                  "end": "01:11:19.6",
+                  "kills": 1,
+                  "duration": 7.5
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 2,
+              "pulls": 2,
+              "operatingTime": 11.1,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:07:49.7",
+                  "end": "01:07:57.6",
+                  "kills": 2,
+                  "duration": 7.9
+                },
+                {
+                  "number": 2,
+                  "start": "01:11:02.4",
+                  "end": "01:11:05.6",
+                  "kills": 0,
+                  "duration": 3.2
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 0,
+              "pulls": 1,
+              "operatingTime": 3,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:10:59.2",
+                  "end": "01:11:02.2",
+                  "kills": 0,
+                  "duration": 3
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 0,
+              "pulls": 1,
+              "operatingTime": 2.5,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:07:26.5",
+                  "end": "01:07:29.0",
+                  "kills": 0,
+                  "duration": 2.5
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 0,
+              "pulls": 1,
+              "operatingTime": 13.2,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:08:05.6",
+                  "end": "01:08:18.8",
+                  "kills": 0,
+                  "duration": 13.2
+                }
+              ]
+            }
+          }
+        },
+        {
+          "number": 5,
+          "map": "Raid",
+          "side": "Yellow",
+          "label": "",
+          "vodStart": "1:17:15",
+          "vodEnd": "1:27:40",
+          "players": {
+            "Flirt": {
+              "kills": 4,
+              "pulls": 4,
+              "operatingTime": 60.9,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:17:21.0",
+                  "end": "01:17:39.0",
+                  "kills": 3,
+                  "duration": 18
+                },
+                {
+                  "number": 2,
+                  "start": "01:20:00.0",
+                  "end": "01:20:24.0",
+                  "kills": 1,
+                  "duration": 24
+                },
+                {
+                  "number": 3,
+                  "start": "01:22:11.4",
+                  "end": "01:22:23.1",
+                  "kills": 0,
+                  "duration": 11.7
+                },
+                {
+                  "number": 4,
+                  "start": "01:25:38.2",
+                  "end": "01:25:45.4",
+                  "kills": 0,
+                  "duration": 7.2
+                }
+              ]
+            },
+            "Viper": {
+              "kills": 5,
+              "pulls": 4,
+              "operatingTime": 40.4,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:17:25.0",
+                  "end": "01:17:31.0",
+                  "kills": 0,
+                  "duration": 6
+                },
+                {
+                  "number": 2,
+                  "start": "01:21:06.0",
+                  "end": "01:21:09.0",
+                  "kills": 2,
+                  "duration": 3
+                },
+                {
+                  "number": 3,
+                  "start": "01:23:00.9",
+                  "end": "01:23:13.4",
+                  "kills": 0,
+                  "duration": 12.5
+                },
+                {
+                  "number": 4,
+                  "start": "01:25:44.7",
+                  "end": "01:26:03.6",
+                  "kills": 3,
+                  "duration": 18.9
+                }
+              ]
+            },
+            "Abhiz": {
+              "kills": 4,
+              "pulls": 3,
+              "operatingTime": 28.7,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:17:31.0",
+                  "end": "01:17:35.0",
+                  "kills": 0,
+                  "duration": 4
+                },
+                {
+                  "number": 1,
+                  "start": "01:20:39.6",
+                  "end": "01:20:55.6",
+                  "kills": 2,
+                  "duration": 16
+                },
+                {
+                  "number": 2,
+                  "start": "01:23:49.3",
+                  "end": "01:23:58.0",
+                  "kills": 2,
+                  "duration": 8.7
+                }
+              ]
+            },
+            "Warden": {
+              "kills": 3,
+              "pulls": 2,
+              "operatingTime": 20.4,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:20:29.9",
+                  "end": "01:20:42.2",
+                  "kills": 2,
+                  "duration": 12.3
+                },
+                {
+                  "number": 2,
+                  "start": "01:23:41.0",
+                  "end": "01:23:49.1",
+                  "kills": 1,
+                  "duration": 8.1
+                }
+              ]
+            },
+            "SkullG": {
+              "kills": 4,
+              "pulls": 2,
+              "operatingTime": 24.8,
+              "pullDetails": [
+                {
+                  "number": 1,
+                  "start": "01:19:55.0",
+                  "end": "01:20:00.0",
+                  "kills": 2,
+                  "duration": 5
+                },
+                {
+                  "number": 2,
+                  "start": "01:22:02.0",
+                  "end": "01:22:21.8",
+                  "kills": 2,
+                  "duration": 19.8
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
