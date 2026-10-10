@@ -12,13 +12,38 @@ Data comes in as CSV and JSON files, goes into a SQLite database (`data/cdl.db`)
 
 ## Dashboard
 
-A FastAPI backend with a React frontend. It has five pages:
+A FastAPI backend with a React frontend. It has five pages.
 
-- **Elo:** team ratings and how they changed over the season.
-- **Team:** one team's map strength, recent series and player stats.
-- **H2H:** two teams compared, with an optional pre-match brief written by Claude.
-- **Scrims:** our scrim win rates, map breakdown and player stats.
-- **Training:** player participation, read live from the Discord bot.
+### Team
+
+One team's record, map strength by mode (picks, defends, bans), player K/D and operator trends, and recent series map by map.
+
+![Team page: record and map strength](screenshots/team1.png)
+![Team page: player stats and recent series](screenshots/team2.png)
+
+### Head to Head
+
+Two teams compared mode by mode, with an optional pre-match brief.
+
+![Head to Head page](screenshots/h2h.png)
+
+### Scrims
+
+Our scrim win rates (overall and per mode), map breakdown, and player K/D and operator stats. Defaults to the current block of scrims (since Oct 5).
+
+![Scrims page](screenshots/scrims.png)
+
+### Elo
+
+Team ratings and how they changed over the season.
+
+![Elo page](screenshots/elo.png)
+
+### Training
+
+Player participation, read live from the Discord bot.
+
+![Training page](screenshots/training.png)
 
 ## Run it locally
 
