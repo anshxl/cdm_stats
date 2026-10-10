@@ -1,10 +1,8 @@
 import argparse
 import os
 import sqlite3
-import sys
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "data", "cdl.db")
-OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "output")
 
 
 def get_db() -> sqlite3.Connection:
@@ -70,64 +68,12 @@ def cmd_ingest(args: argparse.Namespace) -> None:
     run_ingest(ingest_csv, args.csv_file)
 
 
-def cmd_export_matrix(_args: argparse.Namespace) -> None:
-    from cdm_stats.export.excel import export_map_matrix
-
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    conn = get_db()
-    path = os.path.join(OUTPUT_DIR, "map_matrix.xlsx")
-    export_map_matrix(conn, path)
-    conn.close()
-    print(f"Map Matrix exported to {path}")
 
 
-def cmd_export_matchup(args: argparse.Namespace) -> None:
-    from cdm_stats.export.excel import export_matchup_prep
-    from cdm_stats.db.queries import get_team_id_by_abbr
-
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    conn = get_db()
-    your_id = get_team_id_by_abbr(conn, args.your_team)
-    opp_id = get_team_id_by_abbr(conn, args.opponent)
-    if not your_id or not opp_id:
-        print("Error: unknown team abbreviation")
-        sys.exit(1)
-    path = os.path.join(OUTPUT_DIR, f"matchup_{args.your_team}_vs_{args.opponent}.xlsx")
-    export_matchup_prep(conn, your_id, opp_id, path)
-    conn.close()
-    print(f"Match-Up Prep exported to {path}")
 
 
-def cmd_chart_heatmap(args: argparse.Namespace) -> None:
-    from cdm_stats.charts.heatmap import chart_avoidance_target
-    from cdm_stats.db.queries import get_team_id_by_abbr
-
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    conn = get_db()
-    team_id = get_team_id_by_abbr(conn, args.team)
-    if not team_id:
-        print("Error: unknown team abbreviation")
-        sys.exit(1)
-    path = os.path.join(OUTPUT_DIR, f"heatmap_{args.team}.png")
-    chart_avoidance_target(conn, team_id, path)
-    conn.close()
-    print(f"Heatmap exported to {path}")
 
 
-def cmd_chart_elo(args: argparse.Namespace) -> None:
-    from cdm_stats.charts.heatmap import chart_elo_trajectory
-    from cdm_stats.db.queries import get_team_id_by_abbr
-
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    conn = get_db()
-    team_id = get_team_id_by_abbr(conn, args.team)
-    if not team_id:
-        print("Error: unknown team abbreviation")
-        sys.exit(1)
-    path = os.path.join(OUTPUT_DIR, f"elo_{args.team}.png")
-    chart_elo_trajectory(conn, team_id, path)
-    conn.close()
-    print(f"Elo trajectory exported to {path}")
 
 
 def cmd_ingest_playoffs(args: argparse.Namespace) -> None:
@@ -148,33 +94,8 @@ def cmd_ingest_tournament(args: argparse.Namespace) -> None:
     run_ingest(ingest_tournament, args.maps_csv, args.bans_csv)
 
 
-def cmd_export_profile(args: argparse.Namespace) -> None:
-    from cdm_stats.export.excel import export_team_profile
-    from cdm_stats.db.queries import get_team_id_by_abbr
-
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    conn = get_db()
-    team_id = get_team_id_by_abbr(conn, args.team)
-    if not team_id:
-        print("Error: unknown team abbreviation")
-        sys.exit(1)
-    fmt = args.format if args.format else None
-    suffix = f"_{args.format}" if args.format else ""
-    path = os.path.join(OUTPUT_DIR, f"profile_{args.team}{suffix}.xlsx")
-    export_team_profile(conn, team_id, path, format_filter=fmt)
-    conn.close()
-    print(f"Team Profile exported to {path}")
 
 
-def cmd_chart_elo_all(_args: argparse.Namespace) -> None:
-    from cdm_stats.charts.heatmap import chart_elo_all_teams
-
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    conn = get_db()
-    path = os.path.join(OUTPUT_DIR, "elo_all_teams.png")
-    chart_elo_all_teams(conn, path)
-    conn.close()
-    print(f"All-teams Elo trajectory exported to {path}")
 
 
 def cmd_ingest_scrims_team(args: argparse.Namespace) -> None:
@@ -237,24 +158,6 @@ def main() -> None:
     p_ingest = sub.add_parser("ingest", help="Ingest match data from CSV")
     p_ingest.add_argument("csv_file", help="Path to CSV file")
 
-    sub_export = sub.add_parser("export", help="Export data to Excel")
-    export_sub = sub_export.add_subparsers(dest="export_type", required=True)
-    export_sub.add_parser("matrix", help="Export Map Matrix")
-    p_matchup = export_sub.add_parser("matchup", help="Export Match-Up Prep")
-    p_matchup.add_argument("your_team", help="Your team abbreviation")
-    p_matchup.add_argument("opponent", help="Opponent team abbreviation")
-    p_profile = export_sub.add_parser("profile", help="Export Team Profile (W-L + bans)")
-    p_profile.add_argument("team", help="Team abbreviation")
-    p_profile.add_argument("--format", help="Filter by format prefix (e.g. TOURNAMENT, CDL_PLAYOFF)", default=None)
-
-    sub_chart = sub.add_parser("chart", help="Generate charts")
-    chart_sub = sub_chart.add_subparsers(dest="chart_type", required=True)
-    p_heatmap = chart_sub.add_parser("heatmap", help="Avoidance vs Target heatmap")
-    p_heatmap.add_argument("team", help="Team abbreviation")
-    p_elo = chart_sub.add_parser("elo", help="Elo trajectory")
-    p_elo.add_argument("team", help="Team abbreviation")
-    chart_sub.add_parser("elo-all", help="Elo trajectory for all teams")
-
     p_ingest_t = sub.add_parser("ingest-tournament", help="Ingest tournament/playoff data from CSVs")
     p_ingest_t.add_argument("maps_csv", help="Path to maps CSV file")
     p_ingest_t.add_argument("bans_csv", help="Path to bans CSV file")
@@ -311,20 +214,6 @@ def main() -> None:
 
     if args.command in commands:
         commands[args.command](args)
-    elif args.command == "export":
-        if args.export_type == "matrix":
-            cmd_export_matrix(args)
-        elif args.export_type == "matchup":
-            cmd_export_matchup(args)
-        elif args.export_type == "profile":
-            cmd_export_profile(args)
-    elif args.command == "chart":
-        if args.chart_type == "heatmap":
-            cmd_chart_heatmap(args)
-        elif args.chart_type == "elo":
-            cmd_chart_elo(args)
-        elif args.chart_type == "elo-all":
-            cmd_chart_elo_all(args)
 
 
 if __name__ == "__main__":

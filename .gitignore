@@ -10,7 +10,9 @@ dist/
 .pytest_cache/
 .claude/
 .superpowers/
-docs/
-data/s2/_xx.csv
-# data/s2/ops_kills.csv
+docs/*
+!docs/cli-reference.md
 .env*
+!.env.example
+node_modules/
+*.db-journal

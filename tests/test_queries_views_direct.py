@@ -23,13 +23,6 @@ def _mid(db, name):
     return db.execute("SELECT map_id FROM maps WHERE map_name = ?", (name,)).fetchone()[0]
 
 
-def test_player_opponents(db):
-    ingest_csv(db, io.StringIO(MATCHES_CSV))
-    assert qv.player_opponents(db) == ["DVS", "OUG"]
-    assert qv.player_opponents(db, "OUG") == ["GL"]
-    assert qv.player_opponents(db, "Q9") == []
-
-
 def test_map_results_detail_slot5_has_no_picker(db):
     ingest_csv(db, io.StringIO(MATCHES_CSV))
     rows = qv.map_results_detail(db, _tid(db, "DVS"), _mid(db, "Hacienda"))

@@ -37,7 +37,7 @@ def scrims(mode: Mode | None = None, map_name: str | None = Query(None, alias="m
         wl = scrim_win_loss(conn, mode=m, map_name=map_name, f=f, opponent=opponent)
         if wl["total"] > 0:
             by_mode.append({"mode": m, **_frac(wl)})
-    # As in Dash: the map table follows mode + opponent but not the map filter.
+    # The map table follows mode + opponent but not the map filter.
     maps = sorted(scrim_map_breakdown(conn, mode=mode, f=f, opponent=opponent),
                   key=lambda d: (MODE_ORDER.get(d["mode"], 99), d["map_name"]))
     return {

@@ -1,4 +1,4 @@
-"""View-level queries moved out of the Dash UI modules.
+"""View-level queries behind the dashboard API.
 
 Each function returns plain data (dicts/lists) so an API layer can serve it.
 """
@@ -276,21 +276,6 @@ def scrim_maps_for_mode(conn: sqlite3.Connection, mode: str | None = None) -> li
 def available_players(conn: sqlite3.Connection) -> list[str]:
     rows = conn.execute(
         "SELECT DISTINCT player_name FROM tournament_player_stats ORDER BY player_name"
-    ).fetchall()
-    return [r[0] for r in rows]
-
-
-def player_opponents(conn: sqlite3.Connection, team_abbr: str = YOUR_TEAM) -> list[str]:
-    """Opponent abbreviations the team has ever played."""
-    rows = conn.execute(
-        """SELECT DISTINCT CASE WHEN t1.abbreviation = ? THEN t2.abbreviation
-                                ELSE t1.abbreviation END AS opp
-           FROM matches m
-           JOIN teams t1 ON m.team1_id = t1.team_id
-           JOIN teams t2 ON m.team2_id = t2.team_id
-           WHERE ? IN (t1.abbreviation, t2.abbreviation)
-           ORDER BY opp""",
-        (team_abbr, team_abbr),
     ).fetchall()
     return [r[0] for r in rows]
 

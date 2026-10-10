@@ -4,7 +4,6 @@ import type { components } from './types'
 type S = components['schemas']
 
 export type Flag = S['Flag']
-export type FlagKind = Flag['kind']
 export type Flagged = S['Flagged']
 export type TeamInfo = S['TeamInfo']
 export type Profile = S['Profile']
@@ -22,4 +21,3 @@ export type Elo = S['Elo']
 export type EloSeries = S['EloSeries']
 export type Training = S['Training']
 export type TrainingPlayer = S['TrainingPlayer']
-export type TrainingDay = S['TrainingDay']

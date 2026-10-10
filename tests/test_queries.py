@@ -7,7 +7,6 @@ from cdm_stats.db.queries import (
     get_map_id,
     get_mode_for_slot,
     insert_match,
-    insert_map_result,
 )
 
 

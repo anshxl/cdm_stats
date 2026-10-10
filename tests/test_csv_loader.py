@@ -1,5 +1,4 @@
 import sqlite3
-import csv
 import io
 import pytest
 from cdm_stats.db.schema import create_tables

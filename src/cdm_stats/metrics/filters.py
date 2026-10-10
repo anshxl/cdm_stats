@@ -16,7 +16,6 @@ def family_sql(alias: str = "m") -> str:
     ELSE 'Regionals' END"""
 
 
-FAMILY_SQL = family_sql("m")
 
 
 @dataclass(frozen=True)
@@ -35,17 +34,6 @@ class MatchFilter:
             params += fams
         dw, dp = self.date_sql(f"{alias}.match_date")
         return ("".join(f" AND {c}" for c in clauses) + dw, params + dp)
-
-    @classmethod
-    def from_dict(cls, data: dict | None) -> "MatchFilter":
-        """Build from the dashboard filter-store payload (None/{} = default)."""
-        data = data or {}
-        fams = data.get("families")
-        return cls(
-            families=frozenset(fams) if fams is not None else frozenset(FAMILIES),
-            start=(data.get("start") or None),
-            end=(data.get("end") or None),
-        )
 
     @classmethod
     def from_event(cls, event: str, start: str | None = None, end: str | None = None) -> "MatchFilter":

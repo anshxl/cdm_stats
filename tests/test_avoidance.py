@@ -8,7 +8,6 @@ from cdm_stats.ingestion.csv_loader import ingest_csv
 from cdm_stats.metrics.avoidance import (
     pick_win_loss,
     defend_win_loss,
-    pick_context_distribution,
 )
 
 
@@ -72,13 +71,6 @@ def test_defend_win_loss_filters_by_family(db):
     assert defend_win_loss(db, oug, tunisia, f=SUMMER) == {"wins": 0, "losses": 0}
 
 
-def test_pick_context_distribution_filters_by_family(db):
-    ingest_csv(db, io.StringIO(MATCH_CSV))
-    dvs, _, tunisia, _, _ = _get_ids(db)
-    assert pick_context_distribution(db, dvs, tunisia, f=SPRING)["Opener"] == 1
-    assert pick_context_distribution(db, dvs, tunisia, f=SUMMER)["Opener"] == 0
-
-
 def test_defend_win_loss_oug_tunisia(db):
     """OUG didn't pick Tunisia, DVS did. OUG's defend record on Tunisia."""
     ingest_csv(db, io.StringIO(MATCH_CSV))
@@ -93,16 +85,6 @@ def test_pick_win_loss_no_data(db):
     result = pick_win_loss(db, dvs, summit_hp)
     assert result == {"wins": 0, "losses": 0}
 
-
-
-def test_pick_context_distribution(db):
-    """DVS picked Tunisia in slot 1 (Opener context)."""
-    ingest_csv(db, io.StringIO(MATCH_CSV))
-    dvs, _, tunisia, _, _ = _get_ids(db)
-    dist = pick_context_distribution(db, dvs, tunisia)
-    assert dist["Opener"] == 1
-    assert dist.get("Neutral", 0) == 0
-    assert dist.get("Must-Win", 0) == 0
 
 
 # DVS picks Tunisia (slot 1) at face value, DVS "wins" 6-3, but the map is DQ'd.
@@ -132,9 +114,3 @@ def test_defend_win_loss_excludes_dq(db):
     assert result == {"wins": 0, "losses": 0}
 
 
-def test_pick_context_distribution_excludes_dq(db):
-    """DVS's DQ'd Opener pick on Tunisia must not appear in the context distribution."""
-    ingest_csv(db, io.StringIO(DQ_PICK_CSV))
-    dvs, _, tunisia, _, _ = _get_ids(db)
-    dist = pick_context_distribution(db, dvs, tunisia)
-    assert dist == {"Opener": 0, "Neutral": 0, "Must-Win": 0, "Close-Out": 0}

@@ -1,6 +1,6 @@
 import pytest
 from cdm_stats.db.queries import get_team_id_by_abbr, insert_match
-from cdm_stats.metrics.filters import MatchFilter, FAMILIES, FAMILY_SQL, match_label
+from cdm_stats.metrics.filters import MatchFilter, FAMILIES, family_sql, match_label
 
 
 @pytest.fixture
@@ -41,7 +41,7 @@ def test_single_family_selects_only_its_rows(db_three_families, family, expected
 
 def test_family_sql_derives_all_three(db_three_families):
     rows = db_three_families.execute(
-        f"SELECT {FAMILY_SQL} FROM matches m ORDER BY m.match_date"
+        f"SELECT {family_sql()} FROM matches m ORDER BY m.match_date"
     ).fetchall()
     assert [r[0] for r in rows] == ["CDM Spring", "CDM Summer", "Regionals"]
 
@@ -59,13 +59,6 @@ def test_match_label():
     assert match_label("Regionals", "Finals", 2) == "Regionals · Finals"
     assert match_label(None, None, 1) == "CDM Spring"
     assert match_label("CDM", "Stage 2", 2) == "CDM Summer · Stage 2"
-
-
-def test_from_dict_roundtrip():
-    f = MatchFilter.from_dict({"families": ["Regionals"], "start": "2026-08-01", "end": None})
-    assert f == MatchFilter(families=frozenset({"Regionals"}), start="2026-08-01")
-    assert MatchFilter.from_dict(None) == MatchFilter()
-    assert MatchFilter.from_dict({}) == MatchFilter()
 
 
 @pytest.mark.parametrize("event,families", [

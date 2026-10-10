@@ -115,16 +115,6 @@ def test_context_weights_constant():
     assert CONTEXT_WEIGHTS["Unknown"] == 0.5
 
 
-def test_all_team_map_strengths(db):
-    """Bulk calculation should return dict keyed by (team_id, map_id)."""
-    from cdm_stats.metrics.map_strength import all_team_map_strengths
-    strengths = all_team_map_strengths(db)
-    assert isinstance(strengths, dict)
-    dvs, _, tunisia, _, _ = _get_ids(db)
-    assert (dvs, tunisia) in strengths
-    assert strengths[(dvs, tunisia)]["rating"] is not None
-
-
 DQ_STRENGTH_CSV = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score,series_winner,picked_by,dq
 2026-02-01,DVS,OUG,DVS,1,Tunisia,OUG,6,3,DVS,,1
 2026-02-01,DVS,OUG,DVS,2,Summit,DVS,250,100,,,

@@ -4,7 +4,7 @@ import pytest
 from cdm_stats.db.schema import create_tables
 from cdm_stats.ingestion.seed import seed_teams, seed_maps
 from cdm_stats.ingestion.csv_loader import ingest_csv
-from cdm_stats.metrics.elo import update_elo, get_current_elo
+from cdm_stats.metrics.elo import get_current_elo
 from cdm_stats.ingestion.backfill import backfill_elo
 
 TWO_MATCHES_CSV = """date,team1,team2,two_v_two_winner,slot,map_name,winner,winner_score,loser_score

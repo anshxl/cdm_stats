@@ -1,7 +1,7 @@
 import sqlite3
 import pytest
 from cdm_stats.db.schema import create_tables
-from cdm_stats.ingestion.seed import seed_teams, seed_maps, TEAMS, MAPS
+from cdm_stats.ingestion.seed import seed_teams, seed_maps
 
 
 @pytest.fixture

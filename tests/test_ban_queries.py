@@ -8,7 +8,7 @@ SUMMER = MatchFilter(families=frozenset({"CDM Summer"}))
 from cdm_stats.db.schema import create_tables, migrate
 from cdm_stats.ingestion.seed import seed_teams, seed_maps
 from cdm_stats.ingestion.tournament_loader import ingest_tournament
-from cdm_stats.db.queries import get_ban_summary, get_team_id_by_abbr
+from cdm_stats.db.queries import get_team_id_by_abbr
 
 
 @pytest.fixture
@@ -36,15 +36,6 @@ BANS_CSV = """date,team1,team2,format,banned_by,map
 2026-02-20,ELV,ALU,TOURNAMENT_BO5,ALU,Firing Range
 2026-02-20,ELV,ALU,TOURNAMENT_BO5,ELV,Raid
 2026-02-20,ELV,ALU,TOURNAMENT_BO5,ALU,Standoff"""
-
-
-def test_ban_summary_returns_bans_for_team(db):
-    ingest_tournament(db, io.StringIO(MAPS_CSV), io.StringIO(BANS_CSV))
-    elv_id = get_team_id_by_abbr(db, "ELV")
-    alu_id = get_team_id_by_abbr(db, "ALU")
-    summary = get_ban_summary(db, elv_id, alu_id)
-    assert len(summary) == 3  # ELV banned 3 maps
-    assert all(s["total_series"] >= 1 for s in summary)
 
 
 def test_team_ban_rates_counts_only_series_with_ban_data(db):
@@ -85,47 +76,3 @@ def test_opponent_ban_rates_counts_bans_against_team(db):
     assert opponent_ban_rates(db, elv_id, f=SUMMER)["total_series"] == 0
 
 
-def test_ban_summary_filters_by_family(db):
-    ingest_tournament(db, io.StringIO(MAPS_CSV), io.StringIO(BANS_CSV))
-    elv_id = get_team_id_by_abbr(db, "ELV")
-    alu_id = get_team_id_by_abbr(db, "ALU")
-
-    assert len(get_ban_summary(db, elv_id, alu_id, f=SPRING)) == 3
-    assert get_ban_summary(db, elv_id, alu_id, f=SUMMER) == []
-
-    db.execute("UPDATE matches SET season = 2, competition = 'CDM'")
-    db.commit()
-    assert get_ban_summary(db, elv_id, alu_id, f=SPRING) == []
-    assert len(get_ban_summary(db, elv_id, alu_id, f=SUMMER)) == 3
-
-
-def test_team_ban_summary_filters_by_family(db):
-    from cdm_stats.db.queries import get_team_ban_summary
-    ingest_tournament(db, io.StringIO(MAPS_CSV), io.StringIO(BANS_CSV))
-    elv_id = get_team_id_by_abbr(db, "ELV")
-
-    s1 = get_team_ban_summary(db, elv_id, f=SPRING)
-    assert len(s1["team_bans"]) > 0
-
-    s2 = get_team_ban_summary(db, elv_id, f=SUMMER)
-    assert s2["team_bans"] == []
-    assert s2["opponent_bans"] == []
-
-
-def test_ban_summary_correct_counts(db):
-    ingest_tournament(db, io.StringIO(MAPS_CSV), io.StringIO(BANS_CSV))
-    alu_id = get_team_id_by_abbr(db, "ALU")
-    elv_id = get_team_id_by_abbr(db, "ELV")
-    summary = get_ban_summary(db, alu_id, elv_id)
-    # ALU banned Summit, Firing Range, Standoff — each once
-    ban_maps = {s["map_name"] for s in summary}
-    assert ban_maps == {"Summit", "Firing Range", "Standoff"}
-    assert all(s["ban_count"] == 1 for s in summary)
-
-
-def test_ban_summary_empty_for_no_bans(db):
-    """No bans between teams that haven't played tournament matches."""
-    elv_id = get_team_id_by_abbr(db, "ELV")
-    dvs_id = get_team_id_by_abbr(db, "DVS")
-    summary = get_ban_summary(db, elv_id, dvs_id)
-    assert summary == []

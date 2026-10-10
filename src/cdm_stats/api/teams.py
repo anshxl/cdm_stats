@@ -70,7 +70,7 @@ def profile(abbr: str, f: MatchFilter = Depends(match_filter),
             "history": map_results_detail(conn, tid, r["map_id"], f) if r["map_id"] else [],
         })
 
-    # Maps banned but never played still matter ("always banned"); same slim rows as Dash.
+    # Maps banned but never played still matter ("always banned"); same slim rows as played maps.
     maps = all_maps(conn)
     seen = {r["map_id"] for r in rows}
     for map_id, map_name, mode in maps:

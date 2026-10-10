@@ -31,9 +31,8 @@ The main CLI entrypoint is [main.py](main.py) — see [docs/cli-reference.md](do
 
 ```
 uv run python main.py init
-uv run python main.py ingest data/matches.csv
-uv run python main.py export matrix
-uv run python main.py chart elo-all
+uv run python main.py ingest-s2-matches data/s2/matches.csv
+uv run python main.py ingest-scrims-team data/s2/scrims_team.csv --season 2
 uv run python main.py backfill
 ```
 
@@ -106,20 +105,16 @@ These aren't blocked by settings but are high-blast-radius — surface the inten
 ## 2. Project at a glance
 
 - **Language / runtime:** Python 3.12, managed with `uv` (see [.python-version](.python-version)).
-- **Framework:** FastAPI ([src/cdm_stats/api/](src/cdm_stats/api/)) + React/Vite/TypeScript/Tailwind/Recharts ([frontend/](frontend/)) for the dashboard; plain `argparse` CLI ([main.py](main.py)) for ingestion and exports.
+- **Framework:** FastAPI ([src/cdm_stats/api/](src/cdm_stats/api/)) + React/Vite/TypeScript/Tailwind/Recharts ([frontend/](frontend/)) for the dashboard; plain `argparse` CLI ([main.py](main.py)) for ingestion.
 - **Storage:** SQLite at [data/cdl.db](data/cdl.db), accessed via raw `sqlite3` + parameterized queries. No ORM.
 - **Layout:**
   - [src/cdm_stats/db/](src/cdm_stats/db/) — schema, migrations, query functions
-  - [src/cdm_stats/ingestion/](src/cdm_stats/ingestion/) — CSV loaders (match, scrim, tournament), backfill, seed
+  - [src/cdm_stats/ingestion/](src/cdm_stats/ingestion/) — CSV/JSON loaders (match, scrim, scrim ops, tournament), backfill, seed
   - [src/cdm_stats/metrics/](src/cdm_stats/metrics/) — Elo, avoidance/target, margin, map strength
-  - [src/cdm_stats/export/](src/cdm_stats/export/) — Excel exports (map matrix, matchup, profile)
-  - [src/cdm_stats/charts/](src/cdm_stats/charts/) — matplotlib chart generation
   - [src/cdm_stats/api/](src/cdm_stats/api/) — FastAPI app: basic auth, `/api` routes, Pydantic schemas, serves `frontend/dist`
   - [frontend/](frontend/) — React + Vite dashboard (pages, components, generated API types in `src/api/types.ts`)
   - [tests/](tests/) — pytest, flat layout
-  - [docs/superpowers/specs/](docs/superpowers/specs/) — design docs from brainstorming
-  - [docs/superpowers/plans/](docs/superpowers/plans/) — implementation plans
-  - [scripts/](scripts/) — currently unused; add one-shot scripts here if needed
+  - [docs/cli-reference.md](docs/cli-reference.md) — every CLI command and its input columns (the only tracked file in `docs/`; specs and plans stay local)
 - **Install / sync:** `uv sync --extra dev` (reads [pyproject.toml](pyproject.toml) + [uv.lock](uv.lock); pytest lives in the `dev` extra, so a plain `uv sync` removes it); `npm ci` in `frontend/`
 - **Dashboard dev server:** `uv run uvicorn cdm_stats.api.app:app --reload` + `npm run dev` in `frontend/` → http://localhost:5173
 - **Training page:** reads live from the Discord bot (`../discord-bot`, `GET /training`) via `TRAINING_API_URL` + `TRAINING_API_TOKEN`; unset → the page shows a 503 card. Locally: seed with `../discord-bot/scripts/seed_sample_training.py` and run its endpoint (see that script's docstring).
@@ -139,7 +134,7 @@ Treat these as project invariants — they underpin every metric. Violating them
 - **Elo is series-level only** (one update per match per team), K=32, seed=1000. Unreliable in the first half of the season — flag `low_confidence` below 7 matches played.
 - **Sample size travels with every metric.** Flag `n < 4` as unreliable in any coaching-facing output.
 
-See [docs/cli-reference.md](docs/cli-reference.md) for derivation details (pick context, avoidance, target, dominance flags).
+See [docs/cli-reference.md](docs/cli-reference.md) for the avoidance and target definitions.
 
 ### Database invariants
 

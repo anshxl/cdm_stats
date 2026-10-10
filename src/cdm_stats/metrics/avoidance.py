@@ -36,19 +36,3 @@ def defend_win_loss(conn: sqlite3.Connection, team_id: int, map_id: int, f: Matc
 
 
 
-def pick_context_distribution(conn: sqlite3.Connection, team_id: int, map_id: int, f: MatchFilter = MatchFilter()) -> dict[str, int]:
-    """Breakdown of how often a team picks this map in each context."""
-    fw, fp = f.sql()
-    rows = conn.execute(
-        f"""SELECT mr.pick_context, COUNT(*)
-           FROM map_results mr
-           JOIN matches m ON mr.match_id = m.match_id
-           WHERE mr.picked_by_team_id = ? AND mr.map_id = ? AND mr.dq = 0{fw}
-           GROUP BY mr.pick_context""",
-        [team_id, map_id] + fp,
-    ).fetchall()
-    result = {"Opener": 0, "Neutral": 0, "Must-Win": 0, "Close-Out": 0}
-    for ctx, count in rows:
-        if ctx in result:
-            result[ctx] = count
-    return result

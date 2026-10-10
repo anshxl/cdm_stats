@@ -2,7 +2,7 @@ import sqlite3
 
 from cdm_stats.metrics.filters import MatchFilter
 
-from cdm_stats.metrics.elo import get_current_elo, SEED_ELO
+from cdm_stats.metrics.elo import SEED_ELO
 
 CONTEXT_WEIGHTS = {
     "Opener": 0.5,
@@ -118,19 +118,3 @@ def map_strength(
     }
 
 
-def all_team_map_strengths(
-    conn: sqlite3.Connection,
-) -> dict[tuple[int, int], dict]:
-    """Compute Map Strength for every (team, map) pair.
-
-    Returns dict keyed by (team_id, map_id) -> map_strength result dict.
-    """
-    teams = conn.execute("SELECT team_id FROM teams").fetchall()
-    maps = conn.execute("SELECT map_id FROM maps").fetchall()
-
-    result = {}
-    for (team_id,) in teams:
-        for (map_id,) in maps:
-            result[(team_id, map_id)] = map_strength(conn, team_id, map_id)
-
-    return result

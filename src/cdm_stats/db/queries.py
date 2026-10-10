@@ -107,36 +107,6 @@ def insert_map_ban(
     return cursor.lastrowid
 
 
-def get_ban_summary(
-    conn: sqlite3.Connection, team_id: int, opponent_id: int, f: MatchFilter = MatchFilter()
-) -> list[dict]:
-    """Get ban frequency for team_id in matches against opponent_id."""
-    fw, fp = f.sql()
-    rows = conn.execute(
-        f"""SELECT mb.team_id, m2.map_name, m2.mode, COUNT(*) as ban_count
-           FROM map_bans mb
-           JOIN maps m2 ON mb.map_id = m2.map_id
-           JOIN matches m ON mb.match_id = m.match_id
-           WHERE mb.team_id = ?
-             AND ((m.team1_id = ? AND m.team2_id = ?) OR (m.team1_id = ? AND m.team2_id = ?)){fw}
-           GROUP BY mb.team_id, m2.map_name, m2.mode
-           ORDER BY ban_count DESC""",
-        [team_id, team_id, opponent_id, opponent_id, team_id] + fp,
-    ).fetchall()
-
-    total_series = conn.execute(
-        f"""SELECT COUNT(*) FROM matches m
-           WHERE m.match_format != 'CDL_BO5'
-             AND ((m.team1_id = ? AND m.team2_id = ?) OR (m.team1_id = ? AND m.team2_id = ?)){fw}""",
-        [team_id, opponent_id, opponent_id, team_id] + fp,
-    ).fetchone()[0]
-
-    return [
-        {"map_name": r[1], "mode": r[2], "ban_count": r[3], "total_series": total_series}
-        for r in rows
-    ]
-
-
 def team_ban_rates(
     conn: sqlite3.Connection,
     team_id: int,
@@ -265,45 +235,3 @@ def get_team_map_wl(
     return [{"map_name": r[0], "mode": r[1], "wins": r[2], "losses": r[3]} for r in rows]
 
 
-def get_team_ban_summary(
-    conn: sqlite3.Connection, team_id: int, f: MatchFilter = MatchFilter()
-) -> dict:
-    """Get ban tendencies for a team: what they ban and what opponents ban against them."""
-    fw, fp = f.sql()
-    # What this team bans
-    team_bans = conn.execute(
-        f"""SELECT m2.map_name, m2.mode, COUNT(*) as ban_count
-           FROM map_bans mb
-           JOIN maps m2 ON mb.map_id = m2.map_id
-           JOIN matches m ON mb.match_id = m.match_id
-           WHERE mb.team_id = ?{fw}
-           GROUP BY m2.map_name, m2.mode
-           ORDER BY ban_count DESC""",
-        [team_id] + fp,
-    ).fetchall()
-
-    # What opponents ban against this team
-    opp_bans = conn.execute(
-        f"""SELECT m2.map_name, m2.mode, COUNT(*) as ban_count
-           FROM map_bans mb
-           JOIN maps m2 ON mb.map_id = m2.map_id
-           JOIN matches m ON mb.match_id = m.match_id
-           WHERE mb.team_id != ?
-             AND (m.team1_id = ? OR m.team2_id = ?){fw}
-           GROUP BY m2.map_name, m2.mode
-           ORDER BY ban_count DESC""",
-        [team_id, team_id, team_id] + fp,
-    ).fetchall()
-
-    total_series = conn.execute(
-        f"""SELECT COUNT(*) FROM matches m
-           WHERE m.match_format != 'CDL_BO5'
-             AND (m.team1_id = ? OR m.team2_id = ?){fw}""",
-        [team_id, team_id] + fp,
-    ).fetchone()[0]
-
-    return {
-        "team_bans": [{"map_name": r[0], "mode": r[1], "ban_count": r[2], "total_series": total_series} for r in team_bans],
-        "opponent_bans": [{"map_name": r[0], "mode": r[1], "ban_count": r[2], "total_series": total_series} for r in opp_bans],
-        "total_series": total_series,
-    }
